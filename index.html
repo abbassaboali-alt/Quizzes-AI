@@ -688,11 +688,14 @@ button{cursor:pointer}
       Source File
     </label>
 
-    <input
-      id="aiSourceFile"
-      type="file"
-      accept=".pdf,.docx,.txt"
-      onchange="showAiSelectedFile()">
+<input
+  id="aiSourceFile"
+  type="file"
+  accept=".pdf,.docx,.txt"
+  onchange="
+    showAiSelectedFile();
+    checkAiFileRequirement();
+  ">
 
     <div class="help">
       Supported files: PDF, Word DOCX, and TXT.
@@ -729,10 +732,13 @@ button{cursor:pointer}
     Describe What You Want
   </label>
 
-  <textarea
-    id="aiInstructions"
-    style="min-height:130px"
-    placeholder="Example:
+<textarea
+  id="aiInstructions"
+  style="min-height:130px"
+  oninput="checkAiFileRequirement()"
+  placeholder="Upload a PDF, DOCX, or TXT file first, then describe what questions you want.
+
+Example:
 
 Use only Units 1 and 2 from the uploaded file.
 
@@ -740,11 +746,24 @@ Create:
 - 10 grammar multiple-choice questions
 - 10 vocabulary multiple-choice questions
 - 4 choices for each question
-- Exactly one correct answer
-- Beginner level
-- Do not use information outside the file
-- Add images to vocabulary questions">
-  </textarea>
+- Exactly one correct answer">
+</textarea>
+
+<div
+  id="aiFileRequiredMessage"
+  class="help"
+  style="
+    display:none;
+    margin-top:8px;
+    padding:10px 12px;
+    border-radius:11px;
+    background:#fff0ee;
+    color:#c0392b;
+    font-weight:800;
+  ">
+  <i class="fa-solid fa-triangle-exclamation"></i>
+  You must upload a PDF, DOCX, or TXT file when using this description box.
+</div>
 
   <div class="help">
     Describe the units, topics, question types, difficulty, language,
@@ -1931,6 +1950,62 @@ async function generateMediaForQuestions(questions,settings){
   return output;
 }
 /* =========================================
+   REQUIRE FILE WHEN DESCRIPTION IS USED
+========================================= */
+
+function checkAiFileRequirement(){
+
+  const instructions =
+    document
+      .getElementById("aiInstructions")
+      ?.value
+      .trim() || "";
+
+  const fileInput =
+    document.getElementById(
+      "aiSourceFile"
+    );
+
+  const sourceFile =
+    fileInput?.files?.[0] ||
+    null;
+
+  const message =
+    document.getElementById(
+      "aiFileRequiredMessage"
+    );
+
+  const descriptionNeedsFile =
+    instructions.length > 0 &&
+    !sourceFile;
+
+  if(message){
+
+    message.style.display =
+      descriptionNeedsFile
+        ? "block"
+        : "none";
+
+  }
+
+  if(fileInput){
+
+    fileInput.style.borderColor =
+      descriptionNeedsFile
+        ? "#e74c3c"
+        : "";
+
+    fileInput.style.boxShadow =
+      descriptionNeedsFile
+        ? "0 0 0 3px rgba(231,76,60,.12)"
+        : "";
+
+  }
+
+  return !descriptionNeedsFile;
+
+}
+/* =========================================
    SHOW SELECTED AI FILE
 ========================================= */
 
@@ -2293,7 +2368,22 @@ async function generateQuestionsWithAI(){
     const sourceFile =
       sourceFileInput?.files?.[0] ||
       null;
+/* =====================================
+   الوصف يتطلب رفع ملف
+===================================== */
 
+if(
+  instructions &&
+  !sourceFile
+){
+
+  checkAiFileRequirement();
+
+  throw new Error(
+    "Upload a PDF, DOCX, or TXT file before using the description box."
+  );
+
+}
     let sourceFileText = "";
     let sourceFileName = "";
 
@@ -2326,18 +2416,16 @@ async function generateQuestionsWithAI(){
     /* =====================================
        يجب توفير وصف أو موضوع أو ملف
     ===================================== */
+if(
+  !topic &&
+  !sourceFile
+){
 
-    if(
-      !topic &&
-      !instructions &&
-      !sourceFile
-    ){
+  throw new Error(
+    "Enter a question topic or upload a source file."
+  );
 
-      throw new Error(
-        "Enter a topic, describe what you want, or upload a source file."
-      );
-
-    }
+}
 
     const courseId =
       document
