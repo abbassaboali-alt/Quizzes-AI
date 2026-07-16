@@ -1443,18 +1443,24 @@ Rules:
       headers:{
         "Content-Type":"application/json"
       },
-      body:JSON.stringify({
-        task:AI_TASK,
-        prompt,
-        topic,
-        count,
-        level,
-        language,
-        mediaType:requestedMediaType,
-        mediaUrl,
-        instructions,
-        responseFormat:"json"
-      })
+body:JSON.stringify({
+  task:AI_TASK,
+
+  /* الـ Worker الحالي يقرأ text وليس prompt */
+  text:prompt,
+
+  /* نرسل prompt أيضًا للتوافق */
+  prompt:prompt,
+
+  topic:topic,
+  count:count,
+  level:level,
+  language:language,
+  mediaType:requestedMediaType,
+  mediaUrl:mediaUrl,
+  instructions:instructions,
+  responseFormat:"json"
+})
     });
 
     const responseText = await response.text();
