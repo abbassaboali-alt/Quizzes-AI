@@ -1439,17 +1439,75 @@ function toast(message){
 }
 
 function showSection(section){
-  const admin = section === "admin";
 
-  document.getElementById("adminSection").classList.toggle("hidden",!admin);
-  document.getElementById("studentSection").classList.toggle("hidden",admin);
+  const admin =
+    section === "admin";
 
-  document.getElementById("adminTab").classList.toggle("active",admin);
-  document.getElementById("studentTab").classList.toggle("active",!admin);
+  /*
+    عند الخروج من شاشة الطالب:
+    إيقاف المؤقت وإنهاء المحاولة الحالية.
+  */
+
+  if(
+    admin &&
+    CURRENT_ACTIVITY
+  ){
+
+    stopActivityTimer();
+
+    ACTIVITY_FINISHED = true;
+    ACTIVITY_TIME_LEFT = 0;
+
+    CURRENT_ACTIVITY = null;
+    CURRENT_COURSE = null;
+
+    CURRENT_QUESTION_INDEX = 0;
+    CURRENT_SCORE = 0;
+    ANSWER_LOCKED = false;
+
+    document
+      .getElementById("playArea")
+      .classList
+      .add("hidden");
+
+    document
+      .getElementById("resultArea")
+      .classList
+      .add("hidden");
+
+    document
+      .getElementById("studentStart")
+      .classList
+      .remove("hidden");
+
+  }
+
+  document
+    .getElementById("adminSection")
+    .classList
+    .toggle("hidden",!admin);
+
+  document
+    .getElementById("studentSection")
+    .classList
+    .toggle("hidden",admin);
+
+  document
+    .getElementById("adminTab")
+    .classList
+    .toggle("active",admin);
+
+  document
+    .getElementById("studentTab")
+    .classList
+    .toggle("active",!admin);
 
   if(!admin){
+
     loadStudentActivities();
+
   }
+
 }
 
 function readText(id){
