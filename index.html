@@ -1,0 +1,2373 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Prudle Fun Activities</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore-compat.js"></script>
+
+<style>
+:root{
+  --blue:#164478;
+  --blue2:#2467a5;
+  --gold:#f4b942;
+  --green:#17a673;
+  --red:#e74c3c;
+  --bg:#f3f7fb;
+  --card:#fff;
+  --text:#18324b;
+  --muted:#6b7b8d;
+  --border:#dce6ef;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:"Tajawal",sans-serif;
+  background:
+    radial-gradient(circle at 10% 5%,rgba(36,103,165,.14),transparent 24%),
+    radial-gradient(circle at 90% 95%,rgba(244,185,66,.15),transparent 25%),
+    var(--bg);
+  color:var(--text);
+  min-height:100vh;
+}
+button,input,select,textarea{font-family:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+
+.topbar{
+  min-height:72px;
+  background:linear-gradient(135deg,var(--blue),var(--blue2));
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:15px;
+  padding:12px 22px;
+  position:sticky;
+  top:0;
+  z-index:20;
+  box-shadow:0 6px 18px rgba(22,68,120,.22);
+}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{
+  width:48px;height:48px;border-radius:14px;background:#fff;
+  display:grid;place-items:center;color:var(--blue);font-weight:900;font-size:20px;
+  box-shadow:0 5px 14px rgba(0,0,0,.18)
+}
+.brand h1{font-size:20px;margin:0}
+.brand small{opacity:.82}
+.nav-actions{display:flex;gap:8px;flex-wrap:wrap}
+.nav-btn{
+  border:1px solid rgba(255,255,255,.3);
+  background:rgba(255,255,255,.12);
+  color:#fff;padding:9px 14px;border-radius:12px;font-weight:800
+}
+.nav-btn.active,.nav-btn:hover{background:#fff;color:var(--blue)}
+
+.container{width:min(1200px,94%);margin:24px auto 50px}
+.panel{
+  background:rgba(255,255,255,.96);
+  border:1px solid var(--border);
+  border-radius:22px;
+  box-shadow:0 12px 35px rgba(31,70,102,.09);
+  padding:22px;
+  margin-bottom:20px
+}
+.panel-title{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  margin-bottom:18px
+}
+.panel-title h2{margin:0;font-size:22px}
+.badge{
+  background:#eaf3fb;color:var(--blue);
+  border-radius:999px;padding:7px 12px;font-weight:800;font-size:13px
+}
+.grid{display:grid;gap:14px}
+.grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.field label{display:block;font-weight:800;margin-bottom:7px}
+.field input,.field select,.field textarea{
+  width:100%;border:1px solid var(--border);border-radius:13px;padding:12px 13px;
+  background:#fff;color:var(--text);font-size:15px;outline:none
+}
+.field input:focus,.field select:focus,.field textarea:focus{
+  border-color:var(--blue2);box-shadow:0 0 0 3px rgba(36,103,165,.11)
+}
+.field textarea{min-height:85px;resize:vertical}
+.help{font-size:12px;color:var(--muted);margin-top:5px}
+
+.btn{
+  border:none;border-radius:13px;padding:11px 17px;font-weight:900;font-size:14px;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px
+}
+.btn-primary{background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff}
+.btn-success{background:var(--green);color:#fff}
+.btn-danger{background:var(--red);color:#fff}
+.btn-gold{background:var(--gold);color:#493500}
+.btn-light{background:#edf4fa;color:var(--blue)}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:15px}
+
+.activity-list,
+.open-activity-list{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:15px
+}
+.activity-card,
+.open-activity-card{
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:17px;
+  background:#fff;
+  transition:.2s;
+  position:relative;
+  overflow:hidden
+}
+.activity-card:before,
+.open-activity-card:before{
+  content:"";
+  position:absolute;
+  right:0;
+  top:0;
+  width:7px;
+  height:100%;
+  background:var(--gold)
+}
+.open-activity-card:before{
+  background:linear-gradient(var(--gold),var(--green))
+}
+.activity-card:hover,
+.open-activity-card:hover{
+  transform:translateY(-3px);
+  box-shadow:0 12px 22px rgba(30,70,105,.11)
+}
+.activity-card h3,
+.open-activity-card h3{
+  margin:0 0 8px;
+  padding-right:4px
+}
+.activity-meta{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.mini{
+  background:#f1f6fa;border-radius:999px;padding:6px 9px;font-size:12px;font-weight:800
+}
+.empty{text-align:center;color:var(--muted);padding:35px 10px}
+
+.question-box{
+  border:1px dashed #b9ccdd;border-radius:18px;padding:17px;margin-top:16px;background:#fbfdff
+}
+.question-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.question-head h3{margin:0}
+.answers-admin{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:13px
+}
+.answer-admin{
+  border:1px solid var(--border);border-radius:15px;padding:12px;background:#fff
+}
+.correct-row{display:flex;align-items:center;gap:8px;margin-top:8px;font-weight:800;color:var(--green)}
+.preview-img{
+  width:100%;height:120px;object-fit:cover;border-radius:10px;background:#eef3f7;
+  display:none;margin-top:8px
+}
+
+/* Student */
+.student-start{
+  max-width:1100px;margin:25px auto
+}
+.start-intro{text-align:center;margin-bottom:22px}
+.hero-icon{
+  width:100px;height:100px;border-radius:30px;margin:0 auto 15px;
+  display:grid;place-items:center;background:linear-gradient(135deg,#ffdf73,#f4a62a);
+  font-size:48px;box-shadow:0 12px 30px rgba(244,166,42,.28)
+}
+.start-intro h2{font-size:30px;margin:8px 0}
+.course-info-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  margin-top:14px
+}
+.info-item{
+  background:#f4f8fb;
+  border:1px solid #e5edf4;
+  border-radius:12px;
+  padding:10px
+}
+.info-item span{
+  display:block;
+  color:var(--muted);
+  font-size:11px;
+  margin-bottom:3px
+}
+.info-item strong{
+  font-size:13px;
+  overflow-wrap:anywhere
+}
+.open-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  background:#e8faf2;
+  color:var(--green);
+  border-radius:999px;
+  padding:7px 10px;
+  font-size:12px;
+  font-weight:900
+}
+.play-shell{max-width:930px;margin:auto}
+.play-summary{
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:13px 16px;
+  margin-bottom:14px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  flex-wrap:wrap
+}
+.play-summary-title{font-weight:900;color:var(--blue)}
+.play-summary-info{color:var(--muted);font-size:13px;font-weight:700}
+
+.play-top{
+  display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px
+}
+.progress-wrap{height:13px;background:#e5edf4;border-radius:999px;overflow:hidden;flex:1}
+.progress-bar{height:100%;width:0;background:linear-gradient(90deg,var(--gold),var(--green));transition:.3s}
+.score-pill{background:var(--blue);color:#fff;padding:9px 14px;border-radius:999px;font-weight:900}
+.game-card{
+  background:#fff;border:1px solid var(--border);border-radius:25px;padding:25px;
+  box-shadow:0 15px 38px rgba(22,68,120,.12)
+}
+.question-number{text-align:center;color:var(--blue);font-weight:900}
+.game-question{text-align:center;font-size:26px;margin:12px auto 22px;line-height:1.6}
+.question-image{
+  max-width:500px;width:100%;max-height:270px;object-fit:contain;
+  display:block;margin:0 auto 20px;border-radius:18px;background:#f5f8fa
+}
+.student-answers{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px
+}
+.student-answer{
+  border:2px solid var(--border);border-radius:18px;background:#fff;padding:12px;
+  min-height:110px;font-weight:900;font-size:18px;color:var(--text);
+  transition:.18s;position:relative
+}
+.student-answer:hover{transform:translateY(-3px);border-color:var(--blue2);box-shadow:0 9px 20px rgba(36,103,165,.13)}
+.student-answer img{
+  width:100%;height:160px;object-fit:cover;border-radius:12px;margin-bottom:8px;background:#eef3f7
+}
+.student-answer.correct{border-color:var(--green);background:#eafaf4}
+.student-answer.wrong{border-color:var(--red);background:#fff0ee}
+.feedback{
+  min-height:42px;text-align:center;font-size:20px;font-weight:900;margin:17px 0 0
+}
+.feedback.good{color:var(--green)}
+.feedback.bad{color:var(--red)}
+
+.result-card{text-align:center;max-width:660px;margin:30px auto}
+.trophy{font-size:90px;filter:drop-shadow(0 12px 12px rgba(244,185,66,.35))}
+.final-score{font-size:48px;color:var(--blue);font-weight:900;margin:5px}
+.stars{font-size:30px;color:var(--gold);letter-spacing:4px}
+.result-course{
+  margin:12px auto;
+  padding:11px;
+  border-radius:13px;
+  background:#f4f8fb;
+  font-weight:800
+}
+.confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:100}
+.confetti i{
+  position:absolute;top:-20px;width:10px;height:18px;border-radius:3px;
+  animation:fall 2.8s linear forwards
+}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+
+.toast{
+  position:fixed;left:20px;bottom:20px;background:#18324b;color:#fff;
+  padding:12px 17px;border-radius:13px;font-weight:800;z-index:200;
+  opacity:0;transform:translateY(20px);pointer-events:none;transition:.25s
+}
+.toast.show{opacity:1;transform:none}
+
+@media(max-width:750px){
+  .topbar{align-items:flex-start;flex-direction:column}
+  .grid-2,.grid-3,.answers-admin,.student-answers,.course-info-grid{grid-template-columns:1fr}
+  .container{width:95%;margin-top:14px}
+  .panel,.game-card{padding:16px;border-radius:18px}
+  .game-question{font-size:21px}
+  .student-answer img{height:190px}
+}
+
+/* ===============================
+   AI Question Generator
+================================ */
+.ai-generator{
+  border:1px solid #cfe0ef;
+  background:linear-gradient(135deg,#f7fbff,#fffaf0);
+}
+.ai-generator .panel-title{
+  margin-bottom:14px;
+}
+.ai-note{
+  padding:11px 13px;
+  border-radius:13px;
+  background:#eef6fd;
+  color:var(--blue);
+  font-size:13px;
+  font-weight:700;
+  line-height:1.8;
+  margin-top:12px;
+}
+.media-preview-box{
+  margin-top:12px;
+  border:1px solid var(--border);
+  border-radius:15px;
+  padding:12px;
+  background:#fff;
+}
+.media-preview-box img,
+.media-preview-box video{
+  width:100%;
+  max-height:280px;
+  object-fit:contain;
+  border-radius:12px;
+  background:#eef3f7;
+}
+.media-preview-box audio{
+  width:100%;
+}
+.ai-loading{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  font-weight:900;
+}
+
+</style>
+</head>
+
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">P</div>
+    <div>
+      <h1>Prudle Fun Activities</h1>
+      <small>أنشطة تعليمية وترفيهية تفاعلية</small>
+    </div>
+  </div>
+
+  <div class="nav-actions">
+    <button class="nav-btn active" id="adminTab" onclick="showSection('admin')">
+      <i class="fa-solid fa-gears"></i> إعداد النشاط
+    </button>
+
+    <button class="nav-btn" id="studentTab" onclick="showSection('student')">
+      <i class="fa-solid fa-gamepad"></i> لعب النشاط
+    </button>
+  </div>
+</header>
+
+<main class="container">
+
+<section id="adminSection">
+
+  <div class="panel">
+    <div class="panel-title">
+      <h2><i class="fa-solid fa-wand-magic-sparkles"></i> إنشاء نشاط جديد</h2>
+      <span class="badge">Firebase</span>
+    </div>
+
+    <div class="grid grid-3">
+      <div class="field">
+        <label>اسم النشاط</label>
+        <input id="activityTitle" placeholder="مثال: اختر الحيوان الصحيح">
+      </div>
+
+      <div class="field">
+        <label>الدورة المفتوحة</label>
+        <select id="courseSelect" onchange="fillSelectedCourseInfo()">
+          <option value="">جارٍ تحميل الدورات المفتوحة...</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>اسم المدرب</label>
+        <input id="trainerName" readonly placeholder="يظهر تلقائيًا">
+      </div>
+    </div>
+
+    <div class="grid grid-3" style="margin-top:14px">
+      <div class="field">
+        <label>الفرع</label>
+        <input id="branchName" readonly placeholder="يظهر تلقائيًا">
+      </div>
+
+      <div class="field">
+        <label>القسم</label>
+        <input id="sectionName" readonly placeholder="يظهر تلقائيًا">
+      </div>
+
+      <div class="field">
+        <label>الفترة</label>
+        <input id="periodName" readonly placeholder="تظهر تلقائيًا">
+      </div>
+    </div>
+
+    <div class="grid grid-2" style="margin-top:14px">
+      <div class="field">
+        <label>وصف النشاط</label>
+        <textarea id="activityDescription" placeholder="تعليمات بسيطة للطالب"></textarea>
+      </div>
+
+      <div class="field">
+        <label>الفئة / المجموعة</label>
+        <select id="activityGroup">
+          <option value="General">General</option>
+          <option value="A">Group A</option>
+          <option value="B">Group B</option>
+          <option value="C">Group C</option>
+          <option value="Kids">Kids</option>
+        </select>
+
+        <label style="margin-top:12px">حالة النشاط</label>
+        <select id="activityStatus">
+          <option value="open">مفتوح للطلاب</option>
+          <option value="closed">مغلق</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="panel ai-generator">
+    <div class="panel-title">
+      <h2>
+        <i class="fa-solid fa-wand-magic-sparkles"></i>
+        توليد الأسئلة بالذكاء الاصطناعي
+      </h2>
+      <span class="badge">AI</span>
+    </div>
+
+    <div class="grid grid-3">
+      <div class="field">
+        <label>موضوع الأسئلة</label>
+        <input id="aiTopic" placeholder="مثال: Personal information, animals, present simple">
+      </div>
+
+      <div class="field">
+        <label>المستوى</label>
+        <select id="aiLevel">
+          <option value="Foundation">Foundation</option>
+          <option value="Beginner">Beginner</option>
+          <option value="Elementary">Elementary</option>
+          <option value="Pre-Intermediate">Pre-Intermediate</option>
+          <option value="Intermediate">Intermediate</option>
+          <option value="Upper-Intermediate">Upper-Intermediate</option>
+          <option value="Advanced">Advanced</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>عدد الأسئلة</label>
+        <input id="aiQuestionCount" type="number" min="1" max="30" value="5">
+      </div>
+    </div>
+
+    <div class="grid grid-3" style="margin-top:14px">
+      <div class="field">
+        <label>لغة الأسئلة</label>
+        <select id="aiLanguage">
+          <option value="English">English</option>
+          <option value="Arabic">Arabic</option>
+          <option value="English with Arabic instructions">English + Arabic Instructions</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>نوع الوسائط</label>
+        <select id="aiMediaType" onchange="toggleAiMediaUrl()">
+          <option value="none">بدون وسائط</option>
+          <option value="image">صورة</option>
+          <option value="video">فيديو</option>
+          <option value="audio">صوت</option>
+          <option value="mixed">مختلط</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>رابط الصورة / الفيديو / الصوت</label>
+        <input id="aiMediaUrl" placeholder="https://..." disabled>
+        <div class="help">
+          اتركه فارغًا إذا كنت ستضيف رابط الوسائط يدويًا بعد التوليد.
+        </div>
+      </div>
+    </div>
+
+    <div class="field" style="margin-top:14px">
+      <label>تعليمات إضافية</label>
+      <textarea id="aiInstructions"
+        placeholder="مثال: 4 اختيارات لكل سؤال، سؤال واحد صحيح، اجعل الأسئلة مناسبة للأطفال"></textarea>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-gold" id="generateAiBtn" onclick="generateQuestionsWithAI()">
+        <i class="fa-solid fa-wand-magic-sparkles"></i>
+        توليد الأسئلة
+      </button>
+
+      <button class="btn btn-light" onclick="clearGeneratedQuestions()">
+        <i class="fa-solid fa-broom"></i>
+        مسح الأسئلة الحالية
+      </button>
+    </div>
+
+    <div class="ai-note">
+      يدعم السؤال النصي والصورة والفيديو والصوت. الذكاء الاصطناعي لا ينشئ رابط وسائط حقيقيًا من تلقاء نفسه؛
+      يجب أن يرسل الـ API رابطًا صالحًا أو تضع الرابط يدويًا.
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">
+      <h2><i class="fa-solid fa-circle-question"></i> أسئلة النشاط</h2>
+
+      <button class="btn btn-light" onclick="addQuestion()">
+        <i class="fa-solid fa-plus"></i> إضافة سؤال
+      </button>
+    </div>
+
+    <div id="questionsContainer"></div>
+
+    <div class="actions">
+      <button class="btn btn-primary" onclick="saveActivity()">
+        <i class="fa-solid fa-floppy-disk"></i> حفظ النشاط
+      </button>
+
+      <button class="btn btn-light" onclick="resetEditor()">
+        <i class="fa-solid fa-rotate"></i> نشاط جديد
+      </button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">
+      <h2><i class="fa-solid fa-list-check"></i> النشاطات المحفوظة</h2>
+
+      <button class="btn btn-light" onclick="loadActivities()">
+        <i class="fa-solid fa-rotate-right"></i> تحديث
+      </button>
+    </div>
+
+    <div id="adminActivities" class="activity-list"></div>
+  </div>
+
+</section>
+
+<section id="studentSection" class="hidden">
+
+  <div id="studentStart" class="student-start">
+
+    <div class="start-intro">
+      <div class="hero-icon">🎮</div>
+
+      <h2>اختر النشاط وابدأ اللعب</h2>
+
+      <p style="color:var(--muted)">
+        تظهر النشاطات المرتبطة بالدورات المفتوحة فقط، بدون إدخال بيانات الطالب.
+      </p>
+    </div>
+
+    <div class="panel">
+      <div id="openActivitiesBox" class="empty">
+        جارٍ تحميل النشاطات والدورات المفتوحة...
+      </div>
+    </div>
+
+  </div>
+
+  <div id="playArea" class="play-shell hidden">
+
+    <div class="play-summary">
+      <div>
+        <div id="playingActivityTitle" class="play-summary-title"></div>
+        <div id="playingCourseInfo" class="play-summary-info"></div>
+      </div>
+
+      <button class="btn btn-light" onclick="backToActivities()">
+        <i class="fa-solid fa-arrow-right"></i> رجوع للنشاطات
+      </button>
+    </div>
+
+    <div class="play-top">
+      <div class="progress-wrap">
+        <div id="progressBar" class="progress-bar"></div>
+      </div>
+
+      <div id="scorePill" class="score-pill">⭐ 0</div>
+    </div>
+
+    <div class="game-card">
+      <div id="questionNumber" class="question-number"></div>
+
+      <h2 id="gameQuestion" class="game-question"></h2>
+
+      <img id="gameQuestionImage" class="question-image hidden" alt="">
+
+      <video id="gameQuestionVideo" class="question-image hidden" controls playsinline></video>
+
+      <audio id="gameQuestionAudio" class="hidden" controls style="width:100%;margin:0 auto 20px"></audio>
+
+      <div id="studentAnswers" class="student-answers"></div>
+
+      <div id="feedback" class="feedback"></div>
+    </div>
+
+  </div>
+
+  <div id="resultArea" class="panel result-card hidden">
+    <div class="trophy">🏆</div>
+
+    <h2>أحسنت! انتهى النشاط</h2>
+
+    <div id="resultCourse" class="result-course"></div>
+
+    <div id="finalScore" class="final-score">0 / 0</div>
+
+    <div id="finalPercent" style="font-size:22px;font-weight:900"></div>
+
+    <div id="finalStars" class="stars"></div>
+
+    <p id="resultMessage" style="color:var(--muted);font-size:18px"></p>
+
+    <div class="actions" style="justify-content:center">
+      <button class="btn btn-gold" onclick="restartGame()">
+        <i class="fa-solid fa-rotate-right"></i> العب مرة أخرى
+      </button>
+
+      <button class="btn btn-primary" onclick="backToActivities()">
+        <i class="fa-solid fa-list"></i> نشاط آخر
+      </button>
+    </div>
+  </div>
+
+</section>
+
+</main>
+
+<div id="confetti" class="confetti"></div>
+<div id="toast" class="toast"></div>
+
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyCCFBvZosI8dwShZjxvZzI-SU5igEbcOKk",
+  authDomain:"prudle-system.firebaseapp.com",
+  projectId:"prudle-system"
+});
+
+const db = firebase.firestore();
+
+const ACTIVITIES_COLLECTION = "FunActivities";
+const COURSES_COLLECTION = "Courses";
+const RESULTS_COLLECTION = "FunActivityResults";
+
+/*
+  ضع رابط Cloudflare Worker الخاص بك هنا.
+  يجب أن يقبل POST ويرجع JSON يحتوي على questions.
+*/
+const AI_WORKER_URL = "PUT_YOUR_CLOUDFLARE_WORKER_URL_HERE";
+const AI_TASK = "generate_activity_questions";
+
+let EDIT_ACTIVITY_ID = "";
+let QUESTION_COUNTER = 0;
+let ACTIVITIES_CACHE = [];
+let OPEN_COURSES_CACHE = [];
+
+let CURRENT_ACTIVITY = null;
+let CURRENT_COURSE = null;
+let CURRENT_QUESTION_INDEX = 0;
+let CURRENT_SCORE = 0;
+let ANSWER_LOCKED = false;
+
+function esc(value){
+  return String(value ?? "")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+
+function clean(value){
+  return String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g," ");
+}
+
+function first(object,fields,fallback=""){
+  for(const field of fields){
+    const value = object?.[field];
+
+    if(value !== undefined && value !== null && String(value).trim() !== ""){
+      return value;
+    }
+  }
+
+  return fallback;
+}
+
+function isOpenStatus(value){
+  return [
+    "open",
+    "opened",
+    "active",
+    "مفتوح",
+    "مفتوحة",
+    "نشط",
+    "جارية",
+    "running"
+  ].includes(clean(value));
+}
+
+function getCourseName(course){
+  return first(course,[
+    "TrainingCourse",
+    "courseName",
+    "CourseName",
+    "title",
+    "name",
+    "course"
+  ],"دورة غير محددة");
+}
+
+function getTrainer(course,activity={}){
+  return first(course,[
+    "trainer",
+    "Trainer",
+    "trainerName",
+    "TrainerName",
+    "courseTrainer",
+    "CourseTrainer",
+    "instructor",
+    "Instructor",
+    "teacher",
+    "Teacher"
+  ],first(activity,[
+    "trainerName",
+    "TrainerName",
+    "trainer",
+    "Trainer"
+  ],"غير محدد"));
+}
+
+function getBranch(course,activity={}){
+  return first(course,[
+    "branch",
+    "Branch",
+    "courseBranch"
+  ],first(activity,["branch","Branch"],"غير محدد"));
+}
+
+function getSection(course,activity={}){
+  return first(course,[
+    "section",
+    "Section",
+    "department",
+    "Department"
+  ],first(activity,["section","department"],"غير محدد"));
+}
+
+function getPeriod(course,activity={}){
+  return first(course,[
+    "period",
+    "Period",
+    "coursePeriod",
+    "time",
+    "Time"
+  ],first(activity,["period"],"غير محدد"));
+}
+
+function getCourseType(course,activity={}){
+  return first(course,[
+    "courseType",
+    "CourseType",
+    "type",
+    "Type"
+  ],first(activity,["courseType"],"غير محدد"));
+}
+
+function toast(message){
+  const el = document.getElementById("toast");
+  el.textContent = message;
+  el.classList.add("show");
+
+  setTimeout(()=>{
+    el.classList.remove("show");
+  },2600);
+}
+
+function showSection(section){
+  const admin = section === "admin";
+
+  document.getElementById("adminSection").classList.toggle("hidden",!admin);
+  document.getElementById("studentSection").classList.toggle("hidden",admin);
+
+  document.getElementById("adminTab").classList.toggle("active",admin);
+  document.getElementById("studentTab").classList.toggle("active",!admin);
+
+  if(!admin){
+    loadStudentActivities();
+  }
+}
+
+function readText(id){
+  return document.getElementById(id).value.trim();
+}
+
+/* ===============================
+   تحميل الدورات المفتوحة
+================================ */
+
+async function loadOpenCourses(){
+  const select = document.getElementById("courseSelect");
+
+  select.innerHTML = `<option value="">جارٍ تحميل الدورات المفتوحة...</option>`;
+
+  try{
+    const snap = await db.collection(COURSES_COLLECTION).get();
+
+    OPEN_COURSES_CACHE = snap.docs
+      .map(doc=>({id:doc.id,...doc.data()}))
+      .filter(course=>{
+        const status = first(course,[
+          "status",
+          "Status",
+          "courseStatus"
+        ],"");
+
+        return isOpenStatus(status);
+      });
+
+    if(!OPEN_COURSES_CACHE.length){
+      select.innerHTML = `<option value="">لا توجد دورات مفتوحة</option>`;
+      return;
+    }
+
+    select.innerHTML = `<option value="">اختر الدورة المفتوحة</option>` +
+      OPEN_COURSES_CACHE.map(course=>`
+        <option value="${course.id}">
+          ${esc(getCourseName(course))}
+          — ${esc(getBranch(course))}
+          — ${esc(getSection(course))}
+          — ${esc(getTrainer(course))}
+        </option>
+      `).join("");
+
+  }catch(error){
+    console.error(error);
+    select.innerHTML = `<option value="">تعذر تحميل الدورات</option>`;
+  }
+}
+
+function fillSelectedCourseInfo(){
+  const id = document.getElementById("courseSelect").value;
+
+  const course = OPEN_COURSES_CACHE.find(item=>item.id === id);
+
+  document.getElementById("trainerName").value =
+    course ? getTrainer(course) : "";
+
+  document.getElementById("branchName").value =
+    course ? getBranch(course) : "";
+
+  document.getElementById("sectionName").value =
+    course ? getSection(course) : "";
+
+  document.getElementById("periodName").value =
+    course ? getPeriod(course) : "";
+}
+
+/* ===============================
+   الأسئلة
+================================ */
+
+function addQuestion(data = null){
+  QUESTION_COUNTER++;
+
+  const q = data || {
+    text:"",
+    mediaType:"none",
+    mediaUrl:"",
+    image:"",
+    answers:[
+      {text:"",image:"",correct:true},
+      {text:"",image:"",correct:false},
+      {text:"",image:"",correct:false},
+      {text:"",image:"",correct:false}
+    ]
+  };
+
+  const key = "q_" + QUESTION_COUNTER;
+  const box = document.createElement("div");
+
+  box.className = "question-box";
+  box.dataset.key = key;
+
+  const savedMediaType =
+    q.mediaType ||
+    (q.video ? "video" : q.audio ? "audio" : q.image ? "image" : "none");
+
+  const savedMediaUrl =
+    q.mediaUrl ||
+    q.video ||
+    q.audio ||
+    q.image ||
+    "";
+
+  const answers =
+    Array.isArray(q.answers) && q.answers.length
+      ? q.answers
+      : [
+          {text:"",image:"",correct:true},
+          {text:"",image:"",correct:false}
+        ];
+
+  box.innerHTML = `
+    <div class="question-head">
+      <h3>السؤال <span class="question-order"></span></h3>
+
+      <button class="btn btn-danger" type="button" onclick="removeQuestion(this)">
+        <i class="fa-solid fa-trash"></i> حذف
+      </button>
+    </div>
+
+    <div class="grid grid-2" style="margin-top:13px">
+      <div class="field">
+        <label>نص السؤال</label>
+        <textarea class="q-text" placeholder="مثال: Which picture shows a cat?">${esc(q.text)}</textarea>
+      </div>
+
+      <div>
+        <div class="field">
+          <label>نوع وسائط السؤال</label>
+          <select class="q-media-type" onchange="updateQuestionMediaPreview(this.closest('.question-box'))">
+            <option value="none" ${savedMediaType === "none" ? "selected" : ""}>بدون وسائط</option>
+            <option value="image" ${savedMediaType === "image" ? "selected" : ""}>صورة</option>
+            <option value="video" ${savedMediaType === "video" ? "selected" : ""}>فيديو</option>
+            <option value="audio" ${savedMediaType === "audio" ? "selected" : ""}>صوت</option>
+          </select>
+        </div>
+
+        <div class="field" style="margin-top:9px">
+          <label>رابط الوسائط</label>
+          <input
+            class="q-media-url"
+            value="${esc(savedMediaUrl)}"
+            placeholder="https://..."
+            oninput="updateQuestionMediaPreview(this.closest('.question-box'))">
+        </div>
+      </div>
+    </div>
+
+    <div class="media-preview-box q-media-preview hidden"></div>
+
+    <div class="answers-admin"></div>
+
+    <button class="btn btn-light" type="button" style="margin-top:12px" onclick="addAnswer(this)">
+      <i class="fa-solid fa-plus"></i> إضافة إجابة
+    </button>
+  `;
+
+  document.getElementById("questionsContainer").appendChild(box);
+
+  answers.forEach(answer=>{
+    appendAnswer(box,answer);
+  });
+
+  updateQuestionMediaPreview(box);
+  refreshQuestionNumbers();
+}
+function appendAnswer(questionBox,answer){
+  const answersBox = questionBox.querySelector(".answers-admin");
+  const item = document.createElement("div");
+  const radioName = "correct_" + questionBox.dataset.key;
+
+  item.className = "answer-admin";
+
+  item.innerHTML = `
+    <div class="field">
+      <label>نص الإجابة</label>
+
+      <input class="a-text" value="${esc(answer.text)}" placeholder="مثال: Cat">
+    </div>
+
+    <div class="field" style="margin-top:9px">
+      <label>رابط صورة الإجابة</label>
+
+      <input class="a-image" value="${esc(answer.image)}" placeholder="https://...">
+
+      <img class="preview-img" alt="">
+    </div>
+
+    <label class="correct-row">
+      <input type="radio" class="a-correct" name="${radioName}" ${answer.correct ? "checked" : ""}>
+      هذه هي الإجابة الصحيحة
+    </label>
+
+    <button class="btn btn-danger" type="button" style="margin-top:9px;padding:7px 11px" onclick="removeAnswer(this)">
+      <i class="fa-solid fa-xmark"></i> حذف الإجابة
+    </button>
+  `;
+
+  const imageInput = item.querySelector(".a-image");
+  const preview = item.querySelector(".preview-img");
+
+  function updatePreview(){
+    const url = imageInput.value.trim();
+
+    if(url){
+      preview.src = url;
+      preview.style.display = "block";
+    }else{
+      preview.removeAttribute("src");
+      preview.style.display = "none";
+    }
+  }
+
+  imageInput.addEventListener("input",updatePreview);
+  updatePreview();
+
+  answersBox.appendChild(item);
+}
+
+function addAnswer(button){
+  const questionBox = button.closest(".question-box");
+  const count = questionBox.querySelectorAll(".answer-admin").length;
+
+  if(count >= 6){
+    alert("الحد الأعلى 6 إجابات لكل سؤال.");
+    return;
+  }
+
+  appendAnswer(questionBox,{
+    text:"",
+    image:"",
+    correct:false
+  });
+}
+
+function removeAnswer(button){
+  const questionBox = button.closest(".question-box");
+  const items = questionBox.querySelectorAll(".answer-admin");
+
+  if(items.length <= 2){
+    alert("يجب أن يحتوي السؤال على إجابتين على الأقل.");
+    return;
+  }
+
+  const item = button.closest(".answer-admin");
+  const wasCorrect = item.querySelector(".a-correct").checked;
+
+  item.remove();
+
+  if(wasCorrect){
+    const firstRadio = questionBox.querySelector(".a-correct");
+
+    if(firstRadio){
+      firstRadio.checked = true;
+    }
+  }
+}
+
+function removeQuestion(button){
+  if(!confirm("حذف هذا السؤال؟")){
+    return;
+  }
+
+  button.closest(".question-box").remove();
+  refreshQuestionNumbers();
+}
+
+function refreshQuestionNumbers(){
+  document.querySelectorAll(".question-box").forEach((box,index)=>{
+    box.querySelector(".question-order").textContent = index + 1;
+  });
+}
+
+function updateQuestionMediaPreview(questionBox){
+  if(!questionBox) return;
+
+  const type = questionBox.querySelector(".q-media-type")?.value || "none";
+  const url = questionBox.querySelector(".q-media-url")?.value.trim() || "";
+  const preview = questionBox.querySelector(".q-media-preview");
+
+  if(!preview) return;
+
+  if(type === "none" || !url){
+    preview.innerHTML = "";
+    preview.classList.add("hidden");
+    return;
+  }
+
+  preview.classList.remove("hidden");
+
+  if(type === "image"){
+    preview.innerHTML = `<img src="${esc(url)}" alt="Question image">`;
+  }else if(type === "video"){
+    preview.innerHTML = `<video src="${esc(url)}" controls playsinline></video>`;
+  }else if(type === "audio"){
+    preview.innerHTML = `<audio src="${esc(url)}" controls></audio>`;
+  }
+}
+
+function collectQuestions(){
+  const questions = [];
+
+  document.querySelectorAll(".question-box").forEach((box,index)=>{
+    const text = box.querySelector(".q-text").value.trim();
+    const mediaType = box.querySelector(".q-media-type")?.value || "none";
+    const mediaUrl = box.querySelector(".q-media-url")?.value.trim() || "";
+    const answers = [];
+
+    box.querySelectorAll(".answer-admin").forEach(answerBox=>{
+      answers.push({
+        text:answerBox.querySelector(".a-text").value.trim(),
+        image:answerBox.querySelector(".a-image").value.trim(),
+        correct:answerBox.querySelector(".a-correct").checked
+      });
+    });
+
+    if(!text){
+      throw new Error(`اكتب نص السؤال رقم ${index + 1}.`);
+    }
+
+    if(answers.length < 2){
+      throw new Error(`السؤال رقم ${index + 1} يحتاج إجابتين على الأقل.`);
+    }
+
+    if(!answers.some(answer=>answer.correct)){
+      throw new Error(`حدد الإجابة الصحيحة في السؤال رقم ${index + 1}.`);
+    }
+
+    if(answers.some(answer=>!answer.text && !answer.image)){
+      throw new Error(`هناك إجابة فارغة في السؤال رقم ${index + 1}.`);
+    }
+
+    questions.push({
+      text,
+      mediaType,
+      mediaUrl,
+
+      /* توافق مع النشاطات القديمة */
+      image:mediaType === "image" ? mediaUrl : "",
+      video:mediaType === "video" ? mediaUrl : "",
+      audio:mediaType === "audio" ? mediaUrl : "",
+
+      answers
+    });
+  });
+
+  if(!questions.length){
+    throw new Error("أضف سؤالًا واحدًا على الأقل.");
+  }
+
+  return questions;
+}
+
+
+/* ===============================
+   AI Question Generation
+================================ */
+
+function toggleAiMediaUrl(){
+  const type = document.getElementById("aiMediaType").value;
+  const input = document.getElementById("aiMediaUrl");
+
+  input.disabled = type === "none";
+  if(type === "none"){
+    input.value = "";
+  }
+}
+
+function clearGeneratedQuestions(){
+  if(!confirm("مسح جميع الأسئلة الحالية؟")){
+    return;
+  }
+
+  document.getElementById("questionsContainer").innerHTML = "";
+  QUESTION_COUNTER = 0;
+  addQuestion();
+}
+
+function extractJsonText(value){
+  let text = String(value || "").trim();
+
+  text = text
+    .replace(/^```json\s*/i,"")
+    .replace(/^```\s*/,"")
+    .replace(/```$/,"")
+    .trim();
+
+  const firstBrace = text.indexOf("{");
+  const firstBracket = text.indexOf("[");
+  let start = -1;
+
+  if(firstBrace === -1) start = firstBracket;
+  else if(firstBracket === -1) start = firstBrace;
+  else start = Math.min(firstBrace,firstBracket);
+
+  if(start > 0){
+    text = text.slice(start);
+  }
+
+  return text;
+}
+
+function getAiResponsePayload(data){
+  if(Array.isArray(data)){
+    return data;
+  }
+
+  if(Array.isArray(data?.questions)){
+    return data.questions;
+  }
+
+  if(Array.isArray(data?.result?.questions)){
+    return data.result.questions;
+  }
+
+  const raw =
+    data?.text ||
+    data?.result ||
+    data?.output ||
+    data?.message ||
+    data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+    "";
+
+  if(typeof raw === "object" && Array.isArray(raw.questions)){
+    return raw.questions;
+  }
+
+  if(typeof raw === "string"){
+    const parsed = JSON.parse(extractJsonText(raw));
+
+    if(Array.isArray(parsed)){
+      return parsed;
+    }
+
+    if(Array.isArray(parsed?.questions)){
+      return parsed.questions;
+    }
+  }
+
+  throw new Error("لم يرجع الذكاء الاصطناعي أسئلة بصيغة صحيحة.");
+}
+
+function normalizeAiQuestion(question,index,defaultMediaType,defaultMediaUrl){
+  const rawAnswers =
+    question.answers ||
+    question.options ||
+    question.choices ||
+    [];
+
+  const correctIndex =
+    Number.isInteger(question.correctIndex)
+      ? question.correctIndex
+      : Number.isInteger(question.correctAnswerIndex)
+        ? question.correctAnswerIndex
+        : -1;
+
+  const correctValue =
+    String(
+      question.correctAnswer ??
+      question.answer ??
+      ""
+    ).trim();
+
+  const answers = rawAnswers.map((answer,answerIndex)=>{
+    if(typeof answer === "string"){
+      return {
+        text:answer,
+        image:"",
+        correct:
+          answerIndex === correctIndex ||
+          (!!correctValue && answer.trim() === correctValue)
+      };
+    }
+
+    return {
+      text:String(answer?.text ?? answer?.label ?? answer?.answer ?? "").trim(),
+      image:String(answer?.image ?? answer?.imageUrl ?? "").trim(),
+      correct:
+        answer?.correct === true ||
+        answer?.isCorrect === true ||
+        answerIndex === correctIndex ||
+        (
+          !!correctValue &&
+          String(answer?.text ?? answer?.label ?? "").trim() === correctValue
+        )
+    };
+  });
+
+  if(answers.length < 2){
+    throw new Error(`السؤال المولد رقم ${index + 1} لا يحتوي على إجابات كافية.`);
+  }
+
+  if(!answers.some(answer=>answer.correct)){
+    answers[0].correct = true;
+  }
+
+  let mediaType =
+    String(question.mediaType || question.type || defaultMediaType || "none")
+      .trim()
+      .toLowerCase();
+
+  if(!["none","image","video","audio"].includes(mediaType)){
+    mediaType = "none";
+  }
+
+  const mediaUrl =
+    String(
+      question.mediaUrl ||
+      question.image ||
+      question.imageUrl ||
+      question.video ||
+      question.videoUrl ||
+      question.audio ||
+      question.audioUrl ||
+      defaultMediaUrl ||
+      ""
+    ).trim();
+
+  return {
+    text:String(question.text || question.question || question.prompt || "").trim(),
+    mediaType,
+    mediaUrl,
+    image:mediaType === "image" ? mediaUrl : "",
+    video:mediaType === "video" ? mediaUrl : "",
+    audio:mediaType === "audio" ? mediaUrl : "",
+    answers
+  };
+}
+
+async function generateQuestionsWithAI(){
+  const button = document.getElementById("generateAiBtn");
+
+  try{
+    if(
+      !AI_WORKER_URL ||
+      AI_WORKER_URL.includes("PUT_YOUR")
+    ){
+      throw new Error(
+        "ضع رابط Cloudflare Worker داخل المتغير AI_WORKER_URL أولًا."
+      );
+    }
+
+    const topic = readText("aiTopic");
+    const count = Math.max(
+      1,
+      Math.min(
+        30,
+        Number(document.getElementById("aiQuestionCount").value || 5)
+      )
+    );
+
+    const level = document.getElementById("aiLevel").value;
+    const language = document.getElementById("aiLanguage").value;
+    const requestedMediaType = document.getElementById("aiMediaType").value;
+    const mediaUrl = readText("aiMediaUrl");
+    const instructions = readText("aiInstructions");
+
+    if(!topic){
+      throw new Error("اكتب موضوع الأسئلة.");
+    }
+
+    const courseId = document.getElementById("courseSelect").value;
+    const course = OPEN_COURSES_CACHE.find(item=>item.id === courseId);
+
+    button.disabled = true;
+    button.innerHTML = `
+      <span class="ai-loading">
+        <i class="fa-solid fa-spinner fa-spin"></i>
+        جارٍ توليد الأسئلة...
+      </span>
+    `;
+
+    const prompt = `
+Create ${count} multiple-choice educational activity questions.
+
+Topic: ${topic}
+Level: ${level}
+Language: ${language}
+Course: ${course ? getCourseName(course) : "Not selected"}
+Requested media type: ${requestedMediaType}
+Provided media URL: ${mediaUrl || "None"}
+Additional instructions: ${instructions || "None"}
+
+Return valid JSON only in this exact structure:
+{
+  "questions": [
+    {
+      "text": "Question text",
+      "mediaType": "none|image|video|audio",
+      "mediaUrl": "",
+      "answers": [
+        {"text":"Answer 1","image":"","correct":true},
+        {"text":"Answer 2","image":"","correct":false},
+        {"text":"Answer 3","image":"","correct":false},
+        {"text":"Answer 4","image":"","correct":false}
+      ]
+    }
+  ]
+}
+
+Rules:
+- Exactly one correct answer per question.
+- Do not invent media URLs.
+- Use the provided media URL only when it is relevant.
+- Keep mediaUrl empty when no real URL is supplied.
+- Each question must have 4 answers.
+- Questions must be clear and appropriate for the selected level.
+`.trim();
+
+    const response = await fetch(AI_WORKER_URL,{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json"
+      },
+      body:JSON.stringify({
+        task:AI_TASK,
+        prompt,
+        topic,
+        count,
+        level,
+        language,
+        mediaType:requestedMediaType,
+        mediaUrl,
+        instructions,
+        responseFormat:"json"
+      })
+    });
+
+    const responseText = await response.text();
+
+    if(!response.ok){
+      throw new Error(
+        `AI API Error (${response.status}): ${responseText.slice(0,250)}`
+      );
+    }
+
+    let data;
+
+    try{
+      data = JSON.parse(responseText);
+    }catch{
+      data = {text:responseText};
+    }
+
+    const rawQuestions = getAiResponsePayload(data);
+
+    const normalized = rawQuestions
+      .slice(0,count)
+      .map((question,index)=>{
+        let defaultType = requestedMediaType;
+
+        if(defaultType === "mixed"){
+          const types = ["image","video","audio","none"];
+          defaultType = types[index % types.length];
+        }
+
+        return normalizeAiQuestion(
+          question,
+          index,
+          defaultType,
+          mediaUrl
+        );
+      })
+      .filter(question=>question.text);
+
+    if(!normalized.length){
+      throw new Error("لم يتم توليد أي سؤال صالح.");
+    }
+
+    document.getElementById("questionsContainer").innerHTML = "";
+    QUESTION_COUNTER = 0;
+
+    normalized.forEach(question=>{
+      addQuestion(question);
+    });
+
+    if(!readText("activityTitle")){
+      document.getElementById("activityTitle").value =
+        `AI Activity - ${topic}`;
+    }
+
+    toast(`تم توليد ${normalized.length} سؤالًا بنجاح ✅`);
+
+    document.getElementById("questionsContainer").scrollIntoView({
+      behavior:"smooth",
+      block:"start"
+    });
+
+  }catch(error){
+    console.error(error);
+    alert(error.message || "تعذر توليد الأسئلة.");
+  }finally{
+    button.disabled = false;
+    button.innerHTML = `
+      <i class="fa-solid fa-wand-magic-sparkles"></i>
+      توليد الأسئلة
+    `;
+  }
+}
+
+/* ===============================
+   حفظ النشاط
+================================ */
+
+async function saveActivity(){
+  try{
+    const title = readText("activityTitle");
+    const courseId = document.getElementById("courseSelect").value;
+
+    if(!title){
+      throw new Error("اكتب اسم النشاط.");
+    }
+
+    if(!courseId){
+      throw new Error("اختر الدورة المفتوحة.");
+    }
+
+    const course = OPEN_COURSES_CACHE.find(item=>item.id === courseId);
+
+    if(!course){
+      throw new Error("تعذر العثور على بيانات الدورة.");
+    }
+
+    const questions = collectQuestions();
+
+    const data = {
+      title,
+
+      courseId:course.id,
+      courseName:getCourseName(course),
+
+      trainerName:getTrainer(course),
+      branch:getBranch(course),
+      section:getSection(course),
+      period:getPeriod(course),
+      courseType:getCourseType(course),
+
+      description:readText("activityDescription"),
+
+      group:document.getElementById("activityGroup").value,
+      status:document.getElementById("activityStatus").value,
+
+      questions,
+      questionCount:questions.length,
+
+      updatedAt:
+        firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    if(EDIT_ACTIVITY_ID){
+      await db.collection(ACTIVITIES_COLLECTION)
+        .doc(EDIT_ACTIVITY_ID)
+        .update(data);
+
+      toast("تم تحديث النشاط بنجاح ✅");
+    }else{
+      data.createdAt =
+        firebase.firestore.FieldValue.serverTimestamp();
+
+      await db.collection(ACTIVITIES_COLLECTION)
+        .add(data);
+
+      toast("تم حفظ النشاط بنجاح ✅");
+    }
+
+    resetEditor();
+    await loadActivities();
+
+  }catch(error){
+    console.error(error);
+    alert(error.message || "تعذر حفظ النشاط.");
+  }
+}
+
+/* ===============================
+   عرض النشاطات في الإدارة
+================================ */
+
+async function loadActivities(){
+  const box = document.getElementById("adminActivities");
+
+  box.innerHTML = `<div class="empty">جارٍ تحميل النشاطات...</div>`;
+
+  try{
+    const snap = await db.collection(ACTIVITIES_COLLECTION)
+      .orderBy("updatedAt","desc")
+      .get();
+
+    ACTIVITIES_CACHE = snap.docs.map(doc=>({
+      id:doc.id,
+      ...doc.data()
+    }));
+
+    renderAdminActivities();
+
+  }catch(error){
+    console.error(error);
+
+    try{
+      const snap = await db.collection(ACTIVITIES_COLLECTION).get();
+
+      ACTIVITIES_CACHE = snap.docs.map(doc=>({
+        id:doc.id,
+        ...doc.data()
+      }));
+
+      renderAdminActivities();
+
+    }catch(secondError){
+      box.innerHTML = `<div class="empty">تعذر تحميل النشاطات.</div>`;
+    }
+  }
+}
+
+function renderAdminActivities(){
+  const box = document.getElementById("adminActivities");
+
+  if(!ACTIVITIES_CACHE.length){
+    box.innerHTML = `<div class="empty">لا توجد نشاطات محفوظة حتى الآن.</div>`;
+    return;
+  }
+
+  box.innerHTML = ACTIVITIES_CACHE.map(activity=>`
+    <article class="activity-card">
+      <h3>${esc(activity.title)}</h3>
+
+      <div style="color:var(--muted);min-height:42px">
+        ${esc(activity.description || "نشاط تفاعلي")}
+      </div>
+
+      <div class="activity-meta">
+        <span class="mini">📘 ${esc(activity.courseName || "غير محددة")}</span>
+        <span class="mini">❓ ${Number(activity.questionCount || activity.questions?.length || 0)} أسئلة</span>
+        <span class="mini">🏫 ${esc(activity.branch || "غير محدد")}</span>
+        <span class="mini">👥 ${esc(activity.group || "General")}</span>
+        <span class="mini">
+          ${activity.status === "open" ? "🟢 مفتوح" : "🔴 مغلق"}
+        </span>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-primary" onclick="editActivity('${activity.id}')">
+          <i class="fa-solid fa-pen"></i> تعديل
+        </button>
+
+        <button class="btn btn-success" onclick="playActivityFromAdmin('${activity.id}')">
+          <i class="fa-solid fa-play"></i> تجربة
+        </button>
+
+        <button class="btn btn-danger" onclick="deleteActivity('${activity.id}')">
+          <i class="fa-solid fa-trash"></i> حذف
+        </button>
+      </div>
+    </article>
+  `).join("");
+}
+
+/* ===============================
+   تعديل النشاط
+================================ */
+
+function editActivity(id){
+  const activity = ACTIVITIES_CACHE.find(item=>item.id === id);
+
+  if(!activity){
+    return;
+  }
+
+  EDIT_ACTIVITY_ID = id;
+
+  document.getElementById("activityTitle").value =
+    activity.title || "";
+
+  document.getElementById("courseSelect").value =
+    activity.courseId || "";
+
+  fillSelectedCourseInfo();
+
+  document.getElementById("activityDescription").value =
+    activity.description || "";
+
+  document.getElementById("activityGroup").value =
+    activity.group || "General";
+
+  document.getElementById("activityStatus").value =
+    activity.status || "open";
+
+  document.getElementById("questionsContainer").innerHTML = "";
+
+  (activity.questions || []).forEach(question=>{
+    addQuestion(question);
+  });
+
+  window.scrollTo({
+    top:0,
+    behavior:"smooth"
+  });
+
+  toast("تم فتح النشاط للتعديل");
+}
+
+async function deleteActivity(id){
+  if(!confirm("هل تريد حذف النشاط؟ النتائج السابقة لن تُحذف.")){
+    return;
+  }
+
+  try{
+    await db.collection(ACTIVITIES_COLLECTION)
+      .doc(id)
+      .delete();
+
+    toast("تم حذف النشاط");
+
+    await loadActivities();
+
+  }catch(error){
+    console.error(error);
+    alert("تعذر حذف النشاط.");
+  }
+}
+
+function resetEditor(){
+  EDIT_ACTIVITY_ID = "";
+
+  document.getElementById("activityTitle").value = "";
+  document.getElementById("courseSelect").value = "";
+  document.getElementById("trainerName").value = "";
+  document.getElementById("branchName").value = "";
+  document.getElementById("sectionName").value = "";
+  document.getElementById("periodName").value = "";
+  document.getElementById("activityDescription").value = "";
+  document.getElementById("activityGroup").value = "General";
+  document.getElementById("activityStatus").value = "open";
+
+  document.getElementById("questionsContainer").innerHTML = "";
+
+  QUESTION_COUNTER = 0;
+
+  addQuestion();
+}
+
+function playActivityFromAdmin(id){
+  showSection("student");
+
+  setTimeout(()=>{
+    const activity = ACTIVITIES_CACHE.find(item=>item.id === id);
+
+    if(!activity){
+      return;
+    }
+
+    const course = findCourseForActivity(activity);
+
+    if(!course){
+      alert("النشاط غير مرتبط بدورة مفتوحة.");
+      return;
+    }
+
+    startActivity(activity.id,course.id);
+  },250);
+}
+
+/* ===============================
+   صفحة الطالب
+================================ */
+
+function findCourseForActivity(activity){
+  const activityCourseId = first(activity,[
+    "courseId",
+    "CourseId",
+    "linkedCourseId"
+  ],"");
+
+  if(activityCourseId){
+    const byId = OPEN_COURSES_CACHE.find(course=>
+      String(course.id) === String(activityCourseId)
+    );
+
+    if(byId){
+      return byId;
+    }
+  }
+
+  const activityCourseName = clean(
+    first(activity,[
+      "courseName",
+      "TrainingCourse",
+      "CourseName"
+    ],"")
+  );
+
+  if(!activityCourseName){
+    return null;
+  }
+
+  return OPEN_COURSES_CACHE.find(course=>
+    clean(getCourseName(course)) === activityCourseName
+  ) || null;
+}
+
+async function loadStudentActivities(){
+  const box = document.getElementById("openActivitiesBox");
+
+  box.className = "empty";
+  box.innerHTML = `
+    <i class="fa-solid fa-spinner fa-spin"></i>
+    جارٍ تحميل النشاطات والدورات المفتوحة...
+  `;
+
+  try{
+    const [activitiesSnap,coursesSnap] = await Promise.all([
+      db.collection(ACTIVITIES_COLLECTION).get(),
+      db.collection(COURSES_COLLECTION).get()
+    ]);
+
+    ACTIVITIES_CACHE = activitiesSnap.docs
+      .map(doc=>({id:doc.id,...doc.data()}))
+      .filter(activity=>isOpenStatus(activity.status));
+
+    OPEN_COURSES_CACHE = coursesSnap.docs
+      .map(doc=>({id:doc.id,...doc.data()}))
+      .filter(course=>{
+        const status = first(course,[
+          "status",
+          "Status",
+          "courseStatus"
+        ],"");
+
+        return isOpenStatus(status);
+      });
+
+    renderStudentActivities();
+
+  }catch(error){
+    console.error(error);
+
+    box.className = "empty";
+    box.innerHTML = `
+      <span style="color:var(--red)">
+        تعذر تحميل النشاطات أو الدورات المفتوحة.
+      </span>
+    `;
+  }
+}
+
+function renderStudentActivities(){
+  const box = document.getElementById("openActivitiesBox");
+
+  const linkedItems = ACTIVITIES_CACHE
+    .map(activity=>({
+      activity,
+      course:findCourseForActivity(activity)
+    }))
+    .filter(item=>item.course);
+
+  if(!linkedItems.length){
+    box.className = "empty";
+    box.innerHTML = `
+      لا توجد نشاطات مرتبطة بدورات مفتوحة حاليًا.
+    `;
+    return;
+  }
+
+  box.className = "open-activity-list";
+
+  box.innerHTML = linkedItems.map(({activity,course})=>`
+    <article class="open-activity-card">
+
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
+        <div>
+          <h3>${esc(getCourseName(course))}</h3>
+
+          <div style="color:var(--blue2);font-weight:900">
+            ${esc(activity.title || "نشاط تفاعلي")}
+          </div>
+        </div>
+
+        <span class="open-badge">
+          <i class="fa-solid fa-circle-check"></i>
+          مفتوحة
+        </span>
+      </div>
+
+      <div style="color:var(--muted);margin-top:12px;line-height:1.7">
+        ${esc(activity.description || "نشاط تعليمي وترفيهي تفاعلي.")}
+      </div>
+
+      <div class="course-info-grid">
+        <div class="info-item">
+          <span>المدرب</span>
+          <strong>${esc(getTrainer(course,activity))}</strong>
+        </div>
+
+        <div class="info-item">
+          <span>الفرع</span>
+          <strong>${esc(getBranch(course,activity))}</strong>
+        </div>
+
+        <div class="info-item">
+          <span>القسم</span>
+          <strong>${esc(getSection(course,activity))}</strong>
+        </div>
+
+        <div class="info-item">
+          <span>الفترة</span>
+          <strong>${esc(getPeriod(course,activity))}</strong>
+        </div>
+
+        <div class="info-item">
+          <span>نوع الدورة</span>
+          <strong>${esc(getCourseType(course,activity))}</strong>
+        </div>
+
+        <div class="info-item">
+          <span>المجموعة</span>
+          <strong>${esc(activity.group || "General")}</strong>
+        </div>
+      </div>
+
+      <div class="actions" style="justify-content:space-between;align-items:center">
+        <strong>
+          ❓ ${Number(activity.questionCount || activity.questions?.length || 0)} أسئلة
+        </strong>
+
+        <button
+          class="btn btn-gold"
+          onclick="startActivity('${activity.id}','${course.id}')">
+
+          <i class="fa-solid fa-play"></i>
+          بدء النشاط
+        </button>
+      </div>
+
+    </article>
+  `).join("");
+}
+
+function startActivity(activityId,courseId){
+  CURRENT_ACTIVITY = ACTIVITIES_CACHE.find(item=>item.id === activityId);
+  CURRENT_COURSE = OPEN_COURSES_CACHE.find(item=>item.id === courseId);
+
+  if(!CURRENT_ACTIVITY || !CURRENT_COURSE){
+    alert("تعذر فتح النشاط.");
+    return;
+  }
+
+  if(
+    !Array.isArray(CURRENT_ACTIVITY.questions) ||
+    !CURRENT_ACTIVITY.questions.length
+  ){
+    alert("هذا النشاط لا يحتوي على أسئلة.");
+    return;
+  }
+
+  CURRENT_QUESTION_INDEX = 0;
+  CURRENT_SCORE = 0;
+  ANSWER_LOCKED = false;
+
+  document.getElementById("studentStart").classList.add("hidden");
+  document.getElementById("resultArea").classList.add("hidden");
+  document.getElementById("playArea").classList.remove("hidden");
+
+  document.getElementById("playingActivityTitle").textContent =
+    CURRENT_ACTIVITY.title || "النشاط التفاعلي";
+
+  document.getElementById("playingCourseInfo").textContent =
+    [
+      getCourseName(CURRENT_COURSE),
+      getBranch(CURRENT_COURSE,CURRENT_ACTIVITY),
+      getSection(CURRENT_COURSE,CURRENT_ACTIVITY),
+      getTrainer(CURRENT_COURSE,CURRENT_ACTIVITY)
+    ]
+    .filter(Boolean)
+    .join(" • ");
+
+  window.scrollTo({
+    top:0,
+    behavior:"smooth"
+  });
+
+  renderStudentQuestion();
+}
+
+/* ===============================
+   اللعب
+================================ */
+
+function renderStudentQuestion(){
+  ANSWER_LOCKED = false;
+
+  const questions = CURRENT_ACTIVITY.questions;
+  const question = questions[CURRENT_QUESTION_INDEX];
+
+  document.getElementById("questionNumber").textContent =
+    `السؤال ${CURRENT_QUESTION_INDEX + 1} من ${questions.length}`;
+
+  document.getElementById("gameQuestion").textContent =
+    question.text || "";
+
+  document.getElementById("scorePill").textContent =
+    `⭐ ${CURRENT_SCORE}`;
+
+  const progress =
+    (CURRENT_QUESTION_INDEX / questions.length) * 100;
+
+  document.getElementById("progressBar").style.width =
+    progress + "%";
+
+  const questionImage = document.getElementById("gameQuestionImage");
+  const questionVideo = document.getElementById("gameQuestionVideo");
+  const questionAudio = document.getElementById("gameQuestionAudio");
+
+  questionImage.classList.add("hidden");
+  questionVideo.classList.add("hidden");
+  questionAudio.classList.add("hidden");
+
+  questionImage.removeAttribute("src");
+  questionVideo.removeAttribute("src");
+  questionAudio.removeAttribute("src");
+
+  const mediaType =
+    question.mediaType ||
+    (question.video ? "video" : question.audio ? "audio" : question.image ? "image" : "none");
+
+  const mediaUrl =
+    question.mediaUrl ||
+    question.video ||
+    question.audio ||
+    question.image ||
+    "";
+
+  if(mediaUrl && mediaType === "image"){
+    questionImage.src = mediaUrl;
+    questionImage.classList.remove("hidden");
+  }else if(mediaUrl && mediaType === "video"){
+    questionVideo.src = mediaUrl;
+    questionVideo.classList.remove("hidden");
+    questionVideo.load();
+  }else if(mediaUrl && mediaType === "audio"){
+    questionAudio.src = mediaUrl;
+    questionAudio.classList.remove("hidden");
+    questionAudio.load();
+  }
+
+  const feedback =
+    document.getElementById("feedback");
+
+  feedback.textContent = "";
+  feedback.className = "feedback";
+
+  const answersBox =
+    document.getElementById("studentAnswers");
+
+  answersBox.innerHTML = "";
+
+  (question.answers || []).forEach((answer,index)=>{
+    const button = document.createElement("button");
+
+    button.className = "student-answer";
+    button.type = "button";
+
+    button.innerHTML = `
+      ${answer.image ? `<img src="${esc(answer.image)}" alt="">` : ""}
+      ${answer.text ? `<div>${esc(answer.text)}</div>` : ""}
+    `;
+
+    button.onclick = ()=>{
+      chooseAnswer(index,button);
+    };
+
+    answersBox.appendChild(button);
+  });
+}
+
+function chooseAnswer(answerIndex,clickedButton){
+  if(ANSWER_LOCKED){
+    return;
+  }
+
+  ANSWER_LOCKED = true;
+
+  const question =
+    CURRENT_ACTIVITY.questions[CURRENT_QUESTION_INDEX];
+
+  const selected =
+    question.answers[answerIndex];
+
+  const buttons = [
+    ...document.querySelectorAll(".student-answer")
+  ];
+
+  const feedback =
+    document.getElementById("feedback");
+
+  buttons.forEach((button,index)=>{
+    button.disabled = true;
+
+    if(question.answers[index].correct){
+      button.classList.add("correct");
+    }
+  });
+
+  if(selected.correct){
+    CURRENT_SCORE++;
+
+    clickedButton.classList.add("correct");
+
+    feedback.textContent =
+      "🎉 إجابة صحيحة! ممتاز";
+
+    feedback.classList.add("good");
+
+    launchSmallConfetti();
+
+  }else{
+    clickedButton.classList.add("wrong");
+
+    feedback.textContent =
+      "❌ إجابة غير صحيحة — شاهد الإجابة الصحيحة";
+
+    feedback.classList.add("bad");
+  }
+
+  document.getElementById("scorePill").textContent =
+    `⭐ ${CURRENT_SCORE}`;
+
+  setTimeout(()=>{
+    CURRENT_QUESTION_INDEX++;
+
+    if(
+      CURRENT_QUESTION_INDEX <
+      CURRENT_ACTIVITY.questions.length
+    ){
+      renderStudentQuestion();
+    }else{
+      finishActivity();
+    }
+  },1500);
+}
+
+/* ===============================
+   النتيجة
+================================ */
+
+async function finishActivity(){
+  document.getElementById("playArea").classList.add("hidden");
+  document.getElementById("resultArea").classList.remove("hidden");
+
+  const total = CURRENT_ACTIVITY.questions.length;
+
+  const percent =
+    total
+      ? Math.round((CURRENT_SCORE / total) * 100)
+      : 0;
+
+  document.getElementById("resultCourse").textContent =
+    `${getCourseName(CURRENT_COURSE)} — ${CURRENT_ACTIVITY.title || ""}`;
+
+  document.getElementById("finalScore").textContent =
+    `${CURRENT_SCORE} / ${total}`;
+
+  document.getElementById("finalPercent").textContent =
+    `${percent}%`;
+
+  let stars = "⭐";
+  let message = "حاول مرة أخرى وستحقق نتيجة أفضل.";
+
+  if(percent >= 90){
+    stars = "⭐⭐⭐";
+    message = "رائع جدًا! أنت بطل النشاط.";
+  }else if(percent >= 70){
+    stars = "⭐⭐";
+    message = "عمل ممتاز! استمر في التقدم.";
+  }
+
+  document.getElementById("finalStars").textContent =
+    stars;
+
+  document.getElementById("resultMessage").textContent =
+    message;
+
+  launchBigConfetti();
+
+  try{
+    await db.collection(RESULTS_COLLECTION).add({
+      activityId:CURRENT_ACTIVITY.id,
+      activityTitle:CURRENT_ACTIVITY.title || "",
+
+      courseId:CURRENT_COURSE.id,
+      courseName:getCourseName(CURRENT_COURSE),
+
+      trainerName:getTrainer(
+        CURRENT_COURSE,
+        CURRENT_ACTIVITY
+      ),
+
+      branch:getBranch(
+        CURRENT_COURSE,
+        CURRENT_ACTIVITY
+      ),
+
+      section:getSection(
+        CURRENT_COURSE,
+        CURRENT_ACTIVITY
+      ),
+
+      period:getPeriod(
+        CURRENT_COURSE,
+        CURRENT_ACTIVITY
+      ),
+
+      courseType:getCourseType(
+        CURRENT_COURSE,
+        CURRENT_ACTIVITY
+      ),
+
+      group:CURRENT_ACTIVITY.group || "General",
+
+      score:CURRENT_SCORE,
+      total,
+      percent,
+
+      anonymous:true,
+
+      createdAt:
+        firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    toast("تم حفظ نتيجة النشاط ✅");
+
+  }catch(error){
+    console.error(error);
+
+    toast("انتهى النشاط، لكن تعذر حفظ النتيجة");
+  }
+
+  window.scrollTo({
+    top:0,
+    behavior:"smooth"
+  });
+}
+
+function restartGame(){
+  if(!CURRENT_ACTIVITY || !CURRENT_COURSE){
+    return;
+  }
+
+  CURRENT_QUESTION_INDEX = 0;
+  CURRENT_SCORE = 0;
+  ANSWER_LOCKED = false;
+
+  document.getElementById("resultArea").classList.add("hidden");
+  document.getElementById("playArea").classList.remove("hidden");
+
+  renderStudentQuestion();
+}
+
+function backToActivities(){
+  CURRENT_ACTIVITY = null;
+  CURRENT_COURSE = null;
+
+  CURRENT_QUESTION_INDEX = 0;
+  CURRENT_SCORE = 0;
+  ANSWER_LOCKED = false;
+
+  document.getElementById("playArea").classList.add("hidden");
+  document.getElementById("resultArea").classList.add("hidden");
+  document.getElementById("studentStart").classList.remove("hidden");
+
+  loadStudentActivities();
+
+  window.scrollTo({
+    top:0,
+    behavior:"smooth"
+  });
+}
+
+/* ===============================
+   المؤثرات
+================================ */
+
+function makeConfetti(count){
+  const box = document.getElementById("confetti");
+
+  const colors = [
+    "#f4b942",
+    "#17a673",
+    "#2467a5",
+    "#e74c3c",
+    "#a768e8"
+  ];
+
+  for(let i=0;i<count;i++){
+    const item = document.createElement("i");
+
+    item.style.left =
+      Math.random()*100 + "vw";
+
+    item.style.background =
+      colors[
+        Math.floor(
+          Math.random()*colors.length
+        )
+      ];
+
+    item.style.animationDelay =
+      Math.random()*.5 + "s";
+
+    item.style.animationDuration =
+      (2.2 + Math.random()*1.5) + "s";
+
+    box.appendChild(item);
+
+    setTimeout(()=>{
+      item.remove();
+    },4200);
+  }
+}
+
+function launchSmallConfetti(){
+  makeConfetti(20);
+}
+
+function launchBigConfetti(){
+  makeConfetti(100);
+}
+
+/* ===============================
+   التشغيل
+================================ */
+
+window.addEventListener("DOMContentLoaded",async()=>{
+  await loadOpenCourses();
+
+  resetEditor();
+
+  await loadActivities();
+});
+</script>
+
+</body>
+</html>
