@@ -2185,91 +2185,164 @@ function prepareAiSourceText(text){
 
 }
 async function generateQuestionsWithAI(){
-  const button = document.getElementById("generateAiBtn");
+
+  const button =
+    document.getElementById("generateAiBtn");
 
   try{
+
     if(
       !AI_WORKER_URL ||
       AI_WORKER_URL.includes("PUT_YOUR")
     ){
+
       throw new Error(
         "Set the Cloudflare Worker URL in AI_WORKER_URL first."
       );
+
     }
 
-    const topic = readText("aiTopic");
-    const count = Math.max(
-      1,
-      Math.min(
-        30,
-        Number(document.getElementById("aiQuestionCount").value || 5)
-      )
-    );
+    /* =====================================
+       بيانات إنشاء الأسئلة
+    ===================================== */
 
-    const level = document.getElementById("aiLevel").value;
-    const language = document.getElementById("aiLanguage").value;
-    const requestedQuestionType = document.getElementById("aiQuestionType").value;
-    const requestedMediaType = document.getElementById("aiMediaType").value;
+    const topic =
+      readText("aiTopic");
+
+    const instructions =
+      readText("aiInstructions");
+
+    const count =
+      Math.max(
+        1,
+        Math.min(
+          30,
+          Number(
+            document
+              .getElementById("aiQuestionCount")
+              .value || 5
+          )
+        )
+      );
+
+    const level =
+      document
+        .getElementById("aiLevel")
+        .value;
+
+    const language =
+      document
+        .getElementById("aiLanguage")
+        .value;
+
+    const requestedQuestionType =
+      document
+        .getElementById("aiQuestionType")
+        .value;
+
+    const requestedMediaType =
+      document
+        .getElementById("aiMediaType")
+        .value;
+
     const generateMedia =
-      document.getElementById("aiGenerateMedia").checked;
+      document
+        .getElementById("aiGenerateMedia")
+        .checked;
 
     const imageStyle =
-      document.getElementById("aiImageStyle").value;
+      document
+        .getElementById("aiImageStyle")
+        .value;
 
     const voice =
-      document.getElementById("aiVoice").value;
+      document
+        .getElementById("aiVoice")
+        .value;
 
     const videoAspectRatio =
-      document.getElementById("aiVideoAspect").value;
+      document
+        .getElementById("aiVideoAspect")
+        .value;
 
     const mediaUrl = "";
-    const instructions = readText("aiInstructions");
-const sourceFileInput =
-  document.getElementById(
-    "aiSourceFile"
-  );
 
-const sourceFile =
-  sourceFileInput.files?.[0] ||
-  null;
+    /* =====================================
+       الملف اختياري
+    ===================================== */
 
-let sourceFileText = "";
-let sourceFileName = "";
+    const sourceFileInput =
+      document.getElementById(
+        "aiSourceFile"
+      );
 
-if(sourceFile){
+    const sourceFile =
+      sourceFileInput?.files?.[0] ||
+      null;
 
-  sourceFileName =
-    sourceFile.name;
+    let sourceFileText = "";
+    let sourceFileName = "";
 
-  setAiProgress(
-    `Reading ${sourceFileName}...`,
-    5
-  );
+    /* =====================================
+       قراءة الملف فقط عند اختياره
+    ===================================== */
 
-  sourceFileText =
-    await readAiSourceFile(
-      sourceFile
-    );
+    if(sourceFile){
 
-  sourceFileText =
-    prepareAiSourceText(
-      sourceFileText
-    );
+      sourceFileName =
+        String(sourceFile.name || "");
 
-}
-  if(
-  !topic &&
-  !sourceFile &&
-  !instructions
-){
+      setAiProgress(
+        `Reading ${sourceFileName}...`,
+        5
+      );
 
-  throw new Error(
-    "Enter a topic, upload a file, or describe the questions you want."
-  );
+      sourceFileText =
+        await readAiSourceFile(
+          sourceFile
+        );
 
-}
+      sourceFileText =
+        prepareAiSourceText(
+          sourceFileText
+        );
 
-    const courseId = document.getElementById("courseSelect").value;
+    }
+
+    /* =====================================
+       يجب توفير وصف أو موضوع أو ملف
+    ===================================== */
+
+    if(
+      !topic &&
+      !instructions &&
+      !sourceFile
+    ){
+
+      throw new Error(
+        "Enter a topic, describe what you want, or upload a source file."
+      );
+
+    }
+
+    const courseId =
+      document
+        .getElementById("courseSelect")
+        .value;
+
+    const course =
+      OPEN_COURSES_CACHE.find(
+        item => item.id === courseId
+      );
+
+    button.disabled = true;
+
+    button.innerHTML = `
+      <span class="ai-loading">
+        <i class="fa-solid fa-spinner fa-spin"></i>
+        Generating questions...
+      </span>
+    `;
     const course = OPEN_COURSES_CACHE.find(item=>item.id === courseId);
 
     button.disabled = true;
