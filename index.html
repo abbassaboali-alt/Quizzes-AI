@@ -10,7 +10,16 @@
 
 <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore-compat.js"></script>
+<!-- قراءة ملفات Word -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"></script>
 
+<!-- قراءة ملفات PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+</script>
 <style>
 :root{
   --blue:#164478;
@@ -666,12 +675,83 @@ button{cursor:pointer}
     </div>
 
     <div id="aiGenerationProgress" class="ai-note hidden"></div>
+<!-- =====================================
+     AI SOURCE FILE
+===================================== -->
 
-    <div class="field" style="margin-top:14px">
-      <label>Additional Instructions</label>
-      <textarea id="aiInstructions"
-        placeholder="Example: 4 choices per question, one correct answer, suitable for children"></textarea>
+<div class="grid grid-2" style="margin-top:14px">
+
+  <div class="field">
+
+    <label>
+      <i class="fa-solid fa-file-arrow-up"></i>
+      Source File
+    </label>
+
+    <input
+      id="aiSourceFile"
+      type="file"
+      accept=".pdf,.docx,.txt"
+      onchange="showAiSelectedFile()">
+
+    <div class="help">
+      Supported files: PDF, Word DOCX, and TXT.
     </div>
+
+  </div>
+
+  <div class="field">
+
+    <label>Selected File</label>
+
+    <div
+      id="aiSelectedFileInfo"
+      style="
+        min-height:46px;
+        padding:12px 13px;
+        border:1px solid var(--border);
+        border-radius:13px;
+        background:#fff;
+        color:var(--muted);
+        overflow-wrap:anywhere;
+      ">
+
+      No file selected
+
+    </div>
+
+  </div>
+
+</div>
+<div class="field" style="margin-top:14px">
+
+  <label>
+    Describe What You Want
+  </label>
+
+  <textarea
+    id="aiInstructions"
+    style="min-height:130px"
+    placeholder="Example:
+
+Use only Units 1 and 2 from the uploaded file.
+
+Create:
+- 10 grammar multiple-choice questions
+- 10 vocabulary multiple-choice questions
+- 4 choices for each question
+- Exactly one correct answer
+- Beginner level
+- Do not use information outside the file
+- Add images to vocabulary questions">
+  </textarea>
+
+  <div class="help">
+    Describe the units, topics, question types, difficulty, language,
+    and any special requirements.
+  </div>
+
+</div>
 
     <div class="actions">
       <button class="btn btn-gold" id="generateAiBtn" onclick="generateQuestionsWithAI()">
@@ -1450,6 +1530,24 @@ function clearGeneratedQuestions(){
 
   document.getElementById("questionsContainer").innerHTML = "";
   QUESTION_COUNTER = 0;
+  const fileInput =
+  document.getElementById(
+    "aiSourceFile"
+  );
+
+if(fileInput){
+  fileInput.value = "";
+}
+
+const fileInfo =
+  document.getElementById(
+    "aiSelectedFileInfo"
+  );
+
+if(fileInfo){
+  fileInfo.textContent =
+    "No file selected";
+}
   addQuestion();
 }
 
@@ -1664,6 +1762,12 @@ function normalizeAiQuestion(question,index,defaultQuestionType,defaultMediaType
 }
 
 async function postToAiWorker(payload){
+  setAiProgress(
+  sourceFile
+    ? `Creating questions from ${sourceFileName}...`
+    : "Creating questions from your instructions...",
+  35
+);
   const response = await fetch(AI_WORKER_URL,{
     method:"POST",
     headers:{
@@ -1812,7 +1916,274 @@ async function generateMediaForQuestions(questions,settings){
 
   return output;
 }
+/* =========================================
+   SHOW SELECTED AI FILE
+========================================= */
 
+function showAiSelectedFile(){
+
+  const input =
+    document.getElementById("aiSourceFile");
+
+  const info =
+    document.getElementById("aiSelectedFileInfo");
+
+  const file =
+    input.files?.[0];
+
+  if(!file){
+
+    info.innerHTML =
+      "No file selected";
+
+    return;
+
+  }
+
+  const sizeMB =
+    file.size / 1024 / 1024;
+
+  info.innerHTML = `
+    <div style="font-weight:900;color:var(--blue)">
+      <i class="fa-solid fa-file"></i>
+      ${esc(file.name)}
+    </div>
+
+    <div style="font-size:12px;margin-top:5px">
+      ${sizeMB.toFixed(2)} MB
+    </div>
+  `;
+
+}
+
+
+/* =========================================
+   READ AI SOURCE FILE
+========================================= */
+
+async function readAiSourceFile(file){
+
+  if(!file){
+    return "";
+  }
+
+  const fileName =
+    String(file.name || "")
+      .toLowerCase();
+
+  if(fileName.endsWith(".txt")){
+
+    return await readAiTxtFile(file);
+
+  }
+
+  if(fileName.endsWith(".docx")){
+
+    return await readAiWordFile(file);
+
+  }
+
+  if(fileName.endsWith(".pdf")){
+
+    return await readAiPdfFile(file);
+
+  }
+
+  throw new Error(
+    "Unsupported file type. Upload PDF, DOCX, or TXT."
+  );
+
+}
+
+
+/* =========================================
+   READ TXT
+========================================= */
+
+async function readAiTxtFile(file){
+
+  const text =
+    await file.text();
+
+  if(!String(text || "").trim()){
+
+    throw new Error(
+      "The TXT file is empty."
+    );
+
+  }
+
+  return String(text)
+    .replace(/\r\n/g,"\n")
+    .trim();
+
+}
+
+
+/* =========================================
+   READ WORD DOCX
+========================================= */
+
+async function readAiWordFile(file){
+
+  if(typeof mammoth === "undefined"){
+
+    throw new Error(
+      "The Word reader library was not loaded."
+    );
+
+  }
+
+  const arrayBuffer =
+    await file.arrayBuffer();
+
+  const result =
+    await mammoth.extractRawText({
+      arrayBuffer
+    });
+
+  const text =
+    String(result.value || "")
+      .replace(/\r\n/g,"\n")
+      .trim();
+
+  if(!text){
+
+    throw new Error(
+      "No readable text was found in the Word file."
+    );
+
+  }
+
+  return text;
+
+}
+
+
+/* =========================================
+   READ PDF
+========================================= */
+
+async function readAiPdfFile(file){
+
+  if(typeof pdfjsLib === "undefined"){
+
+    throw new Error(
+      "The PDF reader library was not loaded."
+    );
+
+  }
+
+  const arrayBuffer =
+    await file.arrayBuffer();
+
+  const loadingTask =
+    pdfjsLib.getDocument({
+      data:new Uint8Array(arrayBuffer)
+    });
+
+  const pdf =
+    await loadingTask.promise;
+
+  let completeText = "";
+
+  for(
+    let pageNumber = 1;
+    pageNumber <= pdf.numPages;
+    pageNumber++
+  ){
+
+    setAiProgress(
+      `Reading PDF page ${pageNumber} of ${pdf.numPages}...`,
+      Math.round(
+        pageNumber /
+        Math.max(pdf.numPages,1) *
+        30
+      )
+    );
+
+    const page =
+      await pdf.getPage(pageNumber);
+
+    const textContent =
+      await page.getTextContent();
+
+    const pageText =
+      textContent.items
+        .map(item=>
+          String(item.str || "")
+        )
+        .join(" ")
+        .replace(/\s+/g," ")
+        .trim();
+
+    if(pageText){
+
+      completeText +=
+        `\n\n===== PAGE ${pageNumber} =====\n` +
+        pageText;
+
+    }
+
+  }
+
+  completeText =
+    completeText.trim();
+
+  if(!completeText){
+
+    throw new Error(
+      "No readable text was found in the PDF. " +
+      "The PDF may contain scanned images only."
+    );
+
+  }
+
+  return completeText;
+
+}
+
+
+/* =========================================
+   CLEAN AND LIMIT SOURCE TEXT
+========================================= */
+
+function prepareAiSourceText(text){
+
+  let output =
+    String(text || "")
+      .replace(/\u0000/g,"")
+      .replace(/[ \t]+/g," ")
+      .replace(/\n{4,}/g,"\n\n")
+      .trim();
+
+  /*
+    تقليل النص حتى لا يصبح الطلب كبيرًا جدًا.
+    يمكن زيادة الرقم لاحقًا إذا احتجت.
+  */
+
+  const maximumCharacters =
+    100000;
+
+  if(
+    output.length >
+    maximumCharacters
+  ){
+
+    output =
+      output.slice(
+        0,
+        maximumCharacters
+      );
+
+    output +=
+      "\n\n[The source file was shortened because it was very large.]";
+
+  }
+
+  return output;
+
+}
 async function generateQuestionsWithAI(){
   const button = document.getElementById("generateAiBtn");
 
@@ -1853,10 +2224,50 @@ async function generateQuestionsWithAI(){
 
     const mediaUrl = "";
     const instructions = readText("aiInstructions");
+const sourceFileInput =
+  document.getElementById(
+    "aiSourceFile"
+  );
 
-    if(!topic){
-      throw new Error("Enter the question topic.");
-    }
+const sourceFile =
+  sourceFileInput.files?.[0] ||
+  null;
+
+let sourceFileText = "";
+let sourceFileName = "";
+
+if(sourceFile){
+
+  sourceFileName =
+    sourceFile.name;
+
+  setAiProgress(
+    `Reading ${sourceFileName}...`,
+    5
+  );
+
+  sourceFileText =
+    await readAiSourceFile(
+      sourceFile
+    );
+
+  sourceFileText =
+    prepareAiSourceText(
+      sourceFileText
+    );
+
+}
+  if(
+  !topic &&
+  !sourceFile &&
+  !instructions
+){
+
+  throw new Error(
+    "Enter a topic, upload a file, or describe the questions you want."
+  );
+
+}
 
     const courseId = document.getElementById("courseSelect").value;
     const course = OPEN_COURSES_CACHE.find(item=>item.id === courseId);
@@ -1869,19 +2280,55 @@ async function generateQuestionsWithAI(){
       </span>
     `;
 
-    const prompt = `
-Create ${count} multiple-choice educational activity questions.
+   const prompt = `
+You are an expert educational question writer.
 
-Topic: ${topic}
-Level: ${level}
-Language: ${language}
-Course: ${course ? getCourseName(course) : "Not selected"}
-Requested question type: ${requestedQuestionType}
-Requested media type: ${requestedMediaType}
-Provided media URL: ${mediaUrl || "None"}
-Additional instructions: ${instructions || "None"}
+Create exactly ${count} educational activity questions.
+
+GENERAL SETTINGS:
+
+Topic:
+${topic || "Use the topic and content found in the uploaded source file."}
+
+Level:
+${level}
+
+Language:
+${language}
+
+Course:
+${course ? getCourseName(course) : "Not selected"}
+
+Requested question type:
+${requestedQuestionType}
+
+Requested media type:
+${requestedMediaType}
+
+Teacher instructions:
+${instructions || "Create clear questions based on the provided topic or source file."}
+
+SOURCE FILE INFORMATION:
+
+File name:
+${sourceFileName || "No file uploaded"}
+
+Source file content:
+${sourceFileText || "No source file content was provided."}
+
+IMPORTANT SOURCE RULES:
+
+- When source file content is provided, use it as the main source.
+- Do not invent facts that are not supported by the source.
+- Follow the teacher instructions carefully.
+- Use only the requested units or sections when they are specified.
+- Do not copy long paragraphs directly from the source.
+- Turn the source content into clear educational questions.
+- Avoid duplicate questions.
+- Make every question appropriate for the selected level.
 
 Return valid JSON only in this exact structure:
+
 {
   "questions": [
     {
@@ -1893,27 +2340,54 @@ Return valid JSON only in this exact structure:
       "audioText": "The exact text that should be spoken for an audio question",
       "answers": [
         {
-          "text":"Left item, answer, or sequence item",
-          "right":"Matching pair only; otherwise empty",
-          "image":"",
-          "correct":true
+          "text": "Left item, answer, or sequence item",
+          "right": "Matching pair only; otherwise empty",
+          "image": "",
+          "correct": true
         }
       ]
     }
   ]
 }
 
-Rules:
-- Follow the requested question type. If "mixed", use a balanced mix of mcq, match, and order.
-- For mcq: create 4 answers and exactly one correct answer.
-- For match: create 4 pairs; use text for the left side and right for the matching side.
-- For order: create 4 to 6 sequence items in the correct order using text.
-- Always keep mediaUrl empty. The backend will create the real media.
+QUESTION RULES:
+
+- Return exactly ${count} questions.
+- Follow the requested question type.
+- If the requested type is "mixed", use a balanced mix of:
+  mcq, match, and order.
+
+- For MCQ:
+  Create exactly 4 choices.
+  Mark exactly one answer as correct.
+  The other three answers must be plausible but incorrect.
+
+- For Match:
+  Create exactly 4 matching pairs.
+  Put the left value in "text".
+  Put its correct matching value in "right".
+  Set "correct" to false because matching questions do not use it.
+
+- For Order:
+  Create between 4 and 6 sequence items.
+  Return the items in their correct order.
+  Put each sequence item in "text".
+  Set "correct" to false.
+
+MEDIA RULES:
+
+- Always keep mediaUrl empty.
+- The backend creates and uploads the real media.
 - For image questions, provide a precise educational mediaPrompt.
-- For video questions, provide a short, safe, visually clear mediaPrompt.
-- For audio questions, provide exact audioText and a useful question based on that audio.
-- The media must directly support the question and must not reveal the answer.
-- Questions must be clear and appropriate for the selected level.
+- For video questions, provide a short and visually clear mediaPrompt.
+- For audio questions, provide the exact audioText.
+- Media must support the question.
+- Media must never reveal the correct answer.
+
+Return JSON only.
+Do not add Markdown.
+Do not use code fences.
+Do not add explanations before or after the JSON.
 `.trim();
 
     const response = await fetch(AI_WORKER_URL,{
@@ -1931,6 +2405,14 @@ body:JSON.stringify({
   prompt:prompt,
 
   topic:topic,
+  sourceFileName:
+  sourceFileName,
+
+hasSourceFile:
+  !!sourceFile,
+
+sourceTextLength:
+  sourceFileText.length,
   count:count,
   level:level,
   language:language,
