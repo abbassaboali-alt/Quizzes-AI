@@ -350,6 +350,98 @@ button{cursor:pointer}
   font-weight:900;
 }
 
+
+/* Question types: MCQ, Match, Order */
+.question-type-note{
+  margin-top:8px;
+  padding:9px 11px;
+  border-radius:11px;
+  background:#f3f7fb;
+  color:var(--muted);
+  font-size:12px;
+  font-weight:700;
+}
+.match-right-field{display:none}
+.question-box[data-type="match"] .match-right-field{display:block}
+.question-box[data-type="match"] .correct-row{display:none}
+.question-box[data-type="order"] .correct-row{display:none}
+.question-box[data-type="order"] .match-right-field{display:none}
+.question-box[data-type="order"] .answer-image-field{display:none}
+
+.match-game{
+  display:grid;
+  gap:12px;
+}
+.match-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:12px;
+  align-items:center;
+  padding:12px;
+  border:1px solid var(--border);
+  border-radius:15px;
+  background:#fbfdff;
+}
+.match-left{
+  font-weight:900;
+  color:var(--blue);
+}
+.match-row select{
+  width:100%;
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:11px;
+  background:#fff;
+  font-family:inherit;
+  font-weight:700;
+}
+.order-game{
+  display:grid;
+  gap:10px;
+}
+.order-item{
+  width:100%;
+  border:2px solid var(--border);
+  border-radius:15px;
+  background:#fff;
+  padding:13px;
+  font-size:16px;
+  font-weight:900;
+  text-align:left;
+}
+.order-item.selected{
+  border-color:var(--blue2);
+  background:#eef6fd;
+}
+.order-sequence{
+  min-height:58px;
+  border:1px dashed #9fb7cc;
+  border-radius:15px;
+  padding:12px;
+  margin-top:14px;
+  background:#fbfdff;
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.order-chip{
+  background:var(--blue);
+  color:#fff;
+  border-radius:999px;
+  padding:7px 11px;
+  font-weight:800;
+}
+.type-result-actions{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:15px;
+}
+@media(max-width:750px){
+  .match-row{grid-template-columns:1fr}
+}
+
 </style>
 </head>
 
@@ -481,13 +573,23 @@ button{cursor:pointer}
       </div>
     </div>
 
-    <div class="grid grid-3" style="margin-top:14px">
+    <div class="grid" style="grid-template-columns:repeat(4,minmax(0,1fr));margin-top:14px">
       <div class="field">
         <label>Question Language</label>
         <select id="aiLanguage">
           <option value="English">English</option>
           <option value="Arabic">Arabic</option>
           <option value="English with Arabic instructions">English + Arabic Instructions</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>AI Question Type</label>
+        <select id="aiQuestionType">
+          <option value="mcq">Multiple Choice</option>
+          <option value="match">Match</option>
+          <option value="order">Order / Sequence</option>
+          <option value="mixed">Mixed Types</option>
         </select>
       </div>
 
@@ -903,15 +1005,16 @@ function addQuestion(data = null){
   QUESTION_COUNTER++;
 
   const q = data || {
+    type:"mcq",
     text:"",
     mediaType:"none",
     mediaUrl:"",
     image:"",
     answers:[
-      {text:"",image:"",correct:true},
-      {text:"",image:"",correct:false},
-      {text:"",image:"",correct:false},
-      {text:"",image:"",correct:false}
+      {text:"",right:"",image:"",correct:true},
+      {text:"",right:"",image:"",correct:false},
+      {text:"",right:"",image:"",correct:false},
+      {text:"",right:"",image:"",correct:false}
     ]
   };
 
@@ -920,6 +1023,7 @@ function addQuestion(data = null){
 
   box.className = "question-box";
   box.dataset.key = key;
+  box.dataset.type = q.type || "mcq";
 
   const savedMediaType =
     q.mediaType ||
@@ -936,8 +1040,8 @@ function addQuestion(data = null){
     Array.isArray(q.answers) && q.answers.length
       ? q.answers
       : [
-          {text:"",image:"",correct:true},
-          {text:"",image:"",correct:false}
+          {text:"",right:"",image:"",correct:true},
+          {text:"",right:"",image:"",correct:false}
         ];
 
   box.innerHTML = `
@@ -949,10 +1053,20 @@ function addQuestion(data = null){
       </button>
     </div>
 
-    <div class="grid grid-2" style="margin-top:13px">
+    <div class="grid grid-3" style="margin-top:13px">
       <div class="field">
-        <label>Question Text</label>
-        <textarea class="q-text" placeholder="Example: Which picture shows a cat?">${esc(q.text)}</textarea>
+        <label>Question Type</label>
+        <select class="q-type" onchange="updateQuestionType(this.closest('.question-box'))">
+          <option value="mcq" ${(q.type || "mcq") === "mcq" ? "selected" : ""}>Multiple Choice</option>
+          <option value="match" ${q.type === "match" ? "selected" : ""}>Match</option>
+          <option value="order" ${q.type === "order" ? "selected" : ""}>Order / Sequence</option>
+        </select>
+        <div class="question-type-note q-type-note"></div>
+      </div>
+
+      <div class="field">
+        <label>Question Text / Instructions</label>
+        <textarea class="q-text" placeholder="Example: Match each word with its meaning.">${esc(q.text)}</textarea>
       </div>
 
       <div>
@@ -982,7 +1096,7 @@ function addQuestion(data = null){
     <div class="answers-admin"></div>
 
     <button class="btn btn-light" type="button" style="margin-top:12px" onclick="addAnswer(this)">
-      <i class="fa-solid fa-plus"></i> Add Answer
+      <i class="fa-solid fa-plus"></i> Add Item
     </button>
   `;
 
@@ -992,6 +1106,7 @@ function addQuestion(data = null){
     appendAnswer(box,answer);
   });
 
+  updateQuestionType(box);
   updateQuestionMediaPreview(box);
   refreshQuestionNumbers();
 }
@@ -1004,16 +1119,18 @@ function appendAnswer(questionBox,answer){
 
   item.innerHTML = `
     <div class="field">
-      <label>Answer Text</label>
-
-      <input class="a-text" value="${esc(answer.text)}" placeholder="Example: Cat">
+      <label class="a-text-label">Answer / Item</label>
+      <input class="a-text" value="${esc(answer.text || "")}" placeholder="Enter text">
     </div>
 
-    <div class="field" style="margin-top:9px">
+    <div class="field match-right-field" style="margin-top:9px">
+      <label>Matching Pair</label>
+      <input class="a-right" value="${esc(answer.right || answer.match || "")}" placeholder="Enter the matching answer">
+    </div>
+
+    <div class="field answer-image-field" style="margin-top:9px">
       <label>Answer Image URL</label>
-
-      <input class="a-image" value="${esc(answer.image)}" placeholder="https://...">
-
+      <input class="a-image" value="${esc(answer.image || "")}" placeholder="https://...">
       <img class="preview-img" alt="">
     </div>
 
@@ -1023,7 +1140,7 @@ function appendAnswer(questionBox,answer){
     </label>
 
     <button class="btn btn-danger" type="button" style="margin-top:9px;padding:7px 11px" onclick="removeAnswer(this)">
-      <i class="fa-solid fa-xmark"></i> Delete Answer
+      <i class="fa-solid fa-xmark"></i> Delete Item
     </button>
   `;
 
@@ -1046,6 +1163,26 @@ function appendAnswer(questionBox,answer){
   updatePreview();
 
   answersBox.appendChild(item);
+}
+function updateQuestionType(questionBox){
+  if(!questionBox) return;
+
+  const type = questionBox.querySelector(".q-type")?.value || "mcq";
+  questionBox.dataset.type = type;
+
+  const note = questionBox.querySelector(".q-type-note");
+  const labels = questionBox.querySelectorAll(".a-text-label");
+
+  if(type === "match"){
+    note.textContent = "Each item contains a left value and its matching right value.";
+    labels.forEach(label=>label.textContent = "Left Item");
+  }else if(type === "order"){
+    note.textContent = "Enter the items in the correct order. They will be shuffled for the student.";
+    labels.forEach(label=>label.textContent = "Sequence Item");
+  }else{
+    note.textContent = "Choose one correct answer. Answer images are optional.";
+    labels.forEach(label=>label.textContent = "Answer / Item");
+  }
 }
 
 function addAnswer(button){
@@ -1132,6 +1269,7 @@ function collectQuestions(){
   const questions = [];
 
   document.querySelectorAll(".question-box").forEach((box,index)=>{
+    const type = box.querySelector(".q-type")?.value || "mcq";
     const text = box.querySelector(".q-text").value.trim();
     const mediaType = box.querySelector(".q-media-type")?.value || "none";
     const mediaUrl = box.querySelector(".q-media-url")?.value.trim() || "";
@@ -1140,37 +1278,50 @@ function collectQuestions(){
     box.querySelectorAll(".answer-admin").forEach(answerBox=>{
       answers.push({
         text:answerBox.querySelector(".a-text").value.trim(),
+        right:answerBox.querySelector(".a-right")?.value.trim() || "",
         image:answerBox.querySelector(".a-image").value.trim(),
         correct:answerBox.querySelector(".a-correct").checked
       });
     });
 
     if(!text){
-      throw new Error(`Enter the text for question number ${index + 1}.`);
+      throw new Error(`Enter the text or instructions for question ${index + 1}.`);
     }
 
     if(answers.length < 2){
-      throw new Error(`Question ${index + 1} requires at least two answers.`);
+      throw new Error(`Question ${index + 1} requires at least two items.`);
     }
 
-    if(!answers.some(answer=>answer.correct)){
-      throw new Error(`Select the correct answer for question number ${index + 1}.`);
+    if(type === "mcq"){
+      if(!answers.some(answer=>answer.correct)){
+        throw new Error(`Select the correct answer for question ${index + 1}.`);
+      }
+
+      if(answers.some(answer=>!answer.text && !answer.image)){
+        throw new Error(`There is an empty answer in question ${index + 1}.`);
+      }
     }
 
-    if(answers.some(answer=>!answer.text && !answer.image)){
-      throw new Error(`There is an empty answer in question number ${index + 1}.`);
+    if(type === "match"){
+      if(answers.some(answer=>!answer.text || !answer.right)){
+        throw new Error(`Complete both sides of every matching pair in question ${index + 1}.`);
+      }
+    }
+
+    if(type === "order"){
+      if(answers.some(answer=>!answer.text)){
+        throw new Error(`Complete every sequence item in question ${index + 1}.`);
+      }
     }
 
     questions.push({
+      type,
       text,
       mediaType,
       mediaUrl,
-
-      /* Compatibility with older activities */
       image:mediaType === "image" ? mediaUrl : "",
       video:mediaType === "video" ? mediaUrl : "",
       audio:mediaType === "audio" ? mediaUrl : "",
-
       answers
     });
   });
@@ -1181,7 +1332,6 @@ function collectQuestions(){
 
   return questions;
 }
-
 
 /* ===============================
    AI Question Generation
@@ -1271,12 +1421,29 @@ function getAiResponsePayload(data){
   throw new Error("The AI did not return questions in a valid format.");
 }
 
-function normalizeAiQuestion(question,index,defaultMediaType,defaultMediaUrl){
+function normalizeAiQuestion(question,index,defaultQuestionType,defaultMediaType,defaultMediaUrl){
   const rawAnswers =
     question.answers ||
     question.options ||
     question.choices ||
+    question.items ||
+    question.pairs ||
     [];
+
+  let type = String(
+    question.type ||
+    question.questionType ||
+    defaultQuestionType ||
+    "mcq"
+  ).trim().toLowerCase();
+
+  if(type === "multiple-choice" || type === "multiple_choice"){
+    type = "mcq";
+  }
+
+  if(!["mcq","match","order"].includes(type)){
+    type = "mcq";
+  }
 
   const correctIndex =
     Number.isInteger(question.correctIndex)
@@ -1296,37 +1463,61 @@ function normalizeAiQuestion(question,index,defaultMediaType,defaultMediaUrl){
     if(typeof answer === "string"){
       return {
         text:answer,
+        right:"",
         image:"",
         correct:
-          answerIndex === correctIndex ||
-          (!!correctValue && answer.trim() === correctValue)
+          type === "mcq" &&
+          (
+            answerIndex === correctIndex ||
+            (!!correctValue && answer.trim() === correctValue)
+          )
       };
     }
 
     return {
-      text:String(answer?.text ?? answer?.label ?? answer?.answer ?? "").trim(),
+      text:String(
+        answer?.text ??
+        answer?.left ??
+        answer?.item ??
+        answer?.label ??
+        answer?.answer ??
+        ""
+      ).trim(),
+
+      right:String(
+        answer?.right ??
+        answer?.match ??
+        answer?.pair ??
+        answer?.meaning ??
+        ""
+      ).trim(),
+
       image:String(answer?.image ?? answer?.imageUrl ?? "").trim(),
+
       correct:
-        answer?.correct === true ||
-        answer?.isCorrect === true ||
-        answerIndex === correctIndex ||
+        type === "mcq" &&
         (
-          !!correctValue &&
-          String(answer?.text ?? answer?.label ?? "").trim() === correctValue
+          answer?.correct === true ||
+          answer?.isCorrect === true ||
+          answerIndex === correctIndex ||
+          (
+            !!correctValue &&
+            String(answer?.text ?? answer?.label ?? "").trim() === correctValue
+          )
         )
     };
   });
 
   if(answers.length < 2){
-    throw new Error(`Generated question number ${index + 1} does not contain enough answers.`);
+    throw new Error(`Generated question ${index + 1} does not contain enough items.`);
   }
 
-  if(!answers.some(answer=>answer.correct)){
+  if(type === "mcq" && !answers.some(answer=>answer.correct)){
     answers[0].correct = true;
   }
 
   let mediaType =
-    String(question.mediaType || question.type || defaultMediaType || "none")
+    String(question.mediaType || defaultMediaType || "none")
       .trim()
       .toLowerCase();
 
@@ -1348,6 +1539,7 @@ function normalizeAiQuestion(question,index,defaultMediaType,defaultMediaUrl){
     ).trim();
 
   return {
+    type,
     text:String(question.text || question.question || question.prompt || "").trim(),
     mediaType,
     mediaUrl,
@@ -1357,7 +1549,6 @@ function normalizeAiQuestion(question,index,defaultMediaType,defaultMediaUrl){
     answers
   };
 }
-
 async function generateQuestionsWithAI(){
   const button = document.getElementById("generateAiBtn");
 
@@ -1382,6 +1573,7 @@ async function generateQuestionsWithAI(){
 
     const level = document.getElementById("aiLevel").value;
     const language = document.getElementById("aiLanguage").value;
+    const requestedQuestionType = document.getElementById("aiQuestionType").value;
     const requestedMediaType = document.getElementById("aiMediaType").value;
     const mediaUrl = readText("aiMediaUrl");
     const instructions = readText("aiInstructions");
@@ -1408,6 +1600,7 @@ Topic: ${topic}
 Level: ${level}
 Language: ${language}
 Course: ${course ? getCourseName(course) : "Not selected"}
+Requested question type: ${requestedQuestionType}
 Requested media type: ${requestedMediaType}
 Provided media URL: ${mediaUrl || "None"}
 Additional instructions: ${instructions || "None"}
@@ -1416,25 +1609,30 @@ Return valid JSON only in this exact structure:
 {
   "questions": [
     {
-      "text": "Question text",
+      "type": "mcq|match|order",
+      "text": "Question text or instructions",
       "mediaType": "none|image|video|audio",
       "mediaUrl": "",
       "answers": [
-        {"text":"Answer 1","image":"","correct":true},
-        {"text":"Answer 2","image":"","correct":false},
-        {"text":"Answer 3","image":"","correct":false},
-        {"text":"Answer 4","image":"","correct":false}
+        {
+          "text":"Left item, answer, or sequence item",
+          "right":"Matching pair only; otherwise empty",
+          "image":"",
+          "correct":true
+        }
       ]
     }
   ]
 }
 
 Rules:
-- Exactly one correct answer per question.
+- Follow the requested question type. If "mixed", use a balanced mix of mcq, match, and order.
+- For mcq: create 4 answers and exactly one correct answer.
+- For match: create 4 pairs; use text for the left side and right for the matching side.
+- For order: create 4 to 6 sequence items in the correct order using text.
 - Do not invent media URLs.
 - Use the provided media URL only when it is relevant.
 - Keep mediaUrl empty when no real URL is supplied.
-- Each question must have 4 answers.
 - Questions must be clear and appropriate for the selected level.
 `.trim();
 
@@ -1484,17 +1682,24 @@ body:JSON.stringify({
     const normalized = rawQuestions
       .slice(0,count)
       .map((question,index)=>{
-        let defaultType = requestedMediaType;
+        let defaultQuestionType = requestedQuestionType;
+        let defaultMediaType = requestedMediaType;
 
-        if(defaultType === "mixed"){
-          const types = ["image","video","audio","none"];
-          defaultType = types[index % types.length];
+        if(defaultQuestionType === "mixed"){
+          const questionTypes = ["mcq","match","order"];
+          defaultQuestionType = questionTypes[index % questionTypes.length];
+        }
+
+        if(defaultMediaType === "mixed"){
+          const mediaTypes = ["image","video","audio","none"];
+          defaultMediaType = mediaTypes[index % mediaTypes.length];
         }
 
         return normalizeAiQuestion(
           question,
           index,
-          defaultType,
+          defaultQuestionType,
+          defaultMediaType,
           mediaUrl
         );
       })
@@ -1769,6 +1974,10 @@ function resetEditor(){
   document.getElementById("activityGroup").value = "General";
   document.getElementById("activityStatus").value = "open";
 
+  if(document.getElementById("aiQuestionType")){
+    document.getElementById("aiQuestionType").value = "mcq";
+  }
+
   document.getElementById("questionsContainer").innerHTML = "";
 
   QUESTION_COUNTER = 0;
@@ -2027,6 +2236,7 @@ function renderStudentQuestion(){
 
   const questions = CURRENT_ACTIVITY.questions;
   const question = questions[CURRENT_QUESTION_INDEX];
+  const type = question.type || "mcq";
 
   document.getElementById("questionNumber").textContent =
     `Question ${CURRENT_QUESTION_INDEX + 1} of ${questions.length}`;
@@ -2079,16 +2289,24 @@ function renderStudentQuestion(){
     questionAudio.load();
   }
 
-  const feedback =
-    document.getElementById("feedback");
-
+  const feedback = document.getElementById("feedback");
   feedback.textContent = "";
   feedback.className = "feedback";
 
-  const answersBox =
-    document.getElementById("studentAnswers");
-
+  const answersBox = document.getElementById("studentAnswers");
   answersBox.innerHTML = "";
+
+  if(type === "match"){
+    renderMatchQuestion(question,answersBox);
+    return;
+  }
+
+  if(type === "order"){
+    renderOrderQuestion(question,answersBox);
+    return;
+  }
+
+  answersBox.className = "student-answers";
 
   (question.answers || []).forEach((answer,index)=>{
     const button = document.createElement("button");
@@ -2107,6 +2325,18 @@ function renderStudentQuestion(){
 
     answersBox.appendChild(button);
   });
+}
+
+function goToNextQuestion(){
+  setTimeout(()=>{
+    CURRENT_QUESTION_INDEX++;
+
+    if(CURRENT_QUESTION_INDEX < CURRENT_ACTIVITY.questions.length){
+      renderStudentQuestion();
+    }else{
+      finishActivity();
+    }
+  },1300);
 }
 
 function chooseAnswer(answerIndex,clickedButton){
@@ -2139,40 +2369,228 @@ function chooseAnswer(answerIndex,clickedButton){
 
   if(selected.correct){
     CURRENT_SCORE++;
-
     clickedButton.classList.add("correct");
-
-    feedback.textContent =
-      "🎉 Correct Answer! Excellent";
-
+    feedback.textContent = "🎉 Correct Answer! Excellent";
     feedback.classList.add("good");
-
     launchSmallConfetti();
-
   }else{
     clickedButton.classList.add("wrong");
-
-    feedback.textContent =
-      "❌ Incorrect Answer — See the Correct Answer";
-
+    feedback.textContent = "❌ Incorrect Answer — See the Correct Answer";
     feedback.classList.add("bad");
   }
 
   document.getElementById("scorePill").textContent =
     `⭐ ${CURRENT_SCORE}`;
 
-  setTimeout(()=>{
-    CURRENT_QUESTION_INDEX++;
+  goToNextQuestion();
+}
 
-    if(
-      CURRENT_QUESTION_INDEX <
-      CURRENT_ACTIVITY.questions.length
-    ){
-      renderStudentQuestion();
-    }else{
-      finishActivity();
-    }
-  },1500);
+function shuffleArray(array){
+  const copy = [...array];
+
+  for(let i=copy.length - 1;i>0;i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i],copy[j]] = [copy[j],copy[i]];
+  }
+
+  return copy;
+}
+
+function renderMatchQuestion(question,answersBox){
+  answersBox.className = "match-game";
+
+  const pairs = (question.answers || []).map((item,index)=>({
+    id:index,
+    left:item.text || "",
+    right:item.right || ""
+  }));
+
+  const rightOptions = shuffleArray(pairs.map(item=>item.right));
+
+  answersBox.innerHTML = pairs.map((pair,index)=>`
+    <div class="match-row">
+      <div class="match-left">${esc(pair.left)}</div>
+
+      <select class="match-select" data-correct="${esc(pair.right)}">
+        <option value="">Select a match...</option>
+        ${rightOptions.map(option=>`
+          <option value="${esc(option)}">${esc(option)}</option>
+        `).join("")}
+      </select>
+    </div>
+  `).join("") + `
+    <div class="type-result-actions">
+      <button class="btn btn-primary" type="button" onclick="checkMatchAnswer()">
+        <i class="fa-solid fa-check"></i> Check Matches
+      </button>
+    </div>
+  `;
+}
+
+function checkMatchAnswer(){
+  if(ANSWER_LOCKED) return;
+
+  const selects = [...document.querySelectorAll(".match-select")];
+
+  if(selects.some(select=>!select.value)){
+    alert("Complete all matching pairs first.");
+    return;
+  }
+
+  ANSWER_LOCKED = true;
+
+  const allCorrect = selects.every(select=>
+    select.value === select.dataset.correct
+  );
+
+  selects.forEach(select=>{
+    select.disabled = true;
+    select.style.borderColor =
+      select.value === select.dataset.correct
+        ? "var(--green)"
+        : "var(--red)";
+  });
+
+  const feedback = document.getElementById("feedback");
+
+  if(allCorrect){
+    CURRENT_SCORE++;
+    feedback.textContent = "🎉 All matches are correct!";
+    feedback.classList.add("good");
+    launchSmallConfetti();
+  }else{
+    feedback.textContent = "❌ Some matches are incorrect.";
+    feedback.classList.add("bad");
+  }
+
+  document.getElementById("scorePill").textContent =
+    `⭐ ${CURRENT_SCORE}`;
+
+  goToNextQuestion();
+}
+
+let CURRENT_ORDER_SELECTION = [];
+
+function renderOrderQuestion(question,answersBox){
+  answersBox.className = "order-game";
+  CURRENT_ORDER_SELECTION = [];
+
+  const items = (question.answers || []).map((item,index)=>({
+    id:index,
+    text:item.text || ""
+  }));
+
+  const shuffled = shuffleArray(items);
+
+  answersBox.innerHTML = `
+    <div id="orderButtons">
+      ${shuffled.map(item=>`
+        <button
+          class="order-item"
+          type="button"
+          data-id="${item.id}"
+          data-text="${esc(item.text)}"
+          onclick="selectOrderItem(this)">
+          ${esc(item.text)}
+        </button>
+      `).join("")}
+    </div>
+
+    <div id="orderSequence" class="order-sequence">
+      <span style="color:var(--muted)">Click the items in the correct order.</span>
+    </div>
+
+    <div class="type-result-actions">
+      <button class="btn btn-light" type="button" onclick="resetOrderSelection()">
+        <i class="fa-solid fa-rotate-left"></i> Reset
+      </button>
+
+      <button class="btn btn-primary" type="button" onclick="checkOrderAnswer()">
+        <i class="fa-solid fa-check"></i> Check Order
+      </button>
+    </div>
+  `;
+}
+
+function selectOrderItem(button){
+  if(ANSWER_LOCKED || button.disabled) return;
+
+  button.disabled = true;
+  button.classList.add("selected");
+
+  CURRENT_ORDER_SELECTION.push({
+    id:Number(button.dataset.id),
+    text:button.dataset.text
+  });
+
+  renderOrderSequence();
+}
+
+function renderOrderSequence(){
+  const box = document.getElementById("orderSequence");
+
+  if(!CURRENT_ORDER_SELECTION.length){
+    box.innerHTML = `<span style="color:var(--muted)">Click the items in the correct order.</span>`;
+    return;
+  }
+
+  box.innerHTML = CURRENT_ORDER_SELECTION.map((item,index)=>`
+    <span class="order-chip">${index + 1}. ${esc(item.text)}</span>
+  `).join("");
+}
+
+function resetOrderSelection(){
+  if(ANSWER_LOCKED) return;
+
+  CURRENT_ORDER_SELECTION = [];
+
+  document.querySelectorAll(".order-item").forEach(button=>{
+    button.disabled = false;
+    button.classList.remove("selected");
+  });
+
+  renderOrderSequence();
+}
+
+function checkOrderAnswer(){
+  if(ANSWER_LOCKED) return;
+
+  const question =
+    CURRENT_ACTIVITY.questions[CURRENT_QUESTION_INDEX];
+
+  const total = question.answers?.length || 0;
+
+  if(CURRENT_ORDER_SELECTION.length !== total){
+    alert("Select all items before checking the order.");
+    return;
+  }
+
+  ANSWER_LOCKED = true;
+
+  const allCorrect = CURRENT_ORDER_SELECTION.every(
+    (item,index)=>item.id === index
+  );
+
+  document.querySelectorAll(".order-item").forEach(button=>{
+    button.disabled = true;
+  });
+
+  const feedback = document.getElementById("feedback");
+
+  if(allCorrect){
+    CURRENT_SCORE++;
+    feedback.textContent = "🎉 The order is correct!";
+    feedback.classList.add("good");
+    launchSmallConfetti();
+  }else{
+    feedback.textContent = "❌ The order is incorrect.";
+    feedback.classList.add("bad");
+  }
+
+  document.getElementById("scorePill").textContent =
+    `⭐ ${CURRENT_SCORE}`;
+
+  goToNextQuestion();
 }
 
 /* ===============================
