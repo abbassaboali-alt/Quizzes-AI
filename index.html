@@ -547,6 +547,69 @@ button{cursor:pointer}
     </div>
   </div>
 
+  <!-- =====================================
+     ACTIVITY TIMER SETTINGS
+===================================== -->
+
+<div class="grid grid-3" style="margin-top:14px">
+
+  <div class="field">
+
+    <label>Quiz Time</label>
+
+    <select
+      id="activityTimerType"
+      onchange="toggleActivityTimerFields()">
+
+      <option value="open">
+        Open Time
+      </option>
+
+      <option value="limited">
+        Limited Time
+      </option>
+
+    </select>
+
+  </div>
+
+  <div
+    class="field"
+    id="activityMinutesField"
+    style="display:none">
+
+    <label>Minutes</label>
+
+    <input
+      id="activityTimerMinutes"
+      type="number"
+      min="0"
+      max="180"
+      value="5">
+
+  </div>
+
+  <div
+    class="field"
+    id="activitySecondsField"
+    style="display:none">
+
+    <label>Seconds</label>
+
+    <input
+      id="activityTimerSeconds"
+      type="number"
+      min="0"
+      max="59"
+      value="0">
+
+  </div>
+
+</div>
+
+<div class="help" style="margin-top:7px">
+  Open Time means the student can complete the activity without a countdown.
+</div>
 
   <div class="panel ai-generator">
     <div class="panel-title">
@@ -861,12 +924,33 @@ Create:
       </button>
     </div>
 
-    <div class="play-top">
-      <div class="progress-wrap">
-        <div id="progressBar" class="progress-bar"></div>
-      </div>
+<div class="play-top">
 
-      <div id="scorePill" class="score-pill">⭐ 0</div>
+  <div class="progress-wrap">
+    <div
+      id="progressBar"
+      class="progress-bar">
+    </div>
+  </div>
+
+  <div
+    id="activityTimerDisplay"
+    class="score-pill"
+    style="background:#d35400">
+
+    ⏱ Open Time
+
+  </div>
+
+  <div
+    id="scorePill"
+    class="score-pill">
+
+    ⭐ 0
+
+  </div>
+
+
     </div>
 
     <div class="game-card">
@@ -883,6 +967,23 @@ Create:
       <div id="studentAnswers" class="student-answers"></div>
 
       <div id="feedback" class="feedback"></div>
+      <div
+  id="nextQuestionArea"
+  class="actions hidden"
+  style="justify-content:center;margin-top:15px">
+
+  <button
+    id="nextQuestionBtn"
+    class="btn btn-primary"
+    type="button"
+    onclick="nextQuestionManually()">
+
+    <i class="fa-solid fa-arrow-right"></i>
+    Next Question
+
+  </button>
+
+</div>
     </div>
 
   </div>
@@ -950,6 +1051,274 @@ let CURRENT_COURSE = null;
 let CURRENT_QUESTION_INDEX = 0;
 let CURRENT_SCORE = 0;
 let ANSWER_LOCKED = false;
+let ACTIVITY_TIMER_INTERVAL = null;
+let ACTIVITY_TIME_LEFT = 0;
+let ACTIVITY_FINISHED = false;
+/* =====================================
+   ANSWER SOUNDS
+===================================== */
+
+function playCorrectSound(){
+
+  playToneSequence([
+    {
+      frequency:523.25,
+      duration:0.14,
+      delay:0
+    },
+    {
+      frequency:659.25,
+      duration:0.14,
+      delay:0.13
+    },
+    {
+      frequency:783.99,
+      duration:0.22,
+      delay:0.26
+    }
+  ]);
+
+}
+/* =====================================
+   ACTIVITY TIMER
+===================================== */
+
+function startActivityTimer(){
+
+  stopActivityTimer();
+
+  ACTIVITY_FINISHED = false;
+
+  const display =
+    document.getElementById(
+      "activityTimerDisplay"
+    );
+
+  const timerType =
+    CURRENT_ACTIVITY?.timerType ||
+    "open";
+
+  const totalSeconds =
+    Number(
+      CURRENT_ACTIVITY
+        ?.timerTotalSeconds ||
+      0
+    );
+
+  if(
+    timerType !== "limited" ||
+    totalSeconds <= 0
+  ){
+
+    ACTIVITY_TIME_LEFT = 0;
+
+    display.textContent =
+      "⏱ Open Time";
+
+    display.style.background =
+      "#17a673";
+
+    return;
+
+  }
+
+  ACTIVITY_TIME_LEFT =
+    totalSeconds;
+
+  updateActivityTimerDisplay();
+
+  ACTIVITY_TIMER_INTERVAL =
+    setInterval(()=>{
+
+      ACTIVITY_TIME_LEFT--;
+
+      updateActivityTimerDisplay();
+
+      if(
+        ACTIVITY_TIME_LEFT <= 0
+      ){
+
+        stopActivityTimer();
+
+        finishActivityByTimeout();
+
+      }
+
+    },1000);
+
+}
+
+function stopActivityTimer(){
+
+  if(ACTIVITY_TIMER_INTERVAL){
+
+    clearInterval(
+      ACTIVITY_TIMER_INTERVAL
+    );
+
+    ACTIVITY_TIMER_INTERVAL =
+      null;
+
+  }
+
+}
+
+function updateActivityTimerDisplay(){
+
+  const display =
+    document.getElementById(
+      "activityTimerDisplay"
+    );
+
+  const minutes =
+    Math.floor(
+      ACTIVITY_TIME_LEFT / 60
+    );
+
+  const seconds =
+    ACTIVITY_TIME_LEFT % 60;
+
+  display.textContent =
+    "⏱ " +
+    String(minutes)
+      .padStart(2,"0") +
+    ":" +
+    String(seconds)
+      .padStart(2,"0");
+
+  if(ACTIVITY_TIME_LEFT <= 10){
+
+    display.style.background =
+      "#e74c3c";
+
+  }else if(ACTIVITY_TIME_LEFT <= 30){
+
+    display.style.background =
+      "#f39c12";
+
+  }else{
+
+    display.style.background =
+      "#164478";
+
+  }
+
+}
+
+async function finishActivityByTimeout(){
+
+  if(ACTIVITY_FINISHED){
+    return;
+  }
+
+  ANSWER_LOCKED = true;
+
+  stopActivityTimer();
+
+  ACTIVITY_TIME_LEFT = 0;
+
+  alert(
+    "Time is over. The activity will now finish."
+  );
+
+  await finishActivity();
+
+}
+
+function playWrongSound(){
+
+  playToneSequence([
+    {
+      frequency:220,
+      duration:0.18,
+      delay:0
+    },
+    {
+      frequency:165,
+      duration:0.28,
+      delay:0.17
+    }
+  ]);
+
+}
+
+function playToneSequence(tones){
+
+  try{
+
+    const AudioContextClass =
+      window.AudioContext ||
+      window.webkitAudioContext;
+
+    if(!AudioContextClass){
+      return;
+    }
+
+    const audioContext =
+      new AudioContextClass();
+
+    const startTime =
+      audioContext.currentTime;
+
+    tones.forEach(tone=>{
+
+      const oscillator =
+        audioContext
+          .createOscillator();
+
+      const gain =
+        audioContext
+          .createGain();
+
+      oscillator.type =
+        "sine";
+
+      oscillator.frequency.value =
+        tone.frequency;
+
+      const toneStart =
+        startTime +
+        tone.delay;
+
+      const toneEnd =
+        toneStart +
+        tone.duration;
+
+      gain.gain.setValueAtTime(
+        0.0001,
+        toneStart
+      );
+
+      gain.gain.exponentialRampToValueAtTime(
+        0.18,
+        toneStart + 0.02
+      );
+
+      gain.gain.exponentialRampToValueAtTime(
+        0.0001,
+        toneEnd
+      );
+
+      oscillator.connect(gain);
+      gain.connect(
+        audioContext.destination
+      );
+
+      oscillator.start(toneStart);
+      oscillator.stop(toneEnd);
+
+    });
+
+  }catch(error){
+
+    console.warn(
+      "Sound could not play:",
+      error
+    );
+
+  }
+
+}
 
 function esc(value){
   return String(value ?? "")
@@ -2693,7 +3062,31 @@ sourceTextLength:
     `;
   }
 }
+/* =====================================
+   TIMER SETTINGS
+===================================== */
 
+function toggleActivityTimerFields(){
+
+  const timerType =
+    document
+      .getElementById("activityTimerType")
+      .value;
+
+  const limited =
+    timerType === "limited";
+
+  document
+    .getElementById("activityMinutesField")
+    .style.display =
+      limited ? "block" : "none";
+
+  document
+    .getElementById("activitySecondsField")
+    .style.display =
+      limited ? "block" : "none";
+
+}
 /* ===============================
    Save Activity
 ================================ */
@@ -2718,8 +3111,57 @@ async function saveActivity(){
     }
 
     const questions = collectQuestions();
+const timerType =
+  document
+    .getElementById("activityTimerType")
+    .value;
 
+const timerMinutes =
+  Math.max(
+    0,
+    Number(
+      document
+        .getElementById("activityTimerMinutes")
+        .value || 0
+    )
+  );
+
+const timerSeconds =
+  Math.max(
+    0,
+    Math.min(
+      59,
+      Number(
+        document
+          .getElementById("activityTimerSeconds")
+          .value || 0
+      )
+    )
+  );
+
+const timerTotalSeconds =
+  timerType === "limited"
+    ? (
+        timerMinutes * 60 +
+        timerSeconds
+      )
+    : 0;
+
+if(
+  timerType === "limited" &&
+  timerTotalSeconds <= 0
+){
+
+  throw new Error(
+    "Enter a valid quiz time."
+  );
+
+}
     const data = {
+      timerType,
+timerMinutes,
+timerSeconds,
+timerTotalSeconds,
       title,
 
       courseId:course.id,
@@ -2880,6 +3322,16 @@ function editActivity(id){
 
   document.getElementById("activityStatus").value =
     activity.status || "open";
+    document.getElementById("activityTimerType").value =
+  activity.timerType || "open";
+
+document.getElementById("activityTimerMinutes").value =
+  Number(activity.timerMinutes || 5);
+
+document.getElementById("activityTimerSeconds").value =
+  Number(activity.timerSeconds || 0);
+
+toggleActivityTimerFields();
 
   document.getElementById("questionsContainer").innerHTML = "";
 
@@ -2944,7 +3396,16 @@ function playActivityFromAdmin(id){
 
   setTimeout(()=>{
     const activity = ACTIVITIES_CACHE.find(item=>item.id === id);
+document.getElementById("activityTimerType").value =
+  "open";
 
+document.getElementById("activityTimerMinutes").value =
+  5;
+
+document.getElementById("activityTimerSeconds").value =
+  0;
+
+toggleActivityTimerFields();
     if(!activity){
       return;
     }
@@ -3152,9 +3613,10 @@ function startActivity(activityId,courseId){
     return;
   }
 
-  CURRENT_QUESTION_INDEX = 0;
-  CURRENT_SCORE = 0;
-  ANSWER_LOCKED = false;
+CURRENT_QUESTION_INDEX = 0;
+CURRENT_SCORE = 0;
+ANSWER_LOCKED = false;
+ACTIVITY_FINISHED = false;
 
   document.getElementById("studentStart").classList.add("hidden");
   document.getElementById("resultArea").classList.add("hidden");
@@ -3177,7 +3639,7 @@ function startActivity(activityId,courseId){
     top:0,
     behavior:"smooth"
   });
-
+startActivityTimer();
   renderStudentQuestion();
 }
 
@@ -3187,7 +3649,10 @@ function startActivity(activityId,courseId){
 
 function renderStudentQuestion(){
   ANSWER_LOCKED = false;
-
+document
+  .getElementById("nextQuestionArea")
+  .classList
+  .add("hidden");
   const questions = CURRENT_ACTIVITY.questions;
   const question = questions[CURRENT_QUESTION_INDEX];
   const type = question.type || "mcq";
@@ -3281,16 +3746,65 @@ function renderStudentQuestion(){
   });
 }
 
-function goToNextQuestion(){
-  setTimeout(()=>{
-    CURRENT_QUESTION_INDEX++;
+function showNextQuestionButton(){
 
-    if(CURRENT_QUESTION_INDEX < CURRENT_ACTIVITY.questions.length){
-      renderStudentQuestion();
-    }else{
-      finishActivity();
-    }
-  },1300);
+  const area =
+    document.getElementById(
+      "nextQuestionArea"
+    );
+
+  const button =
+    document.getElementById(
+      "nextQuestionBtn"
+    );
+
+  const isLastQuestion =
+    CURRENT_QUESTION_INDEX >=
+    CURRENT_ACTIVITY.questions.length - 1;
+
+  button.innerHTML =
+    isLastQuestion
+      ? `
+          <i class="fa-solid fa-flag-checkered"></i>
+          Finish Activity
+        `
+      : `
+          <i class="fa-solid fa-arrow-right"></i>
+          Next Question
+        `;
+
+  area.classList.remove("hidden");
+
+}
+
+function nextQuestionManually(){
+
+  if(!ANSWER_LOCKED){
+    return;
+  }
+
+  document
+    .getElementById(
+      "nextQuestionArea"
+    )
+    .classList
+    .add("hidden");
+
+  CURRENT_QUESTION_INDEX++;
+
+  if(
+    CURRENT_QUESTION_INDEX <
+    CURRENT_ACTIVITY.questions.length
+  ){
+
+    renderStudentQuestion();
+
+  }else{
+
+    finishActivity();
+
+  }
+
 }
 
 function chooseAnswer(answerIndex,clickedButton){
@@ -3327,16 +3841,24 @@ function chooseAnswer(answerIndex,clickedButton){
     feedback.textContent = "🎉 Correct Answer! Excellent";
     feedback.classList.add("good");
     launchSmallConfetti();
-  }else{
-    clickedButton.classList.add("wrong");
-    feedback.textContent = "❌ Incorrect Answer — See the Correct Answer";
-    feedback.classList.add("bad");
-  }
+    playCorrectSound();
+}else{
+
+  clickedButton.classList.add("wrong");
+
+  feedback.textContent =
+    "❌ Incorrect Answer — See the Correct Answer";
+
+  feedback.classList.add("bad");
+
+  playWrongSound();
+
+}
 
   document.getElementById("scorePill").textContent =
     `⭐ ${CURRENT_SCORE}`;
 
-  goToNextQuestion();
+ showNextQuestionButton();
 }
 
 function shuffleArray(array){
@@ -3382,45 +3904,110 @@ function renderMatchQuestion(question,answersBox){
 }
 
 function checkMatchAnswer(){
-  if(ANSWER_LOCKED) return;
 
-  const selects = [...document.querySelectorAll(".match-select")];
-
-  if(selects.some(select=>!select.value)){
-    alert("Complete all matching pairs first.");
+  if(ANSWER_LOCKED){
     return;
+  }
+
+  const selects = [
+    ...document.querySelectorAll(
+      ".match-select"
+    )
+  ];
+
+  if(
+    selects.some(
+      select => !select.value
+    )
+  ){
+
+    alert(
+      "Complete all matching pairs first."
+    );
+
+    return;
+
   }
 
   ANSWER_LOCKED = true;
 
-  const allCorrect = selects.every(select=>
-    select.value === select.dataset.correct
-  );
+  const allCorrect =
+    selects.every(
+      select =>
+        select.value ===
+        select.dataset.correct
+    );
 
   selects.forEach(select=>{
+
     select.disabled = true;
+
+    const isCorrect =
+      select.value ===
+      select.dataset.correct;
+
     select.style.borderColor =
-      select.value === select.dataset.correct
+      isCorrect
         ? "var(--green)"
         : "var(--red)";
+
+    select.style.background =
+      isCorrect
+        ? "#eafaf4"
+        : "#fff0ee";
+
   });
 
-  const feedback = document.getElementById("feedback");
+  const feedback =
+    document.getElementById(
+      "feedback"
+    );
+
+  feedback.className =
+    "feedback";
 
   if(allCorrect){
+
     CURRENT_SCORE++;
-    feedback.textContent = "🎉 All matches are correct!";
-    feedback.classList.add("good");
+
+    feedback.textContent =
+      "🎉 All matches are correct!";
+
+    feedback.classList.add(
+      "good"
+    );
+
     launchSmallConfetti();
+
+    playCorrectSound();
+
   }else{
-    feedback.textContent = "❌ Some matches are incorrect.";
-    feedback.classList.add("bad");
+
+    feedback.textContent =
+      "❌ Some matches are incorrect.";
+
+    feedback.classList.add(
+      "bad"
+    );
+
+    playWrongSound();
+
   }
 
-  document.getElementById("scorePill").textContent =
-    `⭐ ${CURRENT_SCORE}`;
+  document
+    .getElementById(
+      "scorePill"
+    )
+    .textContent =
+      `⭐ ${CURRENT_SCORE}`;
 
-  goToNextQuestion();
+  /*
+    لا ينتقل تلقائيًا.
+    يظهر زر Next Question.
+  */
+
+  showNextQuestionButton();
+
 }
 
 let CURRENT_ORDER_SELECTION = [];
@@ -3531,20 +4118,34 @@ function checkOrderAnswer(){
 
   const feedback = document.getElementById("feedback");
 
-  if(allCorrect){
-    CURRENT_SCORE++;
-    feedback.textContent = "🎉 The order is correct!";
-    feedback.classList.add("good");
-    launchSmallConfetti();
-  }else{
-    feedback.textContent = "❌ The order is incorrect.";
-    feedback.classList.add("bad");
-  }
+if(allCorrect){
+
+  CURRENT_SCORE++;
+
+  feedback.textContent =
+    "🎉 The order is correct!";
+
+  feedback.classList.add("good");
+
+  launchSmallConfetti();
+
+  playCorrectSound();
+
+}else{
+
+  feedback.textContent =
+    "❌ The order is incorrect.";
+
+  feedback.classList.add("bad");
+
+  playWrongSound();
+
+}
 
   document.getElementById("scorePill").textContent =
     `⭐ ${CURRENT_SCORE}`;
 
-  goToNextQuestion();
+  showNextQuestionButton();
 }
 
 /* ===============================
@@ -3552,129 +4153,303 @@ function checkOrderAnswer(){
 ================================ */
 
 async function finishActivity(){
-  document.getElementById("playArea").classList.add("hidden");
-  document.getElementById("resultArea").classList.remove("hidden");
 
-  const total = CURRENT_ACTIVITY.questions.length;
+  /*
+    منع تكرار شاشة النتيجة والحفظ
+  */
 
-  const percent =
-    total
-      ? Math.round((CURRENT_SCORE / total) * 100)
-      : 0;
+  const resultArea =
+    document.getElementById(
+      "resultArea"
+    );
 
-  document.getElementById("resultCourse").textContent =
-    `${getCourseName(CURRENT_COURSE)} — ${CURRENT_ACTIVITY.title || ""}`;
-
-  document.getElementById("finalScore").textContent =
-    `${CURRENT_SCORE} / ${total}`;
-
-  document.getElementById("finalPercent").textContent =
-    `${percent}%`;
-
-  let stars = "⭐";
-  let message = "Try again and you will achieve a better result.";
-
-  if(percent >= 90){
-    stars = "⭐⭐⭐";
-    message = "Excellent! You are the activity champion.";
-  }else if(percent >= 70){
-    stars = "⭐⭐";
-    message = "Great work! Keep progressing.";
+  if(
+    !resultArea.classList.contains(
+      "hidden"
+    )
+  ){
+    return;
   }
 
-  document.getElementById("finalStars").textContent =
-    stars;
+  ACTIVITY_FINISHED = true;
 
-  document.getElementById("resultMessage").textContent =
-    message;
+  stopActivityTimer();
+
+  document
+    .getElementById(
+      "playArea"
+    )
+    .classList
+    .add("hidden");
+
+  resultArea.classList.remove(
+    "hidden"
+  );
+
+  const total =
+    CURRENT_ACTIVITY?.questions?.length ||
+    0;
+
+  const percent =
+    total > 0
+      ? Math.round(
+          (
+            CURRENT_SCORE /
+            total
+          ) * 100
+        )
+      : 0;
+
+  document
+    .getElementById(
+      "resultCourse"
+    )
+    .textContent =
+      `${
+        getCourseName(
+          CURRENT_COURSE
+        )
+      } — ${
+        CURRENT_ACTIVITY?.title ||
+        ""
+      }`;
+
+  document
+    .getElementById(
+      "finalScore"
+    )
+    .textContent =
+      `${CURRENT_SCORE} / ${total}`;
+
+  document
+    .getElementById(
+      "finalPercent"
+    )
+    .textContent =
+      `${percent}%`;
+
+  let stars = "⭐";
+
+  let message =
+    "Try again and you will achieve a better result.";
+
+  if(percent >= 90){
+
+    stars = "⭐⭐⭐";
+
+    message =
+      "Excellent! You are the activity champion.";
+
+  }else if(percent >= 70){
+
+    stars = "⭐⭐";
+
+    message =
+      "Great work! Keep progressing.";
+
+  }
+
+  document
+    .getElementById(
+      "finalStars"
+    )
+    .textContent =
+      stars;
+
+  document
+    .getElementById(
+      "resultMessage"
+    )
+    .textContent =
+      message;
 
   launchBigConfetti();
 
   try{
-    await db.collection(RESULTS_COLLECTION).add({
-      activityId:CURRENT_ACTIVITY.id,
-      activityTitle:CURRENT_ACTIVITY.title || "",
 
-      courseId:CURRENT_COURSE.id,
-      courseName:getCourseName(CURRENT_COURSE),
+    await db
+      .collection(
+        RESULTS_COLLECTION
+      )
+      .add({
 
-      trainerName:getTrainer(
-        CURRENT_COURSE,
-        CURRENT_ACTIVITY
-      ),
+        activityId:
+          CURRENT_ACTIVITY?.id ||
+          "",
 
-      branch:getBranch(
-        CURRENT_COURSE,
-        CURRENT_ACTIVITY
-      ),
+        activityTitle:
+          CURRENT_ACTIVITY?.title ||
+          "",
 
-      section:getSection(
-        CURRENT_COURSE,
-        CURRENT_ACTIVITY
-      ),
+        courseId:
+          CURRENT_COURSE?.id ||
+          "",
 
-      period:getPeriod(
-        CURRENT_COURSE,
-        CURRENT_ACTIVITY
-      ),
+        courseName:
+          getCourseName(
+            CURRENT_COURSE
+          ),
 
-      courseType:getCourseType(
-        CURRENT_COURSE,
-        CURRENT_ACTIVITY
-      ),
+        trainerName:
+          getTrainer(
+            CURRENT_COURSE,
+            CURRENT_ACTIVITY
+          ),
 
-      group:CURRENT_ACTIVITY.group || "General",
+        branch:
+          getBranch(
+            CURRENT_COURSE,
+            CURRENT_ACTIVITY
+          ),
 
-      score:CURRENT_SCORE,
-      total,
-      percent,
+        section:
+          getSection(
+            CURRENT_COURSE,
+            CURRENT_ACTIVITY
+          ),
 
-      anonymous:true,
+        period:
+          getPeriod(
+            CURRENT_COURSE,
+            CURRENT_ACTIVITY
+          ),
 
-      createdAt:
-        firebase.firestore.FieldValue.serverTimestamp()
-    });
+        courseType:
+          getCourseType(
+            CURRENT_COURSE,
+            CURRENT_ACTIVITY
+          ),
 
-    toast("Activity result saved ✅");
+        group:
+          CURRENT_ACTIVITY?.group ||
+          "General",
+
+        score:
+          CURRENT_SCORE,
+
+        total:
+          total,
+
+        percent:
+          percent,
+
+        timerType:
+          CURRENT_ACTIVITY
+            ?.timerType ||
+          "open",
+
+        configuredTimeSeconds:
+          Number(
+            CURRENT_ACTIVITY
+              ?.timerTotalSeconds ||
+            0
+          ),
+
+        timeRemainingSeconds:
+          Math.max(
+            0,
+            Number(
+              ACTIVITY_TIME_LEFT ||
+              0
+            )
+          ),
+
+        finishedByTimeout:
+          ACTIVITY_TIME_LEFT <= 0 &&
+          CURRENT_ACTIVITY
+            ?.timerType ===
+            "limited",
+
+        anonymous:
+          true,
+
+        createdAt:
+          firebase
+            .firestore
+            .FieldValue
+            .serverTimestamp()
+
+      });
+
+    toast(
+      "Activity result saved ✅"
+    );
 
   }catch(error){
+
     console.error(error);
 
-    toast("The activity ended, but the result could not be saved");
+    toast(
+      "The activity ended, but the result could not be saved"
+    );
+
   }
 
   window.scrollTo({
     top:0,
     behavior:"smooth"
   });
+
 }
 
 function restartGame(){
-  if(!CURRENT_ACTIVITY || !CURRENT_COURSE){
+
+  if(
+    !CURRENT_ACTIVITY ||
+    !CURRENT_COURSE
+  ){
     return;
   }
 
   CURRENT_QUESTION_INDEX = 0;
   CURRENT_SCORE = 0;
   ANSWER_LOCKED = false;
+  ACTIVITY_FINISHED = false;
 
-  document.getElementById("resultArea").classList.add("hidden");
-  document.getElementById("playArea").classList.remove("hidden");
+  document
+    .getElementById("resultArea")
+    .classList
+    .add("hidden");
+
+  document
+    .getElementById("playArea")
+    .classList
+    .remove("hidden");
+
+  startActivityTimer();
 
   renderStudentQuestion();
+
 }
 
 function backToActivities(){
+
+  stopActivityTimer();
+
+  ACTIVITY_FINISHED = true;
+
   CURRENT_ACTIVITY = null;
   CURRENT_COURSE = null;
 
   CURRENT_QUESTION_INDEX = 0;
   CURRENT_SCORE = 0;
   ANSWER_LOCKED = false;
+  ACTIVITY_TIME_LEFT = 0;
 
-  document.getElementById("playArea").classList.add("hidden");
-  document.getElementById("resultArea").classList.add("hidden");
-  document.getElementById("studentStart").classList.remove("hidden");
+  document
+    .getElementById("playArea")
+    .classList
+    .add("hidden");
+
+  document
+    .getElementById("resultArea")
+    .classList
+    .add("hidden");
+
+  document
+    .getElementById("studentStart")
+    .classList
+    .remove("hidden");
 
   loadStudentActivities();
 
@@ -3682,6 +4457,7 @@ function backToActivities(){
     top:0,
     behavior:"smooth"
   });
+
 }
 
 /* ===============================
