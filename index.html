@@ -605,13 +605,67 @@ button{cursor:pointer}
       </div>
 
       <div class="field">
-        <label>Image / Video / Audio URL</label>
-        <input id="aiMediaUrl" placeholder="https://..." disabled>
+        <label>Automatic Media</label>
+
+        <label style="
+          display:flex;
+          align-items:center;
+          gap:9px;
+          min-height:46px;
+          padding:10px 12px;
+          border:1px solid var(--border);
+          border-radius:13px;
+          background:#fff;
+        ">
+          <input
+            id="aiGenerateMedia"
+            type="checkbox"
+            checked
+            style="width:auto"
+            onchange="toggleAiMediaOptions()">
+
+          Generate real media automatically
+        </label>
+
         <div class="help">
-          Leave it empty if you will add the media URL manually after generation.
+          Images, audio, and videos are generated and uploaded automatically.
         </div>
       </div>
     </div>
+
+    <div id="aiMediaOptions" class="grid grid-3" style="margin-top:14px">
+      <div class="field">
+        <label>Image Style</label>
+        <select id="aiImageStyle">
+          <option value="educational illustration">Educational Illustration</option>
+          <option value="realistic educational photo">Realistic</option>
+          <option value="colorful cartoon for learners">Cartoon</option>
+          <option value="simple children book illustration">Children Style</option>
+          <option value="clean flashcard illustration">Flashcard</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Audio Voice</label>
+        <select id="aiVoice">
+          <option value="Kore">Kore</option>
+          <option value="Puck">Puck</option>
+          <option value="Charon">Charon</option>
+          <option value="Fenrir">Fenrir</option>
+          <option value="Aoede">Aoede</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Video Aspect Ratio</label>
+        <select id="aiVideoAspect">
+          <option value="16:9">Landscape 16:9</option>
+          <option value="9:16">Portrait 9:16</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="aiGenerationProgress" class="ai-note hidden"></div>
 
     <div class="field" style="margin-top:14px">
       <label>Additional Instructions</label>
@@ -632,8 +686,8 @@ button{cursor:pointer}
     </div>
 
     <div class="ai-note">
-      Supports text, image, video, and audio questions. AI does not create a real media URL automatically;
-      the API must return a valid URL, or you must enter it manually.
+      The system generates the questions first, then automatically creates and uploads the selected
+      image, audio, or video. Video generation can take several minutes and is checked automatically.
     </div>
   </div>
 
@@ -784,7 +838,7 @@ const RESULTS_COLLECTION = "FunActivityResults";
   Place your Cloudflare Worker URL here.
   It must accept POST requests and return JSON containing questions.
 */
-const AI_WORKER_URL = "https://muddy-frost-dfd0.abbassaboali.workers.dev";
+const AI_WORKER_URL = "https://YOUR-ACTIVITY-MEDIA-WORKER.YOUR-SUBDOMAIN.workers.dev";
 const AI_TASK = "generate_activity_questions";
 
 let EDIT_ACTIVITY_ID = "";
@@ -1338,15 +1392,57 @@ function collectQuestions(){
 ================================ */
 
 function toggleAiMediaUrl(){
-  const type = document.getElementById("aiMediaType").value;
-  const input = document.getElementById("aiMediaUrl");
-
-  input.disabled = type === "none";
-  if(type === "none"){
-    input.value = "";
-  }
+  toggleAiMediaOptions();
 }
 
+function toggleAiMediaOptions(){
+  const mediaType = document.getElementById("aiMediaType").value;
+  const enabled = document.getElementById("aiGenerateMedia").checked;
+  const options = document.getElementById("aiMediaOptions");
+
+  options.classList.toggle(
+    "hidden",
+    mediaType === "none" || !enabled
+  );
+}
+
+function setAiProgress(message,percent=null){
+  const box = document.getElementById("aiGenerationProgress");
+
+  if(!message){
+    box.classList.add("hidden");
+    box.innerHTML = "";
+    return;
+  }
+
+  box.classList.remove("hidden");
+
+  box.innerHTML = `
+    <div style="font-weight:900;margin-bottom:${percent === null ? 0 : 8}px">
+      ${esc(message)}
+    </div>
+
+    ${
+      percent === null
+        ? ""
+        : `
+          <div style="
+            height:10px;
+            background:#dce8f2;
+            border-radius:999px;
+            overflow:hidden;
+          ">
+            <div style="
+              height:100%;
+              width:${Math.max(0,Math.min(100,percent))}%;
+              background:linear-gradient(90deg,var(--gold),var(--green));
+              transition:.25s;
+            "></div>
+          </div>
+        `
+    }
+  `;
+}
 function clearGeneratedQuestions(){
   if(!confirm("Clear all current questions?")){
     return;
@@ -1541,14 +1637,182 @@ function normalizeAiQuestion(question,index,defaultQuestionType,defaultMediaType
   return {
     type,
     text:String(question.text || question.question || question.prompt || "").trim(),
+
     mediaType,
     mediaUrl,
+
+    mediaPrompt:String(
+      question.mediaPrompt ||
+      question.visualPrompt ||
+      question.mediaDescription ||
+      ""
+    ).trim(),
+
+    audioText:String(
+      question.audioText ||
+      question.speechText ||
+      question.listeningText ||
+      ""
+    ).trim(),
+
     image:mediaType === "image" ? mediaUrl : "",
     video:mediaType === "video" ? mediaUrl : "",
     audio:mediaType === "audio" ? mediaUrl : "",
+
     answers
   };
 }
+
+async function postToAiWorker(payload){
+  const response = await fetch(AI_WORKER_URL,{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json"
+    },
+    body:JSON.stringify(payload)
+  });
+
+  const responseText = await response.text();
+
+  let data;
+
+  try{
+    data = JSON.parse(responseText);
+  }catch{
+    data = {
+      error:responseText
+    };
+  }
+
+  if(!response.ok){
+    throw new Error(
+      data?.error ||
+      data?.message ||
+      `AI API Error (${response.status})`
+    );
+  }
+
+  return data;
+}
+
+async function waitForVideo(operationName,questionNumber){
+  const startedAt = Date.now();
+  const timeoutMs = 12 * 60 * 1000;
+
+  while(Date.now() - startedAt < timeoutMs){
+    setAiProgress(
+      `Question ${questionNumber}: waiting for the AI video to finish...`,
+      null
+    );
+
+    const result = await postToAiWorker({
+      task:"check_video_generation",
+      operationName
+    });
+
+    if(result.status === "completed" && result.url){
+      return result.url;
+    }
+
+    if(result.status === "failed"){
+      throw new Error(
+        result.error ||
+        `Video generation failed for question ${questionNumber}.`
+      );
+    }
+
+    await new Promise(resolve=>setTimeout(resolve,10000));
+  }
+
+  throw new Error(
+    `Video generation timed out for question ${questionNumber}.`
+  );
+}
+
+async function generateOneQuestionMedia(question,index,settings){
+  const mediaType = question.mediaType || "none";
+
+  if(mediaType === "none"){
+    return question;
+  }
+
+  const mediaPrompt =
+    question.mediaPrompt ||
+    `Create educational media for this question without showing the answer: ${question.text}`;
+
+  const audioText =
+    question.audioText ||
+    question.text;
+
+  const result = await postToAiWorker({
+    task:"generate_question_media",
+
+    mediaType,
+    mediaPrompt,
+    audioText,
+
+    imageStyle:settings.imageStyle,
+    voice:settings.voice,
+    videoAspectRatio:settings.videoAspectRatio,
+
+    questionText:question.text
+  });
+
+  let url = result.url || "";
+
+  if(mediaType === "video" && result.operationName){
+    url = await waitForVideo(
+      result.operationName,
+      index + 1
+    );
+  }
+
+  if(!url){
+    throw new Error(
+      `The ${mediaType} URL was not returned for question ${index + 1}.`
+    );
+  }
+
+  return {
+    ...question,
+    mediaUrl:url,
+    image:mediaType === "image" ? url : "",
+    video:mediaType === "video" ? url : "",
+    audio:mediaType === "audio" ? url : ""
+  };
+}
+
+async function generateMediaForQuestions(questions,settings){
+  const output = [];
+
+  for(let index=0;index<questions.length;index++){
+    const question = questions[index];
+    const percent = Math.round(
+      (index / Math.max(questions.length,1)) * 100
+    );
+
+    setAiProgress(
+      `Creating ${question.mediaType || "media"} for question ${index + 1} of ${questions.length}...`,
+      percent
+    );
+
+    const completed = await generateOneQuestionMedia(
+      question,
+      index,
+      settings
+    );
+
+    output.push(completed);
+  }
+
+  setAiProgress(
+    "All question media has been generated and uploaded.",
+    100
+  );
+
+  return output;
+}
+
 async function generateQuestionsWithAI(){
   const button = document.getElementById("generateAiBtn");
 
@@ -1575,7 +1839,19 @@ async function generateQuestionsWithAI(){
     const language = document.getElementById("aiLanguage").value;
     const requestedQuestionType = document.getElementById("aiQuestionType").value;
     const requestedMediaType = document.getElementById("aiMediaType").value;
-    const mediaUrl = readText("aiMediaUrl");
+    const generateMedia =
+      document.getElementById("aiGenerateMedia").checked;
+
+    const imageStyle =
+      document.getElementById("aiImageStyle").value;
+
+    const voice =
+      document.getElementById("aiVoice").value;
+
+    const videoAspectRatio =
+      document.getElementById("aiVideoAspect").value;
+
+    const mediaUrl = "";
     const instructions = readText("aiInstructions");
 
     if(!topic){
@@ -1613,6 +1889,8 @@ Return valid JSON only in this exact structure:
       "text": "Question text or instructions",
       "mediaType": "none|image|video|audio",
       "mediaUrl": "",
+      "mediaPrompt": "A detailed prompt for generating an image or video",
+      "audioText": "The exact text that should be spoken for an audio question",
       "answers": [
         {
           "text":"Left item, answer, or sequence item",
@@ -1630,9 +1908,11 @@ Rules:
 - For mcq: create 4 answers and exactly one correct answer.
 - For match: create 4 pairs; use text for the left side and right for the matching side.
 - For order: create 4 to 6 sequence items in the correct order using text.
-- Do not invent media URLs.
-- Use the provided media URL only when it is relevant.
-- Keep mediaUrl empty when no real URL is supplied.
+- Always keep mediaUrl empty. The backend will create the real media.
+- For image questions, provide a precise educational mediaPrompt.
+- For video questions, provide a short, safe, visually clear mediaPrompt.
+- For audio questions, provide exact audioText and a useful question based on that audio.
+- The media must directly support the question and must not reveal the answer.
 - Questions must be clear and appropriate for the selected level.
 `.trim();
 
@@ -1654,8 +1934,13 @@ body:JSON.stringify({
   count:count,
   level:level,
   language:language,
+  questionType:requestedQuestionType,
   mediaType:requestedMediaType,
   mediaUrl:mediaUrl,
+  generateMedia:generateMedia,
+  imageStyle:imageStyle,
+  voice:voice,
+  videoAspectRatio:videoAspectRatio,
   instructions:instructions,
   responseFormat:"json"
 })
@@ -1709,10 +1994,23 @@ body:JSON.stringify({
       throw new Error("No valid questions were generated.");
     }
 
+    let finalQuestions = normalized;
+
+    if(generateMedia && requestedMediaType !== "none"){
+      finalQuestions = await generateMediaForQuestions(
+        normalized,
+        {
+          imageStyle,
+          voice,
+          videoAspectRatio
+        }
+      );
+    }
+
     document.getElementById("questionsContainer").innerHTML = "";
     QUESTION_COUNTER = 0;
 
-    normalized.forEach(question=>{
+    finalQuestions.forEach(question=>{
       addQuestion(question);
     });
 
@@ -1721,7 +2019,7 @@ body:JSON.stringify({
         `AI Activity - ${topic}`;
     }
 
-    toast(`Generated ${normalized.length} questions successfully ✅`);
+    toast(`Generated ${finalQuestions.length} questions successfully ✅`);
 
     document.getElementById("questionsContainer").scrollIntoView({
       behavior:"smooth",
@@ -1732,6 +2030,7 @@ body:JSON.stringify({
     console.error(error);
     alert(error.message || "Unable to generate questions.");
   }finally{
+    setAiProgress("");
     button.disabled = false;
     button.innerHTML = `
       <i class="fa-solid fa-wand-magic-sparkles"></i>
@@ -2788,6 +3087,7 @@ window.addEventListener("DOMContentLoaded",async()=>{
   await loadOpenCourses();
 
   resetEditor();
+  toggleAiMediaOptions();
 
   await loadActivities();
 });
