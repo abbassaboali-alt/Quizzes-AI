@@ -16,6 +16,10 @@
 <!-- قراءة ملفات PDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
+<!-- PDF Preview Export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
 <script>
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
@@ -449,6 +453,68 @@ button{cursor:pointer}
 }
 @media(max-width:750px){
   .match-row{grid-template-columns:1fr}
+}
+
+/* ===============================
+   READ-ONLY ACTIVITY PREVIEW
+================================ */
+.preview-modal{
+  position:fixed;inset:0;background:rgba(10,30,50,.72);z-index:500;
+  display:flex;align-items:flex-start;justify-content:center;padding:24px;overflow:auto
+}
+.preview-modal.hidden{display:none!important}
+.preview-dialog{
+  width:min(1000px,100%);background:#fff;border-radius:22px;
+  box-shadow:0 24px 70px rgba(0,0,0,.28);overflow:hidden
+}
+.preview-toolbar{
+  position:sticky;top:0;z-index:2;background:#fff;border-bottom:1px solid var(--border);
+  padding:14px 18px;display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap
+}
+.preview-toolbar h2{margin:0;color:var(--blue);font-size:20px}
+.preview-toolbar-actions{display:flex;gap:9px;flex-wrap:wrap}
+.preview-document{padding:28px;background:#fff}
+.preview-cover{
+  border-bottom:4px solid var(--gold);padding-bottom:18px;margin-bottom:22px;
+  display:flex;justify-content:space-between;gap:18px;align-items:flex-start
+}
+.preview-cover h1{margin:0 0 7px;color:var(--blue);font-size:27px}
+.preview-cover p{margin:0;color:var(--muted)}
+.preview-course-grid{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:16px
+}
+.preview-info{background:#f4f8fb;border:1px solid var(--border);border-radius:11px;padding:9px}
+.preview-info span{display:block;color:var(--muted);font-size:10px;margin-bottom:3px}
+.preview-info strong{font-size:12px;overflow-wrap:anywhere}
+.preview-question{
+  break-inside:avoid;page-break-inside:avoid;border:1px solid var(--border);
+  border-radius:16px;padding:17px;margin-bottom:15px;background:#fff
+}
+.preview-question-title{font-size:18px;font-weight:900;color:var(--blue);margin-bottom:12px;line-height:1.6}
+.preview-question-media{max-width:520px;width:100%;max-height:280px;object-fit:contain;border-radius:13px;display:block;margin:10px auto}
+.preview-audio{width:100%;margin:10px 0}
+.preview-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.preview-option{border:1px solid #dce6ef;border-radius:11px;padding:10px 12px;background:#fafcfe;font-weight:700}
+.preview-option img{width:100%;max-height:150px;object-fit:contain;border-radius:8px;margin-top:7px}
+.preview-match{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.preview-match-column{border:1px solid var(--border);border-radius:12px;padding:10px}
+.preview-match-column h4{margin:0 0 8px;color:var(--blue)}
+.preview-match-item{padding:7px;border-bottom:1px dashed #d8e2eb}
+.preview-match-item:last-child{border-bottom:none}
+.preview-order-list{margin:0;padding-left:24px}
+.preview-order-list li{padding:7px 4px;font-weight:700}
+.preview-footer{text-align:center;color:var(--muted);font-size:11px;margin-top:18px}
+@media(max-width:700px){
+  .preview-modal{padding:8px}.preview-document{padding:16px}
+  .preview-course-grid,.preview-options{grid-template-columns:1fr}
+  .preview-cover{display:block}.preview-match{grid-template-columns:1fr}
+}
+@media print{
+  body>*:not(#activityPreviewModal){display:none!important}
+  #activityPreviewModal{position:static!important;background:#fff!important;padding:0!important;display:block!important}
+  .preview-dialog{box-shadow:none!important;border-radius:0!important;width:100%!important}
+  .preview-toolbar{display:none!important}
+  .preview-document{padding:10mm!important}
 }
 
 </style>
@@ -1041,6 +1107,28 @@ Create:
 </main>
 
 <div id="confetti" class="confetti"></div>
+
+<!-- READ-ONLY PREVIEW MODAL -->
+<div id="activityPreviewModal" class="preview-modal hidden">
+  <div class="preview-dialog">
+    <div class="preview-toolbar">
+      <h2><i class="fa-solid fa-eye"></i> Activity Preview</h2>
+      <div class="preview-toolbar-actions">
+        <button class="btn btn-primary" type="button" onclick="downloadActivityPreviewPdf()">
+          <i class="fa-solid fa-file-pdf"></i> Download PDF
+        </button>
+        <button class="btn btn-light" type="button" onclick="window.print()">
+          <i class="fa-solid fa-print"></i> Print
+        </button>
+        <button class="btn btn-danger" type="button" onclick="closeActivityPreview()">
+          <i class="fa-solid fa-xmark"></i> Close
+        </button>
+      </div>
+    </div>
+    <div id="activityPreviewDocument" class="preview-document"></div>
+  </div>
+</div>
+
 <div id="toast" class="toast"></div>
 
 <script>
@@ -3384,8 +3472,8 @@ function renderAdminActivities(){
           <i class="fa-solid fa-pen"></i> Edit
         </button>
 
-        <button class="btn btn-success" onclick="playActivityFromAdmin('${activity.id}')">
-          <i class="fa-solid fa-play"></i> Preview
+        <button class="btn btn-success" onclick="previewActivity('${activity.id}')">
+          <i class="fa-solid fa-eye"></i> Preview
         </button>
 
         <button class="btn btn-danger" onclick="deleteActivity('${activity.id}')">
@@ -3492,6 +3580,365 @@ function resetEditor(){
   QUESTION_COUNTER = 0;
 
   addQuestion();
+}
+
+/* ===============================
+   READ-ONLY PREVIEW + PDF
+================================ */
+
+let PREVIEW_ACTIVITY = null;
+
+function previewActivity(id){
+
+  const activity =
+    ACTIVITIES_CACHE.find(item=>item.id === id);
+
+  if(!activity){
+    alert("Activity not found.");
+    return;
+  }
+
+  PREVIEW_ACTIVITY = activity;
+
+  const questions =
+    Array.isArray(activity.questions)
+      ? activity.questions
+      : [];
+
+  const documentBox =
+    document.getElementById("activityPreviewDocument");
+
+  documentBox.innerHTML = `
+    <div class="preview-cover">
+      <div style="flex:1">
+        <h1>${esc(activity.title || "Activity")}</h1>
+        <p>${esc(activity.description || "Interactive Activity")}</p>
+
+        <div class="preview-course-grid">
+          ${previewInfo("Course",activity.courseName || "Not Specified")}
+          ${previewInfo("Trainer",activity.trainerName || activity.trainer || "Not Specified")}
+          ${previewInfo("Branch",activity.branch || "Not Specified")}
+          ${previewInfo("Department",activity.section || activity.department || "Not Specified")}
+          ${previewInfo("Period",activity.period || "Not Specified")}
+          ${previewInfo("Questions",questions.length)}
+        </div>
+      </div>
+
+      <div style="font-size:54px">📝</div>
+    </div>
+
+    <div>
+      ${
+        questions.length
+          ? questions.map((question,index)=>
+              buildReadOnlyQuestion(question,index)
+            ).join("")
+          : `<div class="empty">No questions found in this activity.</div>`
+      }
+    </div>
+
+    <div class="preview-footer">
+      Prudle Institute — Activity Questions
+    </div>
+  `;
+
+  document
+    .getElementById("activityPreviewModal")
+    .classList.remove("hidden");
+
+  document.body.style.overflow = "hidden";
+
+}
+
+function previewInfo(label,value){
+  return `
+    <div class="preview-info">
+      <span>${esc(label)}</span>
+      <strong>${esc(value)}</strong>
+    </div>
+  `;
+}
+
+function buildReadOnlyQuestion(question,index){
+
+  const type =
+    String(question?.type || "mcq")
+      .toLowerCase();
+
+  const answers =
+    Array.isArray(question?.answers)
+      ? question.answers
+      : [];
+
+  const mediaType =
+    question?.mediaType ||
+    (question?.image ? "image" :
+      question?.video ? "video" :
+      question?.audio ? "audio" : "none");
+
+  const mediaUrl =
+    question?.mediaUrl ||
+    question?.image ||
+    question?.video ||
+    question?.audio ||
+    "";
+
+  let mediaHtml = "";
+
+  if(mediaUrl && mediaType === "image"){
+    mediaHtml = `
+      <img
+        class="preview-question-media"
+        src="${esc(mediaUrl)}"
+        alt="Question media">
+    `;
+  }else if(mediaUrl && mediaType === "video"){
+    mediaHtml = `
+      <div class="preview-option">
+        <i class="fa-solid fa-video"></i>
+        Video attached to this question:<br>
+        <span style="font-size:11px;overflow-wrap:anywhere">${esc(mediaUrl)}</span>
+      </div>
+    `;
+  }else if(mediaUrl && mediaType === "audio"){
+    mediaHtml = `
+      <audio class="preview-audio" controls src="${esc(mediaUrl)}"></audio>
+    `;
+  }
+
+  let answersHtml = "";
+
+  if(type === "match"){
+
+    /*
+      Deliberately separate and shuffle the right column,
+      so Preview never reveals the solved pairs.
+    */
+    const leftItems = answers.map(answer=>answer.text || "");
+    const rightItems = shufflePreviewItems(
+      answers.map(answer=>answer.right || answer.match || "")
+    );
+
+    answersHtml = `
+      <div class="preview-match">
+        <div class="preview-match-column">
+          <h4>Column A</h4>
+          ${leftItems.map((item,i)=>`
+            <div class="preview-match-item">${i + 1}. ${esc(item)}</div>
+          `).join("")}
+        </div>
+
+        <div class="preview-match-column">
+          <h4>Column B</h4>
+          ${rightItems.map((item,i)=>`
+            <div class="preview-match-item">${String.fromCharCode(65+i)}. ${esc(item)}</div>
+          `).join("")}
+        </div>
+      </div>
+    `;
+
+  }else if(type === "order"){
+
+    /* Shuffle sequence items so the correct order is not displayed. */
+    const items = shufflePreviewItems(
+      answers.map(answer=>answer.text || "")
+    );
+
+    answersHtml = `
+      <ol class="preview-order-list">
+        ${items.map(item=>`<li>${esc(item)}</li>`).join("")}
+      </ol>
+    `;
+
+  }else{
+
+    /* MCQ: display all options without marking the correct one. */
+    answersHtml = `
+      <div class="preview-options">
+        ${answers.map((answer,answerIndex)=>`
+          <div class="preview-option">
+            <div>
+              ${String.fromCharCode(65 + answerIndex)}.
+              ${esc(answer.text || "")}
+            </div>
+            ${
+              answer.image
+                ? `<img src="${esc(answer.image)}" alt="Answer image">`
+                : ""
+            }
+          </div>
+        `).join("")}
+      </div>
+    `;
+
+  }
+
+  return `
+    <section class="preview-question">
+      <div class="preview-question-title">
+        ${index + 1}. ${esc(question?.text || "Question")}
+      </div>
+      ${mediaHtml}
+      ${answersHtml}
+    </section>
+  `;
+
+}
+
+function shufflePreviewItems(items){
+
+  const output = [...items];
+
+  for(let i=output.length-1;i>0;i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [output[i],output[j]] = [output[j],output[i]];
+  }
+
+  return output;
+
+}
+
+function closeActivityPreview(){
+
+  document
+    .getElementById("activityPreviewModal")
+    .classList.add("hidden");
+
+  document.body.style.overflow = "";
+  PREVIEW_ACTIVITY = null;
+
+}
+
+async function downloadActivityPreviewPdf(){
+
+  if(!PREVIEW_ACTIVITY){
+    return;
+  }
+
+  const button = event?.currentTarget;
+  const originalHtml = button?.innerHTML || "";
+
+  try{
+
+    if(button){
+      button.disabled = true;
+      button.innerHTML =
+        `<i class="fa-solid fa-spinner fa-spin"></i> Creating PDF...`;
+    }
+
+    const element =
+      document.getElementById("activityPreviewDocument");
+
+    const canvas =
+      await html2canvas(element,{
+        scale:2,
+        useCORS:true,
+        allowTaint:false,
+        backgroundColor:"#ffffff",
+        logging:false,
+        windowWidth:1000
+      });
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF("p","mm","a4");
+
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const margin = 8;
+    const printableWidth = pageWidth - (margin * 2);
+    const printableHeight = pageHeight - (margin * 2);
+
+    const imageWidth = printableWidth;
+    const imageHeight =
+      canvas.height * imageWidth / canvas.width;
+
+    const pageCanvasHeight =
+      Math.floor(
+        canvas.width * printableHeight / imageWidth
+      );
+
+    let sourceY = 0;
+    let pageIndex = 0;
+
+    while(sourceY < canvas.height){
+
+      const sliceHeight =
+        Math.min(
+          pageCanvasHeight,
+          canvas.height - sourceY
+        );
+
+      const pageCanvas =
+        document.createElement("canvas");
+
+      pageCanvas.width = canvas.width;
+      pageCanvas.height = sliceHeight;
+
+      const context = pageCanvas.getContext("2d");
+
+      context.fillStyle = "#ffffff";
+      context.fillRect(
+        0,0,
+        pageCanvas.width,
+        pageCanvas.height
+      );
+
+      context.drawImage(
+        canvas,
+        0,sourceY,
+        canvas.width,sliceHeight,
+        0,0,
+        canvas.width,sliceHeight
+      );
+
+      if(pageIndex > 0){
+        pdf.addPage();
+      }
+
+      const renderedHeight =
+        sliceHeight * imageWidth / canvas.width;
+
+      pdf.addImage(
+        pageCanvas.toDataURL("image/jpeg",0.95),
+        "JPEG",
+        margin,
+        margin,
+        imageWidth,
+        renderedHeight,
+        undefined,
+        "FAST"
+      );
+
+      sourceY += sliceHeight;
+      pageIndex++;
+
+    }
+
+    const safeTitle =
+      String(PREVIEW_ACTIVITY.title || "activity")
+        .replace(/[^a-zA-Z0-9\u0600-\u06FF_-]+/g,"-")
+        .replace(/^-+|-+$/g,"") ||
+      "activity";
+
+    pdf.save(`${safeTitle}-questions.pdf`);
+
+  }catch(error){
+
+    console.error(error);
+    alert(
+      error.message ||
+      "Unable to create the PDF."
+    );
+
+  }finally{
+
+    if(button){
+      button.disabled = false;
+      button.innerHTML = originalHtml;
+    }
+
+  }
+
 }
 
 function playActivityFromAdmin(id){
