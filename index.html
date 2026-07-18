@@ -1058,46 +1058,66 @@ const db = firebase.firestore();
 const LOGIN_URL =
   "https://www.prudle-education.com/log-in-out";
 
-(function () {
+function checkLogin(){
 
-  function checkLogin() {
+  const username =
+    localStorage.getItem("username");
 
-    const username =
-      localStorage.getItem("username");
+  const role =
+    localStorage.getItem("role");
 
-    const role =
-      localStorage.getItem("role");
+  const loginDate =
+    localStorage.getItem("loginDate");
 
-    const loginDate =
-      localStorage.getItem("loginDate");
+  const today =
+    new Date().toDateString();
 
-    const today =
-      new Date().toDateString();
+  if(
+    !username ||
+    !role ||
+    loginDate !== today
+  ){
 
-    if (
-      !username ||
-      !role ||
-      loginDate !== today
-    ) {
+    localStorage.clear();
+    sessionStorage.clear();
 
-      localStorage.clear();
-      sessionStorage.clear();
+    location.replace(LOGIN_URL);
 
-      location.replace(LOGIN_URL);
-    }
+    return false;
   }
 
+  return true;
+}
+
+checkLogin();
+
+/* عند الرجوع */
+window.addEventListener("pageshow",function(){
   checkLogin();
+});
 
-  window.addEventListener("pageshow", function () {
+/* عند استعادة الصفحة من الكاش */
+window.addEventListener("popstate",function(){
+  checkLogin();
+});
+
+/* عند عودة الصفحة للواجهة */
+document.addEventListener("visibilitychange",function(){
+
+  if(!document.hidden){
     checkLogin();
-  });
+  }
 
-})();
+});
+
+/* منع حفظ الصفحة في Back Cache */
+window.addEventListener("unload",function(){});
 function logout(){
 
   localStorage.clear();
   sessionStorage.clear();
+
+  history.pushState(null,null,location.href);
 
   location.replace(
     "https://www.prudle-education.com/log-in-out"
