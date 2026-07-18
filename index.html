@@ -2044,6 +2044,7 @@ function collectQuestions(){
         text:answerBox.querySelector(".a-text").value.trim(),
         right:answerBox.querySelector(".a-right")?.value.trim() || "",
         image:answerBox.querySelector(".a-image").value.trim(),
+        mediaPrompt:answerBox.querySelector(".a-text").value.trim(),
         correct:answerBox.querySelector(".a-correct").checked
       });
     });
@@ -2328,7 +2329,17 @@ function normalizeAiQuestion(question,index,defaultQuestionType,defaultMediaType
         ""
       ).trim(),
 
-      image:String(answer?.image ?? answer?.imageUrl ?? "").trim(),
+      image:String(answer?.image ?? answer?.imageUrl ?? answer?.url ?? "").trim(),
+
+      mediaPrompt:String(
+        answer?.mediaPrompt ??
+        answer?.imagePrompt ??
+        answer?.visualPrompt ??
+        answer?.prompt ??
+        answer?.text ??
+        answer?.label ??
+        ""
+      ).trim(),
 
       correct:
         type === "mcq" &&
@@ -2373,6 +2384,26 @@ function normalizeAiQuestion(question,index,defaultQuestionType,defaultMediaType
       defaultMediaUrl ||
       ""
     ).trim();
+
+  if(type === "random"){
+    mediaType = "none";
+
+    answers.forEach((answer,answerIndex)=>{
+      answer.correct = false;
+      answer.right = "";
+
+      if(!answer.mediaPrompt){
+        answer.mediaPrompt =
+          answer.text ||
+          `Educational random image item ${answerIndex + 1} for: ${
+            question.text ||
+            question.question ||
+            question.prompt ||
+            "the activity"
+          }`;
+      }
+    });
+  }
 
   return {
     type,
@@ -2489,7 +2520,160 @@ async function waitForVideo(operationName,questionNumber){
   );
 }
 
+async function generateRandomQuestionItemImages(question,index,settings){
+
+  const items =
+    Array.isArray(question.answers)
+      ? question.answers
+      : [];
+
+  if(items.length < 2){
+    throw new Error(
+      `Random question ${index + 1} requires at least two image items.`
+    );
+  }
+
+  const preparedItems =
+    items.map((item,itemIndex)=>({
+      text:String(item?.text || "").trim(),
+
+      mediaPrompt:String(
+        item?.mediaPrompt ||
+        item?.imagePrompt ||
+        item?.prompt ||
+        item?.text ||
+        `Educational image item ${itemIndex + 1} for: ${question.text}`
+      ).trim(),
+
+      image:String(
+        item?.image ||
+        item?.imageUrl ||
+        item?.url ||
+        ""
+      ).trim(),
+
+      correct:false
+    }));
+
+  /*
+    Generate only the missing images.
+    Existing image URLs are preserved.
+  */
+  const missingIndexes = [];
+
+  preparedItems.forEach((item,itemIndex)=>{
+    if(!item.image){
+      missingIndexes.push(itemIndex);
+    }
+  });
+
+  if(!missingIndexes.length){
+    return {
+      ...question,
+      type:"random",
+      mediaType:"none",
+      mediaUrl:"",
+      image:"",
+      video:"",
+      audio:"",
+      answers:preparedItems
+    };
+  }
+
+  setAiProgress(
+    `Creating random image set for question ${index + 1}...`,
+    null
+  );
+
+  const result =
+    await postToAiWorker({
+      task:"generate_random_question_images",
+
+      questionText:
+        question.text ||
+        "Look at the selected image and answer the question.",
+
+      imageStyle:
+        settings.imageStyle,
+
+      answers:
+        missingIndexes.map(itemIndex=>({
+          text:
+            preparedItems[itemIndex].text,
+
+          mediaPrompt:
+            preparedItems[itemIndex].mediaPrompt
+        }))
+    });
+
+  const generatedItems =
+    Array.isArray(result?.answers)
+      ? result.answers
+      : Array.isArray(result?.items)
+        ? result.items
+        : Array.isArray(result?.images)
+          ? result.images
+          : [];
+
+  if(
+    generatedItems.length !==
+    missingIndexes.length
+  ){
+    throw new Error(
+      `The AI returned ${generatedItems.length} images for random question ${index + 1}, but ${missingIndexes.length} were required.`
+    );
+  }
+
+  generatedItems.forEach((generated,generatedIndex)=>{
+    const targetIndex =
+      missingIndexes[generatedIndex];
+
+    const url =
+      typeof generated === "string"
+        ? generated
+        : String(
+            generated?.image ||
+            generated?.imageUrl ||
+            generated?.url ||
+            ""
+          ).trim();
+
+    if(!url){
+      throw new Error(
+        `Image ${generatedIndex + 1} was not returned for random question ${index + 1}.`
+      );
+    }
+
+    preparedItems[targetIndex].image =
+      url;
+  });
+
+  return {
+    ...question,
+    type:"random",
+    mediaType:"none",
+    mediaUrl:"",
+    image:"",
+    video:"",
+    audio:"",
+    answers:preparedItems
+  };
+}
+
 async function generateOneQuestionMedia(question,index,settings){
+
+  /*
+    Random Image Questions generate one image for each answer item,
+    not one media file for the whole question.
+  */
+  if(question.type === "random"){
+    return await generateRandomQuestionItemImages(
+      question,
+      index,
+      settings
+    );
+  }
+
   const mediaType = question.mediaType || "none";
 
   if(mediaType === "none"){
@@ -2552,7 +2736,9 @@ async function generateMediaForQuestions(questions,settings){
     );
 
     setAiProgress(
-      `Creating ${question.mediaType || "media"} for question ${index + 1} of ${questions.length}...`,
+      question.type === "random"
+        ? `Creating random images for question ${index + 1} of ${questions.length}...`
+        : `Creating ${question.mediaType || "media"} for question ${index + 1} of ${questions.length}...`,
       percent
     );
 
@@ -3128,7 +3314,7 @@ Return valid JSON only in this exact structure:
 {
   "questions": [
     {
-      "type": "mcq|match|order",
+      "type": "mcq|match|order|random",
       "text": "Question text or instructions",
       "mediaType": "none|image|video|audio",
       "mediaUrl": "",
@@ -3138,6 +3324,7 @@ Return valid JSON only in this exact structure:
         {
           "text": "Left item, answer, or sequence item",
           "right": "Matching pair only; otherwise empty",
+          "mediaPrompt": "Detailed image prompt for random items; otherwise empty",
           "image": "",
           "correct": true
         }
@@ -3151,7 +3338,7 @@ QUESTION RULES:
 - Return exactly ${count} questions.
 - Follow the requested question type.
 - If the requested type is "mixed", use a balanced mix of:
-  mcq, match, and order.
+  mcq, match, order, and random.
 
 - For MCQ:
   Create exactly 4 choices.
@@ -3169,6 +3356,17 @@ QUESTION RULES:
   Return the items in their correct order.
   Put each sequence item in "text".
   Set "correct" to false.
+
+- For Random Image Question:
+  Use type "random".
+  Create between 4 and 8 different visual items.
+  Put an optional short label in each answer "text".
+  Put a detailed image-generation description in each answer "mediaPrompt".
+  Keep each answer "image" empty because the backend generates it.
+  Set "right" to an empty string.
+  Set "correct" to false for every item.
+  Do not create one correct option because the trainer grades the spoken answer.
+  Set the question mediaType to "none".
 
 MEDIA RULES:
 
@@ -3249,13 +3447,17 @@ sourceTextLength:
         let defaultMediaType = requestedMediaType;
 
         if(defaultQuestionType === "mixed"){
-          const questionTypes = ["mcq","match","order"];
+          const questionTypes = ["mcq","match","order","random"];
           defaultQuestionType = questionTypes[index % questionTypes.length];
         }
 
         if(defaultMediaType === "mixed"){
           const mediaTypes = ["image","video","audio","none"];
           defaultMediaType = mediaTypes[index % mediaTypes.length];
+        }
+
+        if(defaultQuestionType === "random"){
+          defaultMediaType = "none";
         }
 
         return normalizeAiQuestion(
@@ -3274,7 +3476,18 @@ sourceTextLength:
 
     let finalQuestions = normalized;
 
-    if(generateMedia && requestedMediaType !== "none"){
+    const hasRandomQuestions =
+      normalized.some(
+        question=>question.type === "random"
+      );
+
+    if(
+      generateMedia &&
+      (
+        requestedMediaType !== "none" ||
+        hasRandomQuestions
+      )
+    ){
       finalQuestions = await generateMediaForQuestions(
         normalized,
         {
