@@ -465,15 +465,37 @@ button{cursor:pointer}
     </div>
   </div>
 
-  <div class="nav-actions">
-    <button class="nav-btn active" id="adminTab" onclick="showSection('admin')">
-      <i class="fa-solid fa-gears"></i> Activity Setup
-    </button>
+<div class="nav-actions">
 
-    <button class="nav-btn" id="studentTab" onclick="showSection('student')">
-      <i class="fa-solid fa-gamepad"></i> Play Activity
-    </button>
-  </div>
+  <button
+    class="nav-btn active"
+    id="adminTab"
+    onclick="showSection('admin')">
+    <i class="fa-solid fa-gears"></i>
+    Activity Setup
+  </button>
+
+  <button
+    class="nav-btn"
+    id="studentTab"
+    onclick="showSection('student')">
+    <i class="fa-solid fa-gamepad"></i>
+    Play Activity
+  </button>
+
+  <button
+    class="nav-btn"
+    onclick="logout()"
+    style="
+      background:#e74c3c;
+      border-color:#e74c3c;
+      color:#fff;
+    ">
+    <i class="fa-solid fa-right-from-bracket"></i>
+    Logout
+  </button>
+
+</div>
 </header>
 
 <main class="container">
@@ -1029,7 +1051,18 @@ firebase.initializeApp({
 });
 
 const db = firebase.firestore();
+function logout(){
 
+  localStorage.removeItem("username");
+  localStorage.removeItem("role");
+  localStorage.removeItem("loginDate");
+
+  sessionStorage.clear();
+
+  window.location.href =
+    "https://www.prudle-education.com/log-in-out";
+
+}
 const ACTIVITIES_COLLECTION = "FunActivities";
 const COURSES_COLLECTION = "Courses";
 const RESULTS_COLLECTION = "FunActivityResults";
