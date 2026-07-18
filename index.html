@@ -1051,16 +1051,57 @@ firebase.initializeApp({
 });
 
 const db = firebase.firestore();
+/* ===============================
+   Login Protection
+=============================== */
+
+const LOGIN_URL =
+  "https://www.prudle-education.com/log-in-out";
+
+(function () {
+
+  function checkLogin() {
+
+    const username =
+      localStorage.getItem("username");
+
+    const role =
+      localStorage.getItem("role");
+
+    const loginDate =
+      localStorage.getItem("loginDate");
+
+    const today =
+      new Date().toDateString();
+
+    if (
+      !username ||
+      !role ||
+      loginDate !== today
+    ) {
+
+      localStorage.clear();
+      sessionStorage.clear();
+
+      location.replace(LOGIN_URL);
+    }
+  }
+
+  checkLogin();
+
+  window.addEventListener("pageshow", function () {
+    checkLogin();
+  });
+
+})();
 function logout(){
 
-  localStorage.removeItem("username");
-  localStorage.removeItem("role");
-  localStorage.removeItem("loginDate");
-
+  localStorage.clear();
   sessionStorage.clear();
 
-  window.location.href =
-    "https://www.prudle-education.com/log-in-out";
+  location.replace(
+    "https://www.prudle-education.com/log-in-out"
+  );
 
 }
 const ACTIVITIES_COLLECTION = "FunActivities";
