@@ -2274,22 +2274,6 @@ function normalizeAiQuestion(question,index,defaultQuestionType,defaultMediaType
     "mcq"
   ).trim().toLowerCase();
 
-  /*
-    Respect the type selected by the user.
-
-    A selected MCQ, Match, Order, or Random type is enforced
-    for every generated question.
-
-    Mixed keeps the distributed mixed types.
-  */
-  if(
-    defaultQuestionType &&
-    defaultQuestionType !== "mixed" &&
-    ["mcq","match","order","random"].includes(defaultQuestionType)
-  ){
-    type = defaultQuestionType;
-  }
-
   if(type === "multiple-choice" || type === "multiple_choice"){
     type = "mcq";
   }
@@ -3476,52 +3460,13 @@ sourceTextLength:
           defaultMediaType = "none";
         }
 
-        const normalizedQuestion =
-          normalizeAiQuestion(
-            question,
-            index,
-            defaultQuestionType,
-            defaultMediaType,
-            mediaUrl
-          );
-
-        /*
-          Final safeguard:
-          the generated type must match the user's selected type.
-        */
-        if(
-          requestedQuestionType !== "mixed" &&
-          ["mcq","match","order","random"].includes(requestedQuestionType)
-        ){
-          normalizedQuestion.type =
-            requestedQuestionType;
-        }
-
-        if(requestedQuestionType === "random"){
-          normalizedQuestion.mediaType = "none";
-          normalizedQuestion.mediaUrl = "";
-          normalizedQuestion.image = "";
-          normalizedQuestion.video = "";
-          normalizedQuestion.audio = "";
-
-          normalizedQuestion.answers =
-            (normalizedQuestion.answers || [])
-              .map((answer,answerIndex)=>({
-                ...answer,
-                right:"",
-                correct:false,
-                mediaPrompt:
-                  answer.mediaPrompt ||
-                  answer.text ||
-                  `Educational random image item ${answerIndex + 1} for: ${
-                    normalizedQuestion.text ||
-                    topic ||
-                    "the activity"
-                  }`
-              }));
-        }
-
-        return normalizedQuestion;
+        return normalizeAiQuestion(
+          question,
+          index,
+          defaultQuestionType,
+          defaultMediaType,
+          mediaUrl
+        );
       })
       .filter(question=>question.text);
 
