@@ -1055,10 +1055,29 @@ const db = firebase.firestore();
    Login Protection
 =============================== */
 
+/* =====================================
+   LOGIN AND LOGOUT PROTECTION
+===================================== */
+
 const LOGIN_URL =
   "https://www.prudle-education.com/log-in-out";
 
+let isRedirecting = false;
+
+function clearLoginData(){
+
+  localStorage.removeItem("username");
+  localStorage.removeItem("role");
+  localStorage.removeItem("loginDate");
+
+  sessionStorage.clear();
+}
+
 function checkLogin(){
+
+  if(isRedirecting){
+    return false;
+  }
 
   const username =
     localStorage.getItem("username");
@@ -1072,16 +1091,21 @@ function checkLogin(){
   const today =
     new Date().toDateString();
 
+  const validRole =
+    role === "admin" ||
+    role === "trainer";
+
   if(
     !username ||
-    !role ||
+    !validRole ||
     loginDate !== today
   ){
 
-    localStorage.clear();
-    sessionStorage.clear();
+    isRedirecting = true;
 
-    location.replace(LOGIN_URL);
+    clearLoginData();
+
+    window.location.replace(LOGIN_URL);
 
     return false;
   }
@@ -1089,40 +1113,63 @@ function checkLogin(){
   return true;
 }
 
+/* التحقق عند فتح الصفحة */
 checkLogin();
 
-/* عند الرجوع */
+/* التحقق عند الرجوع Back */
 window.addEventListener("pageshow",function(){
+
   checkLogin();
+
 });
 
-/* عند استعادة الصفحة من الكاش */
-window.addEventListener("popstate",function(){
-  checkLogin();
-});
-
-/* عند عودة الصفحة للواجهة */
+/* التحقق عند الرجوع للصفحة أو التبويب */
 document.addEventListener("visibilitychange",function(){
 
-  if(!document.hidden){
+  if(document.visibilityState === "visible"){
     checkLogin();
   }
 
 });
 
-/* منع حفظ الصفحة في Back Cache */
-window.addEventListener("unload",function(){});
+/* التحقق عند استعادة التركيز */
+window.addEventListener("focus",function(){
+
+  checkLogin();
+
+});
+
 function logout(){
 
-  localStorage.clear();
-  sessionStorage.clear();
+  if(isRedirecting){
+    return;
+  }
 
-  history.pushState(null,null,location.href);
+  isRedirecting = true;
 
-  location.replace(
-    "https://www.prudle-education.com/log-in-out"
-  );
+  clearLoginData();
 
+  /*
+    إذا كانت الصفحة داخل iframe:
+    إبلاغ الصفحة الرئيسية بتسجيل الخروج.
+  */
+  if(window.self !== window.top){
+
+    window.parent.postMessage(
+      "PRUDLE_LOGOUT",
+      "*"
+    );
+
+    setTimeout(function(){
+
+      window.location.replace(LOGIN_URL);
+
+    },300);
+
+    return;
+  }
+
+  window.location.replace(LOGIN_URL);
 }
 const ACTIVITIES_COLLECTION = "FunActivities";
 const COURSES_COLLECTION = "Courses";
