@@ -547,6 +547,27 @@ button{cursor:pointer}
   to{transform:scale(1.015);box-shadow:0 18px 38px rgba(244,185,66,.28)}
 }
 
+/* =====================================
+   WHEEL OF FORTUNE QUESTION
+===================================== */
+.question-box[data-type="wheel"] .correct-row{display:none}
+.question-box[data-type="wheel"] .match-right-field{display:block}
+.question-box[data-type="wheel"] .answer-image-field{display:block}
+.question-box[data-type="wheel"] .answers-admin{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.wheel-game{text-align:center}
+.wheel-wrap{position:relative;width:min(520px,92vw);aspect-ratio:1;margin:0 auto 18px}
+.wheel-pointer{position:absolute;left:50%;top:-8px;transform:translateX(-50%);z-index:5;font-size:48px;color:var(--red);filter:drop-shadow(0 4px 4px rgba(0,0,0,.22))}
+.wheel-disc{width:100%;height:100%;border-radius:50%;border:10px solid #fff;box-shadow:0 18px 45px rgba(22,68,120,.22);position:relative;overflow:hidden;transition:transform 4.4s cubic-bezier(.12,.72,.12,1)}
+.wheel-label{position:absolute;left:50%;top:50%;width:42%;transform-origin:0 0;text-align:right;font-size:14px;font-weight:900;color:#fff;text-shadow:0 2px 4px rgba(0,0,0,.45);padding-right:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wheel-center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:82px;height:82px;border-radius:50%;background:#fff;border:7px solid var(--gold);display:grid;place-items:center;font-size:35px;z-index:3;box-shadow:0 5px 16px rgba(0,0,0,.2)}
+.wheel-result-card{margin:16px auto 0;max-width:720px;border:2px solid var(--gold);border-radius:18px;padding:17px;background:linear-gradient(135deg,#fff8dd,#fff)}
+.wheel-result-category{font-size:22px;font-weight:900;color:var(--blue)}
+.wheel-result-question{font-size:20px;font-weight:800;line-height:1.7;margin-top:8px}
+.wheel-result-card img{max-width:100%;max-height:280px;object-fit:contain;border-radius:14px;margin-top:12px}
+.wheel-controls{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:15px}
+.wheel-correct{background:var(--green);color:#fff}.wheel-wrong{background:var(--red);color:#fff}
+@media(max-width:600px){.wheel-label{font-size:11px}.wheel-pointer{font-size:40px}}
+
 </style>
 </head>
 
@@ -780,6 +801,7 @@ button{cursor:pointer}
           <option value="match">Match</option>
           <option value="order">Order / Sequence</option>
           <option value="random">Random Image Question</option>
+          <option value="wheel">🎡 Wheel of Fortune</option>
           <option value="mixed">Mixed Types</option>
         </select>
       </div>
@@ -1224,6 +1246,11 @@ let RANDOM_STOP_TIMEOUT = null;
 let RANDOM_SELECTED_INDEX = -1;
 let RANDOM_IS_SPINNING = false;
 
+let WHEEL_IS_SPINNING = false;
+let WHEEL_SELECTED_INDEX = -1;
+let WHEEL_ROTATION = 0;
+let WHEEL_POINTS_MULTIPLIER = 1;
+
 /* =====================================
    ANSWER SOUNDS
 ===================================== */
@@ -1611,6 +1638,7 @@ function toast(message){
 function showSection(section){
 
   clearRandomQuestionTimers();
+  clearWheelState();
 
   const admin =
     section === "admin";
@@ -1813,6 +1841,7 @@ function addQuestion(data = null){
           <option value="match" ${q.type === "match" ? "selected" : ""}>Match</option>
           <option value="order" ${q.type === "order" ? "selected" : ""}>Order / Sequence</option>
           <option value="random" ${q.type === "random" ? "selected" : ""}>Random Image Question</option>
+          <option value="wheel" ${q.type === "wheel" ? "selected" : ""}>🎡 Wheel of Fortune</option>
         </select>
         <div class="question-type-note q-type-note"></div>
       </div>
@@ -1931,6 +1960,19 @@ function updateQuestionType(questionBox){
     note.textContent = "Each item contains a left value and its matching right value.";
     labels.forEach(label=>label.textContent = "Left Item");
     if(addButton) addButton.innerHTML = '<i class="fa-solid fa-plus"></i> Add Matching Pair';
+  }else if(type === "wheel"){
+    answersHtml = `
+      <div class="preview-options">
+        ${answers.map((answer,answerIndex)=>`
+          <div class="preview-option">
+            <strong>🎡 ${esc(answer.text || `Section ${answerIndex + 1}`)}</strong>
+            <div style="margin-top:6px">${esc(answer.right || "")}</div>
+            ${answer.image ? `<img src="${esc(answer.image)}" alt="Wheel media">` : ""}
+          </div>
+        `).join("")}
+      </div>
+    `;
+
   }else if(type === "order"){
     note.textContent = "Enter the items in the correct order. They will be shuffled for the student.";
     labels.forEach(label=>label.textContent = "Sequence Item");
@@ -1939,6 +1981,10 @@ function updateQuestionType(questionBox){
     note.textContent = "Add several images. They will change quickly and stop randomly. Text under each image is optional.";
     labels.forEach(label=>label.textContent = "Optional Text");
     if(addButton) addButton.innerHTML = '<i class="fa-solid fa-image"></i> Add Random Image';
+  }else if(type === "wheel"){
+    note.textContent = "Each item is one wheel section. Write the category in the first field and its challenge/question in Matching Pair. Image is optional. Use Double Points as a category to award 2 points.";
+    labels.forEach(label=>label.textContent = "Wheel Category");
+    if(addButton) addButton.innerHTML = '<i class="fa-solid fa-circle-notch"></i> Add Wheel Section';
   }else{
     note.textContent = "Choose one correct answer. Answer images are optional.";
     labels.forEach(label=>label.textContent = "Answer / Item");
@@ -1951,7 +1997,7 @@ function addAnswer(button){
   const count = questionBox.querySelectorAll(".answer-admin").length;
 
   const type = questionBox.querySelector(".q-type")?.value || "mcq";
-  const maximum = type === "random" ? 8 : 6;
+  const maximum = type === "random" ? 20 : type === "wheel" ? 12 : 6;
 
   if(count >= maximum){
     alert(`A maximum of ${maximum} items is allowed for this question.`);
@@ -1969,10 +2015,10 @@ function removeAnswer(button){
   const questionBox = button.closest(".question-box");
   const items = questionBox.querySelectorAll(".answer-admin");
 
-if(items.length <= 2){
-  alert("The question must contain at least two answers.");
-  return;
-}
+  if(items.length <= 2){
+    alert("The question must contain at least two answers.");
+    return;
+  }
 
   const item = button.closest(".answer-admin");
   const wasCorrect = item.querySelector(".a-correct").checked;
@@ -2049,7 +2095,7 @@ function collectQuestions(){
       });
     });
 
-    if(!text && type !== "random"){
+    if(!text && type !== "random" && type !== "wheel"){
       throw new Error(`Enter the text or instructions for question ${index + 1}.`);
     }
 
@@ -2079,6 +2125,16 @@ function collectQuestions(){
       }
     }
 
+    if(type === "wheel"){
+      if(answers.length < 2){
+        throw new Error(`Wheel question ${index + 1} requires at least two sections.`);
+      }
+      if(answers.some(answer=>!answer.text || !answer.right)){
+        throw new Error(`Complete the category and challenge for every wheel section in question ${index + 1}.`);
+      }
+      answers.forEach(answer=>{ answer.correct = false; });
+    }
+
     if(type === "random"){
       if(answers.length < 2){
         throw new Error(`Random question ${index + 1} requires at least two images.`);
@@ -2091,9 +2147,9 @@ function collectQuestions(){
 
     questions.push({
       type,
-      text:type === "random" && !text
+      text:(type === "random" && !text)
         ? "Look at the selected image and answer the question."
-        : text,
+        : (type === "wheel" && !text ? "Spin the wheel and complete the selected challenge." : text),
       mediaType,
       mediaUrl,
       image:mediaType === "image" ? mediaUrl : "",
@@ -2285,7 +2341,7 @@ function normalizeAiQuestion(question,index,defaultQuestionType,defaultMediaType
   if(
     defaultQuestionType &&
     defaultQuestionType !== "mixed" &&
-    ["mcq","match","order","random"].includes(defaultQuestionType)
+    ["mcq","match","order","random","wheel"].includes(defaultQuestionType)
   ){
     type = defaultQuestionType;
   }
@@ -2294,7 +2350,7 @@ function normalizeAiQuestion(question,index,defaultQuestionType,defaultMediaType
     type = "mcq";
   }
 
-  if(!["mcq","match","order","random"].includes(type)){
+  if(!["mcq","match","order","random","wheel"].includes(type)){
     type = "mcq";
   }
 
@@ -2400,6 +2456,19 @@ function normalizeAiQuestion(question,index,defaultQuestionType,defaultMediaType
       defaultMediaUrl ||
       ""
     ).trim();
+
+  if(type === "wheel"){
+    mediaType = "none";
+    answers.forEach((answer,answerIndex)=>{
+      answer.correct = false;
+      if(!answer.text){
+        answer.text = ["Grammar","Vocabulary","Speaking","Reading","Picture","Video","Listening","Double Points"][answerIndex % 8];
+      }
+      if(!answer.right){
+        answer.right = `Complete the ${answer.text} challenge.`;
+      }
+    });
+  }
 
   if(type === "random"){
     mediaType = "none";
@@ -2621,31 +2690,7 @@ async function generateRandomQuestionItemImages(question,index,settings){
             preparedItems[itemIndex].mediaPrompt
         }))
     });
-if(
-  result?.status ===
-    "completed_with_errors"
-){
 
-  const failedItem =
-    Array.isArray(
-      result?.items
-    )
-      ? result.items.find(
-          item =>
-            item
-              ?.generationStatus ===
-              "failed"
-        )
-      : null;
-
-  throw new Error(
-    failedItem
-      ?.generationError ||
-    result?.error ||
-    "One or more random images could not be generated."
-  );
-
-}
   const generatedItems =
     Array.isArray(result?.answers)
       ? result.answers
@@ -2664,89 +2709,29 @@ if(
     );
   }
 
-generatedItems.forEach(
-  (
-    generated,
-    generatedIndex
-  ) => {
-
+  generatedItems.forEach((generated,generatedIndex)=>{
     const targetIndex =
-      missingIndexes[
-        generatedIndex
-      ];
+      missingIndexes[generatedIndex];
 
     const url =
-      typeof generated ===
-        "string"
-        ? generated.trim()
+      typeof generated === "string"
+        ? generated
         : String(
             generated?.image ||
             generated?.imageUrl ||
             generated?.url ||
             ""
-          )
-          .trim();
+          ).trim();
 
-    const generationStatus =
-      String(
-        generated
-          ?.generationStatus ||
-        ""
-      )
-      .trim()
-      .toLowerCase();
-
-    const generationError =
-      String(
-        generated
-          ?.generationError ||
-        generated
-          ?.error ||
-        generated
-          ?.message ||
-        ""
-      )
-      .trim();
-
-    /*
-      إذا أعاد الـWorker فشلًا للصورة،
-      نعرض السبب الحقيقي بدل الرسالة العامة.
-    */
-
-    if(
-      generationStatus ===
-        "failed" ||
-      !url
-    ){
-
-      console.error(
-        "Random image generation failed:",
-        {
-          questionNumber:
-            index + 1,
-
-          imageNumber:
-            generatedIndex + 1,
-
-          generated:
-            generated
-        }
-      );
-
+    if(!url){
       throw new Error(
-        generationError ||
         `Image ${generatedIndex + 1} was not returned for random question ${index + 1}.`
       );
-
     }
 
-    preparedItems[
-      targetIndex
-    ].image =
+    preparedItems[targetIndex].image =
       url;
-
-  }
-);
+  });
 
   return {
     ...question,
@@ -3414,7 +3399,7 @@ Return valid JSON only in this exact structure:
 {
   "questions": [
     {
-      "type": "mcq|match|order|random",
+      "type": "mcq|match|order|random|wheel",
       "text": "Question text or instructions",
       "mediaType": "none|image|video|audio",
       "mediaUrl": "",
@@ -3438,7 +3423,7 @@ QUESTION RULES:
 - Return exactly ${count} questions.
 - Follow the requested question type.
 - If the requested type is "mixed", use a balanced mix of:
-  mcq, match, order, and random.
+  mcq, match, order, random, and wheel.
 
 - For MCQ:
   Create exactly 4 choices.
@@ -3467,6 +3452,17 @@ QUESTION RULES:
   Set "correct" to false for every item.
   Do not create one correct option because the trainer grades the spoken answer.
   Set the question mediaType to "none".
+
+- For Wheel of Fortune:
+  Use type "wheel".
+  Create exactly 8 wheel sections in this order: Grammar, Vocabulary, Speaking, Reading, Picture, Video, Listening, Double Points.
+  Put the wheel category in each answer "text".
+  Put a clear category-appropriate challenge or question in each answer "right".
+  For Picture, write a visual identification challenge and add a detailed image prompt in "mediaPrompt".
+  For Video and Listening, write a practical prompt that can be used with teacher-provided or generated media.
+  For Double Points, create a challenging bonus question.
+  Set "correct" to false for every wheel section because the trainer grades the spoken answer.
+  Set question mediaType to "none".
 
 MEDIA RULES:
 
@@ -3547,7 +3543,7 @@ sourceTextLength:
         let defaultMediaType = requestedMediaType;
 
         if(defaultQuestionType === "mixed"){
-          const questionTypes = ["mcq","match","order","random"];
+          const questionTypes = ["mcq","match","order","random","wheel"];
           defaultQuestionType = questionTypes[index % questionTypes.length];
         }
 
@@ -3575,7 +3571,7 @@ sourceTextLength:
         */
         if(
           requestedQuestionType !== "mixed" &&
-          ["mcq","match","order","random"].includes(requestedQuestionType)
+          ["mcq","match","order","random","wheel"].includes(requestedQuestionType)
         ){
           normalizedQuestion.type =
             requestedQuestionType;
@@ -4614,6 +4610,7 @@ startActivityTimer();
 
 function renderStudentQuestion(){
   clearRandomQuestionTimers();
+  clearWheelState();
   ANSWER_LOCKED = false;
 document
   .getElementById("nextQuestionArea")
@@ -4693,6 +4690,11 @@ document
 
   if(type === "random"){
     renderRandomImageQuestion(question,answersBox);
+    return;
+  }
+
+  if(type === "wheel"){
+    renderWheelQuestion(question,answersBox);
     return;
   }
 
@@ -4953,6 +4955,118 @@ function gradeRandomAnswer(isCorrect){
   document.getElementById("scorePill").textContent = `⭐ ${CURRENT_SCORE}`;
   showNextQuestionButton();
 }
+
+
+function clearWheelState(){
+  WHEEL_IS_SPINNING = false;
+  WHEEL_SELECTED_INDEX = -1;
+  WHEEL_POINTS_MULTIPLIER = 1;
+}
+
+function getWheelColors(count){
+  const colors=["#164478","#f4b942","#17a673","#e74c3c","#7f5af0","#00a8cc","#f08a24","#34495e","#c0392b","#16a085","#8e44ad","#2980b9"];
+  return Array.from({length:count},(_,i)=>colors[i%colors.length]);
+}
+
+function renderWheelQuestion(question,answersBox){
+  const items=Array.isArray(question.answers)?question.answers.filter(item=>String(item?.text||"").trim()):[];
+  answersBox.className="wheel-game";
+  WHEEL_SELECTED_INDEX=-1;
+  WHEEL_IS_SPINNING=false;
+  WHEEL_POINTS_MULTIPLIER=1;
+  if(items.length<2){
+    answersBox.innerHTML='<div class="feedback bad">This wheel requires at least two sections.</div>';
+    return;
+  }
+  const colors=getWheelColors(items.length);
+  const step=360/items.length;
+  const gradient=items.map((_,i)=>`${colors[i]} ${i*step}deg ${(i+1)*step}deg`).join(",");
+  answersBox.innerHTML=`
+    <div class="wheel-wrap">
+      <div class="wheel-pointer">▼</div>
+      <div id="wheelDisc" class="wheel-disc" style="background:conic-gradient(${gradient})">
+        ${items.map((item,i)=>`<div class="wheel-label" style="transform:rotate(${i*step+step/2}deg) translateY(-50%)">${esc(item.text)}</div>`).join("")}
+        <div class="wheel-center">🎡</div>
+      </div>
+    </div>
+    <div class="wheel-controls">
+      <button id="wheelSpinBtn" class="btn btn-gold" type="button" onclick="spinWheel()"><i class="fa-solid fa-rotate"></i> Spin Wheel</button>
+      <button id="wheelCorrectBtn" class="btn wheel-correct hidden" type="button" onclick="gradeWheelAnswer(true)"><i class="fa-solid fa-check"></i> Correct</button>
+      <button id="wheelWrongBtn" class="btn wheel-wrong hidden" type="button" onclick="gradeWheelAnswer(false)"><i class="fa-solid fa-xmark"></i> Wrong</button>
+    </div>
+    <div id="wheelResult" class="wheel-result-card hidden"></div>`;
+}
+
+function spinWheel(){
+  if(ANSWER_LOCKED||ACTIVITY_FINISHED||WHEEL_IS_SPINNING)return;
+  const question=CURRENT_ACTIVITY?.questions?.[CURRENT_QUESTION_INDEX];
+  const items=Array.isArray(question?.answers)?question.answers:[];
+  if(items.length<2)return;
+  WHEEL_IS_SPINNING=true;
+  const button=document.getElementById("wheelSpinBtn");
+  const disc=document.getElementById("wheelDisc");
+  button.disabled=true;
+  button.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Spinning...';
+  document.getElementById("wheelCorrectBtn")?.classList.add("hidden");
+  document.getElementById("wheelWrongBtn")?.classList.add("hidden");
+  document.getElementById("wheelResult")?.classList.add("hidden");
+  WHEEL_SELECTED_INDEX=Math.floor(Math.random()*items.length);
+  const step=360/items.length;
+  const centerAngle=WHEEL_SELECTED_INDEX*step+step/2;
+  WHEEL_ROTATION += 1440 + (360-centerAngle);
+  disc.style.transform=`rotate(${WHEEL_ROTATION}deg)`;
+  playWheelSpinSound();
+  setTimeout(()=>{
+    WHEEL_IS_SPINNING=false;
+    const selected=items[WHEEL_SELECTED_INDEX];
+    const doublePoints=clean(selected.text).includes("double points");
+    WHEEL_POINTS_MULTIPLIER=doublePoints?2:1;
+    const result=document.getElementById("wheelResult");
+    result.innerHTML=`<div class="wheel-result-category">${doublePoints?"✨ ":"🎯 "}${esc(selected.text||"Selected Challenge")}${doublePoints?" — 2 Points":""}</div><div class="wheel-result-question">${esc(selected.right||"Complete the selected challenge.")}</div>${selected.image?`<img src="${esc(selected.image)}" alt="Wheel challenge">`:""}`;
+    result.classList.remove("hidden");
+    document.getElementById("wheelCorrectBtn")?.classList.remove("hidden");
+    document.getElementById("wheelWrongBtn")?.classList.remove("hidden");
+    button.disabled=false;
+    button.innerHTML='<i class="fa-solid fa-rotate-right"></i> Spin Again';
+    playWheelStopSound();
+  },4400);
+}
+
+function gradeWheelAnswer(isCorrect){
+  if(ANSWER_LOCKED||ACTIVITY_FINISHED||WHEEL_IS_SPINNING||WHEEL_SELECTED_INDEX<0)return;
+  ANSWER_LOCKED=true;
+  const feedback=document.getElementById("feedback");
+  feedback.className="feedback";
+  if(isCorrect){
+    CURRENT_SCORE += WHEEL_POINTS_MULTIPLIER;
+    feedback.textContent=WHEEL_POINTS_MULTIPLIER===2?"🎉 Correct! Double points awarded.":"🎉 Correct wheel challenge!";
+    feedback.classList.add("good");
+    launchSmallConfetti();
+    playCorrectSound();
+  }else{
+    feedback.textContent="❌ The wheel challenge was marked incorrect.";
+    feedback.classList.add("bad");
+    playWrongSound();
+  }
+  WHEEL_POINTS_MULTIPLIER=1;
+  ["wheelSpinBtn","wheelCorrectBtn","wheelWrongBtn"].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=true;});
+  document.getElementById("scorePill").textContent=`⭐ ${CURRENT_SCORE}`;
+  stopActivityTimer();
+  showNextQuestionButton();
+}
+
+function playWheelSpinSound(){
+  try{
+    const C=window.AudioContext||window.webkitAudioContext;if(!C)return;
+    const ctx=new C();let t=ctx.currentTime;
+    for(let i=0;i<18;i++){
+      const o=ctx.createOscillator(),g=ctx.createGain();o.type="square";o.frequency.value=300+i*18;
+      g.gain.setValueAtTime(.0001,t+i*.07);g.gain.exponentialRampToValueAtTime(.04,t+i*.07+.01);g.gain.exponentialRampToValueAtTime(.0001,t+i*.07+.045);
+      o.connect(g);g.connect(ctx.destination);o.start(t+i*.07);o.stop(t+i*.07+.05);
+    }
+  }catch(e){}
+}
+function playWheelStopSound(){playToneSequence([{frequency:523.25,duration:.12,delay:0},{frequency:659.25,duration:.12,delay:.12},{frequency:880,duration:.25,delay:.24}]);}
 
 function chooseAnswer(answerIndex,clickedButton){
   if(ANSWER_LOCKED){
