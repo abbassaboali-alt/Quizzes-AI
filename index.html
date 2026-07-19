@@ -1951,7 +1951,7 @@ function addAnswer(button){
   const count = questionBox.querySelectorAll(".answer-admin").length;
 
   const type = questionBox.querySelector(".q-type")?.value || "mcq";
-  const maximum = type === "random" ? 20 : 6;
+  const maximum = type === "random" ? 8 : 6;
 
   if(count >= maximum){
     alert(`A maximum of ${maximum} items is allowed for this question.`);
@@ -1969,10 +1969,10 @@ function removeAnswer(button){
   const questionBox = button.closest(".question-box");
   const items = questionBox.querySelectorAll(".answer-admin");
 
-  if(items.length <= 2){
-    alert("The question must contain at least two answers.");
-    return;
-  }
+if(items.length <= 2){
+  alert("The question must contain at least two answers.");
+  return;
+}
 
   const item = button.closest(".answer-admin");
   const wasCorrect = item.querySelector(".a-correct").checked;
@@ -2621,7 +2621,31 @@ async function generateRandomQuestionItemImages(question,index,settings){
             preparedItems[itemIndex].mediaPrompt
         }))
     });
+if(
+  result?.status ===
+    "completed_with_errors"
+){
 
+  const failedItem =
+    Array.isArray(
+      result?.items
+    )
+      ? result.items.find(
+          item =>
+            item
+              ?.generationStatus ===
+              "failed"
+        )
+      : null;
+
+  throw new Error(
+    failedItem
+      ?.generationError ||
+    result?.error ||
+    "One or more random images could not be generated."
+  );
+
+}
   const generatedItems =
     Array.isArray(result?.answers)
       ? result.answers
@@ -2640,29 +2664,89 @@ async function generateRandomQuestionItemImages(question,index,settings){
     );
   }
 
-  generatedItems.forEach((generated,generatedIndex)=>{
+generatedItems.forEach(
+  (
+    generated,
+    generatedIndex
+  ) => {
+
     const targetIndex =
-      missingIndexes[generatedIndex];
+      missingIndexes[
+        generatedIndex
+      ];
 
     const url =
-      typeof generated === "string"
-        ? generated
+      typeof generated ===
+        "string"
+        ? generated.trim()
         : String(
             generated?.image ||
             generated?.imageUrl ||
             generated?.url ||
             ""
-          ).trim();
+          )
+          .trim();
 
-    if(!url){
+    const generationStatus =
+      String(
+        generated
+          ?.generationStatus ||
+        ""
+      )
+      .trim()
+      .toLowerCase();
+
+    const generationError =
+      String(
+        generated
+          ?.generationError ||
+        generated
+          ?.error ||
+        generated
+          ?.message ||
+        ""
+      )
+      .trim();
+
+    /*
+      إذا أعاد الـWorker فشلًا للصورة،
+      نعرض السبب الحقيقي بدل الرسالة العامة.
+    */
+
+    if(
+      generationStatus ===
+        "failed" ||
+      !url
+    ){
+
+      console.error(
+        "Random image generation failed:",
+        {
+          questionNumber:
+            index + 1,
+
+          imageNumber:
+            generatedIndex + 1,
+
+          generated:
+            generated
+        }
+      );
+
       throw new Error(
+        generationError ||
         `Image ${generatedIndex + 1} was not returned for random question ${index + 1}.`
       );
+
     }
 
-    preparedItems[targetIndex].image =
+    preparedItems[
+      targetIndex
+    ].image =
       url;
-  });
+
+  }
+);
 
   return {
     ...question,
