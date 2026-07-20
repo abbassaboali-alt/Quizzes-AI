@@ -3219,16 +3219,47 @@ async function generateRandomQuestionItemImages(question,index,settings){
   });
 
   if(!missingIndexes.length){
-    return {
-      ...question,
-      type:"random",
-      mediaType:"none",
-      mediaUrl:"",
-      image:"",
-      video:"",
-      audio:"",
-      answers:preparedItems
-    };
+return {
+  ...question,
+
+  /*
+    نحافظ على نوع السؤال الأصلي:
+    mcq, match, order, wheel, balloon,
+    mystery أو random.
+  */
+
+  type:
+    question.type ||
+    "mcq",
+
+  /*
+    لا نمسح وسائط السؤال؛
+    حتى يستطيع بعدها توليد الصوت أو الفيديو.
+  */
+
+  mediaType:
+    question.mediaType ||
+    "none",
+
+  mediaUrl:
+    question.mediaUrl ||
+    "",
+
+  image:
+    question.image ||
+    "",
+
+  video:
+    question.video ||
+    "",
+
+  audio:
+    question.audio ||
+    "",
+
+  answers:
+    preparedItems
+};
   }
 
   setAiProgress(
@@ -3353,70 +3384,217 @@ for(let generatedIndex = 0; generatedIndex < missingIndexes.length; generatedInd
   };
 }
 
-async function generateOneQuestionMedia(question,index,settings){
+async function generateOneQuestionMedia(
+  question,
+  index,
+  settings
+){
 
   /*
-    Random Image Questions generate one image for each answer item,
-    not one media file for the whole question.
+    نبدأ بنسخة من السؤال.
+
+    قد نضيف أولًا صور العناصر،
+    ثم نضيف صوتًا أو فيديو أو صورة للسؤال نفسه.
   */
-  if(question.type === "random"){
-    return await generateRandomQuestionItemImages(
-      question,
-      index,
-      settings
+
+  let preparedQuestion = {
+    ...question
+  };
+
+  /* =====================================
+     GENERATE ANSWER ITEM IMAGES
+     FOR ANY QUESTION TYPE
+  ===================================== */
+
+  const hasAnswerImagePrompts =
+    Array.isArray(
+      preparedQuestion.answers
+    ) &&
+    preparedQuestion.answers.some(
+      answer =>
+        answer &&
+        !String(
+          answer.image ||
+          answer.imageUrl ||
+          answer.url ||
+          ""
+        ).trim() &&
+        Boolean(
+          String(
+            answer.mediaPrompt ||
+            answer.imagePrompt ||
+            ""
+          ).trim()
+        )
     );
+
+  if(
+    hasAnswerImagePrompts
+  ){
+
+    preparedQuestion =
+      await generateRandomQuestionItemImages(
+        preparedQuestion,
+        index,
+        settings
+      );
+
   }
 
-  const mediaType = question.mediaType || "none";
+  /* =====================================
+     QUESTION-LEVEL MEDIA
+     IMAGE / AUDIO / VIDEO
+  ===================================== */
 
-  if(mediaType === "none"){
-    return question;
+  const mediaType =
+    String(
+      preparedQuestion.mediaType ||
+      question.mediaType ||
+      "none"
+    )
+    .trim()
+    .toLowerCase();
+
+  /*
+    إذا لم يتم اختيار وسائط للسؤال،
+    نعيده مع صور العناصر التي تم توليدها.
+  */
+
+  if(
+    mediaType === "none"
+  ){
+
+    return preparedQuestion;
+
   }
 
   const mediaPrompt =
-    question.mediaPrompt ||
-    `Create educational media for this question without showing the answer: ${question.text}`;
+    String(
+      preparedQuestion.mediaPrompt ||
+      question.mediaPrompt ||
+      `Create educational media for this question without showing the answer: ${
+        preparedQuestion.text ||
+        question.text ||
+        ""
+      }`
+    )
+    .trim();
+
+  /*
+    النص الذي سيقرأه الصوت.
+
+    الأولوية:
+    1. audioText القادم من الذكاء الاصطناعي.
+    2. نص السؤال نفسه.
+  */
 
   const audioText =
-    question.audioText ||
-    question.text;
+    String(
+      preparedQuestion.audioText ||
+      question.audioText ||
+      preparedQuestion.text ||
+      question.text ||
+      ""
+    )
+    .trim();
 
-  const result = await postToAiWorker({
-    task:"generate_question_media",
+  const result =
+    await postToAiWorker({
+      task:
+        "generate_question_media",
 
-    mediaType,
-    mediaPrompt,
-    audioText,
+      mediaType:
+        mediaType,
 
-    imageStyle:settings.imageStyle,
-    voice:settings.voice,
-    videoAspectRatio:settings.videoAspectRatio,
+      mediaPrompt:
+        mediaPrompt,
 
-    questionText:question.text
-  });
+      audioText:
+        audioText,
 
-  let url = result.url || "";
+      imageStyle:
+        settings.imageStyle,
 
-  if(mediaType === "video" && result.operationName){
-    url = await waitForVideo(
-      result.operationName,
-      index + 1
-    );
+      voice:
+        settings.voice,
+
+      videoAspectRatio:
+        settings.videoAspectRatio,
+
+      questionText:
+        preparedQuestion.text ||
+        question.text ||
+        ""
+    });
+
+  let url =
+    String(
+      result?.url ||
+      ""
+    )
+    .trim();
+
+  /*
+    الفيديو يحتاج انتظار انتهاء المعالجة.
+  */
+
+  if(
+    mediaType === "video" &&
+    result?.operationName
+  ){
+
+    url =
+      await waitForVideo(
+        result.operationName,
+        index + 1
+      );
+
   }
 
-  if(!url){
+  if(
+    !url
+  ){
+
     throw new Error(
       `The ${mediaType} URL was not returned for question ${index + 1}.`
     );
+
   }
 
   return {
-    ...question,
-    mediaUrl:url,
-    image:mediaType === "image" ? url : "",
-    video:mediaType === "video" ? url : "",
-    audio:mediaType === "audio" ? url : ""
+    ...preparedQuestion,
+
+    mediaType:
+      mediaType,
+
+    mediaUrl:
+      url,
+
+    image:
+      mediaType === "image"
+        ? url
+        : String(
+            preparedQuestion.image ||
+            ""
+          ),
+
+    video:
+      mediaType === "video"
+        ? url
+        : String(
+            preparedQuestion.video ||
+            ""
+          ),
+
+    audio:
+      mediaType === "audio"
+        ? url
+        : String(
+            preparedQuestion.audio ||
+            ""
+          )
   };
+
 }
 
 async function generateMediaForQuestions(questions,settings){
