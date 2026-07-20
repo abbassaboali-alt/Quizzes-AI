@@ -566,7 +566,171 @@ button{cursor:pointer}
 .wheel-result-card img{max-width:100%;max-height:280px;object-fit:contain;border-radius:14px;margin-top:12px}
 .wheel-controls{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:15px}
 .wheel-correct{background:var(--green);color:#fff}.wheel-wrong{background:var(--red);color:#fff}
+
 @media(max-width:600px){.wheel-label{font-size:11px}.wheel-pointer{font-size:40px}}
+
+/* =====================================
+   BALLOON POP QUESTION
+===================================== */
+.question-box[data-type="balloon"] .match-right-field{display:none}
+.question-box[data-type="balloon"] .answer-image-field{display:block}
+.question-box[data-type="balloon"] .correct-row{display:flex}
+
+.balloon-game{
+  width:100%;
+  text-align:center;
+}
+
+.balloon-stage{
+  position:relative;
+  min-height:420px;
+  overflow:hidden;
+  border:2px dashed #c7dbea;
+  border-radius:26px;
+  padding:28px 18px 34px;
+  background:
+    radial-gradient(circle at 15% 20%,rgba(255,255,255,.9),transparent 13%),
+    radial-gradient(circle at 80% 18%,rgba(255,255,255,.75),transparent 11%),
+    linear-gradient(180deg,#dff5ff 0%,#f8fdff 62%,#eaf8e5 100%);
+}
+
+.balloon-instruction{
+  position:relative;
+  z-index:3;
+  color:var(--blue);
+  font-weight:900;
+  margin-bottom:18px;
+}
+
+.balloon-main{
+  position:relative;
+  width:190px;
+  height:235px;
+  margin:25px auto 85px;
+  border:0;
+  background:transparent;
+  animation:balloonFloat 2.4s ease-in-out infinite;
+}
+
+.balloon-body{
+  position:absolute;
+  inset:0 0 35px;
+  display:grid;
+  place-items:center;
+  border-radius:50% 50% 46% 46%;
+  background:
+    radial-gradient(circle at 35% 25%,rgba(255,255,255,.82),transparent 15%),
+    linear-gradient(145deg,#ff7fa6,#e73f77);
+  box-shadow:
+    inset -15px -18px 24px rgba(120,0,45,.18),
+    0 18px 28px rgba(22,68,120,.18);
+  color:#fff;
+  font-size:58px;
+  transition:.22s;
+}
+
+.balloon-main:hover .balloon-body{
+  transform:scale(1.05);
+}
+
+.balloon-knot{
+  position:absolute;
+  left:50%;
+  bottom:24px;
+  transform:translateX(-50%);
+  width:0;
+  height:0;
+  border-left:12px solid transparent;
+  border-right:12px solid transparent;
+  border-top:19px solid #d93368;
+}
+
+.balloon-string{
+  position:absolute;
+  left:50%;
+  top:204px;
+  width:2px;
+  height:94px;
+  background:#74889b;
+  transform:translateX(-50%);
+}
+
+.balloon-main.popping{
+  animation:balloonPop .38s ease forwards;
+  pointer-events:none;
+}
+
+.balloon-question-card{
+  max-width:760px;
+  margin:0 auto;
+  padding:22px;
+  border:2px solid var(--gold);
+  border-radius:22px;
+  background:#fff;
+  box-shadow:0 16px 35px rgba(22,68,120,.16);
+  animation:balloonReveal .45s ease;
+}
+
+.balloon-question-text{
+  font-size:24px;
+  line-height:1.65;
+  font-weight:900;
+  color:var(--blue);
+  margin-bottom:18px;
+}
+
+.balloon-options{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:13px;
+}
+
+.balloon-option{
+  min-height:82px;
+}
+
+.balloon-burst{
+  position:absolute;
+  left:50%;
+  top:48%;
+  transform:translate(-50%,-50%);
+  font-size:92px;
+  z-index:6;
+  animation:balloonBurst .55s ease forwards;
+  pointer-events:none;
+}
+
+@keyframes balloonFloat{
+  0%,100%{transform:translateY(0) rotate(-2deg)}
+  50%{transform:translateY(-18px) rotate(2deg)}
+}
+
+@keyframes balloonPop{
+  0%{transform:scale(1)}
+  65%{transform:scale(1.24)}
+  100%{transform:scale(0);opacity:0}
+}
+
+@keyframes balloonBurst{
+  0%{transform:translate(-50%,-50%) scale(.35);opacity:0}
+  45%{opacity:1}
+  100%{transform:translate(-50%,-50%) scale(1.5);opacity:0}
+}
+
+@keyframes balloonReveal{
+  from{opacity:0;transform:translateY(18px) scale(.97)}
+  to{opacity:1;transform:none}
+}
+
+@media(max-width:650px){
+  .balloon-stage{min-height:390px;padding:20px 12px 28px}
+  .balloon-main{width:155px;height:195px;margin-bottom:75px}
+  .balloon-body{inset:0 0 30px;font-size:48px}
+  .balloon-knot{bottom:20px}
+  .balloon-string{top:168px;height:82px}
+  .balloon-options{grid-template-columns:1fr}
+  .balloon-question-text{font-size:20px}
+}
 
 </style>
 </head>
@@ -802,6 +966,7 @@ button{cursor:pointer}
           <option value="order">Order / Sequence</option>
           <option value="random">Random Image Question</option>
           <option value="wheel">🎡 Wheel of Fortune</option>
+          <option value="balloon">🎈 Balloon Pop</option>
           <option value="mixed">Mixed Types</option>
         </select>
       </div>
@@ -1842,6 +2007,7 @@ function addQuestion(data = null){
           <option value="order" ${q.type === "order" ? "selected" : ""}>Order / Sequence</option>
           <option value="random" ${q.type === "random" ? "selected" : ""}>Random Image Question</option>
           <option value="wheel" ${q.type === "wheel" ? "selected" : ""}>🎡 Wheel of Fortune</option>
+          <option value="balloon" ${q.type === "balloon" ? "selected" : ""}>🎈 Balloon Pop</option>
         </select>
         <div class="question-type-note q-type-note"></div>
       </div>
@@ -2044,6 +2210,23 @@ function updateQuestionType(questionBox){
 
     }
 
+  }else if(type === "balloon"){
+
+    note.textContent =
+      "The student pops the balloon first. The hidden question and its answer choices then appear.";
+
+    labels.forEach(label=>{
+      label.textContent =
+        "Answer Choice";
+    });
+
+    if(addButton){
+
+      addButton.innerHTML =
+        '<i class="fa-solid fa-plus"></i> Add Answer Choice';
+
+    }
+
   }else{
 
     note.textContent =
@@ -2070,7 +2253,7 @@ function addAnswer(button){
   const count = questionBox.querySelectorAll(".answer-admin").length;
 
   const type = questionBox.querySelector(".q-type")?.value || "mcq";
-  const maximum = type === "random" ? 20 : type === "wheel" ? 12 : 6;
+  const maximum = type === "random" ? 20 : type === "wheel" ? 12 : type === "balloon" ? 6 : 6;
 
   if(count >= maximum){
     alert(`A maximum of ${maximum} items is allowed for this question.`);
@@ -2176,7 +2359,7 @@ function collectQuestions(){
       throw new Error(`Question ${index + 1} requires at least two items.`);
     }
 
-    if(type === "mcq"){
+    if(type === "mcq" || type === "balloon"){
       if(!answers.some(answer=>answer.correct)){
         throw new Error(`Select the correct answer for question ${index + 1}.`);
       }
@@ -2222,7 +2405,11 @@ function collectQuestions(){
       type,
       text:(type === "random" && !text)
         ? "Look at the selected image and answer the question."
-        : (type === "wheel" && !text ? "Spin the wheel and complete the selected challenge." : text),
+        : (type === "wheel" && !text
+          ? "Spin the wheel and complete the selected challenge."
+          : (type === "balloon" && !text
+              ? "Pop the balloon to reveal the question."
+              : text)),
       mediaType,
       mediaUrl,
       image:mediaType === "image" ? mediaUrl : "",
@@ -2414,7 +2601,7 @@ function normalizeAiQuestion(question,index,defaultQuestionType,defaultMediaType
   if(
     defaultQuestionType &&
     defaultQuestionType !== "mixed" &&
-    ["mcq","match","order","random","wheel"].includes(defaultQuestionType)
+    ["mcq","match","order","random","wheel","balloon"].includes(defaultQuestionType)
   ){
     type = defaultQuestionType;
   }
@@ -2423,7 +2610,7 @@ function normalizeAiQuestion(question,index,defaultQuestionType,defaultMediaType
     type = "mcq";
   }
 
-  if(!["mcq","match","order","random","wheel"].includes(type)){
+  if(!["mcq","match","order","random","wheel","balloon"].includes(type)){
     type = "mcq";
   }
 
@@ -2448,7 +2635,7 @@ function normalizeAiQuestion(question,index,defaultQuestionType,defaultMediaType
         right:"",
         image:"",
         correct:
-          type === "mcq" &&
+          (type === "mcq" || type === "balloon") &&
           (
             answerIndex === correctIndex ||
             (!!correctValue && answer.trim() === correctValue)
@@ -2487,7 +2674,7 @@ function normalizeAiQuestion(question,index,defaultQuestionType,defaultMediaType
       ).trim(),
 
       correct:
-        type === "mcq" &&
+        (type === "mcq" || type === "balloon") &&
         (
           answer?.correct === true ||
           answer?.isCorrect === true ||
@@ -2504,7 +2691,7 @@ function normalizeAiQuestion(question,index,defaultQuestionType,defaultMediaType
     throw new Error(`Generated question ${index + 1} does not contain enough items.`);
   }
 
-  if(type === "mcq" && !answers.some(answer=>answer.correct)){
+  if((type === "mcq" || type === "balloon") && !answers.some(answer=>answer.correct)){
     answers[0].correct = true;
   }
 
@@ -3296,6 +3483,16 @@ async function generateQuestionsWithAI(){
         .getElementById("aiQuestionType")
         .value;
 
+    /*
+      Balloon Pop uses normal MCQ generation in the existing Worker.
+      The browser converts the returned MCQ into Balloon Pop.
+      Therefore the Cloudflare Worker does not need any modification.
+    */
+    const workerQuestionType =
+      requestedQuestionType === "balloon"
+        ? "mcq"
+        : requestedQuestionType;
+
     const requestedMediaType =
       document
         .getElementById("aiMediaType")
@@ -3472,7 +3669,7 @@ Return valid JSON only in this exact structure:
 {
   "questions": [
     {
-      "type": "mcq|match|order|random|wheel",
+      "type": "mcq|match|order|random|wheel|balloon",
       "text": "Question text or instructions",
       "mediaType": "none|image|video|audio",
       "mediaUrl": "",
@@ -3496,7 +3693,7 @@ QUESTION RULES:
 - Return exactly ${count} questions.
 - Follow the requested question type.
 - If the requested type is "mixed", use a balanced mix of:
-  mcq, match, order, random, and wheel.
+  mcq, match, order, random, wheel, and balloon.
 
 - For MCQ:
   Create exactly 4 choices.
@@ -3536,6 +3733,15 @@ QUESTION RULES:
   For Double Points, create a challenging bonus question.
   Set "correct" to false for every wheel section because the trainer grades the spoken answer.
   Set question mediaType to "none".
+
+- For Balloon Pop:
+  The browser will display one animated balloon first.
+  After the student pops it, the hidden question and its answer choices appear.
+  Create a normal four-choice multiple-choice question.
+  Use type "balloon".
+  Mark exactly one answer as correct.
+  Do not put the answer inside the balloon text.
+  The balloon is only the reveal animation.
 
 MEDIA RULES:
 
@@ -3579,7 +3785,7 @@ sourceTextLength:
   count:count,
   level:level,
   language:language,
-  questionType:requestedQuestionType,
+  questionType:workerQuestionType,
   mediaType:requestedMediaType,
   mediaUrl:mediaUrl,
   generateMedia:generateMedia,
@@ -3612,7 +3818,7 @@ sourceTextLength:
     const normalized = rawQuestions
       .slice(0,count)
       .map((question,index)=>{
-        let defaultQuestionType = requestedQuestionType;
+        let defaultQuestionType = requestedQuestionType === "balloon" ? "mcq" : requestedQuestionType;
         let defaultMediaType = requestedMediaType;
 
         if(defaultQuestionType === "mixed"){
@@ -3644,10 +3850,14 @@ sourceTextLength:
         */
         if(
           requestedQuestionType !== "mixed" &&
-          ["mcq","match","order","random","wheel"].includes(requestedQuestionType)
+          ["mcq","match","order","random","wheel","balloon"].includes(requestedQuestionType)
         ){
           normalizedQuestion.type =
             requestedQuestionType;
+        }
+
+        if(requestedQuestionType === "balloon"){
+          normalizedQuestion.type = "balloon";
         }
 
         if(requestedQuestionType === "random"){
@@ -4260,7 +4470,7 @@ function buildReadOnlyQuestion(question,index){
   return `
     <section class="preview-question">
       <div class="preview-question-title">
-        ${index + 1}. ${esc(question?.text || "Question")}
+        ${index + 1}. ${type === "balloon" ? "🎈 " : ""}${esc(question?.text || "Question")}
       </div>
       ${mediaHtml}
       ${answersHtml}
@@ -4771,6 +4981,13 @@ document
     return;
   }
 
+  if(type === "balloon"){
+    document.getElementById("gameQuestion").textContent =
+      "🎈 Pop the balloon to reveal the question!";
+    renderBalloonQuestion(question,answersBox);
+    return;
+  }
+
   answersBox.className = "student-answers";
 
   (question.answers || []).forEach((answer,index)=>{
@@ -5140,6 +5357,328 @@ function playWheelSpinSound(){
   }catch(e){}
 }
 function playWheelStopSound(){playToneSequence([{frequency:523.25,duration:.12,delay:0},{frequency:659.25,duration:.12,delay:.12},{frequency:880,duration:.25,delay:.24}]);}
+
+
+function renderBalloonQuestion(question,answersBox){
+
+  answersBox.className =
+    "balloon-game";
+
+  answersBox.innerHTML = `
+    <div id="balloonStage" class="balloon-stage">
+
+      <div class="balloon-instruction">
+        Click the balloon to reveal the hidden question.
+      </div>
+
+      <button
+        id="mainQuestionBalloon"
+        class="balloon-main"
+        type="button"
+        onclick="popQuestionBalloon()"
+        aria-label="Pop the balloon">
+
+        <span class="balloon-body">🎈</span>
+        <span class="balloon-knot"></span>
+        <span class="balloon-string"></span>
+
+      </button>
+
+      <div
+        id="balloonQuestionCard"
+        class="balloon-question-card hidden">
+      </div>
+
+    </div>
+  `;
+
+}
+
+function playBalloonPopSound(){
+
+  try{
+
+    const AudioContextClass =
+      window.AudioContext ||
+      window.webkitAudioContext;
+
+    if(!AudioContextClass){
+      return;
+    }
+
+    const context =
+      new AudioContextClass();
+
+    const now =
+      context.currentTime;
+
+    const oscillator =
+      context.createOscillator();
+
+    const gain =
+      context.createGain();
+
+    oscillator.type =
+      "sawtooth";
+
+    oscillator.frequency.setValueAtTime(
+      190,
+      now
+    );
+
+    oscillator.frequency.exponentialRampToValueAtTime(
+      55,
+      now + 0.16
+    );
+
+    gain.gain.setValueAtTime(
+      0.28,
+      now
+    );
+
+    gain.gain.exponentialRampToValueAtTime(
+      0.0001,
+      now + 0.18
+    );
+
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+
+    oscillator.start(now);
+    oscillator.stop(now + 0.19);
+
+  }catch(error){
+
+    console.warn(
+      "Balloon sound could not play:",
+      error
+    );
+
+  }
+
+}
+
+function popQuestionBalloon(){
+
+  if(
+    ANSWER_LOCKED ||
+    ACTIVITY_FINISHED
+  ){
+    return;
+  }
+
+  const question =
+    CURRENT_ACTIVITY
+      ?.questions
+      ?.[CURRENT_QUESTION_INDEX];
+
+  if(!question){
+    return;
+  }
+
+  const balloon =
+    document.getElementById(
+      "mainQuestionBalloon"
+    );
+
+  const stage =
+    document.getElementById(
+      "balloonStage"
+    );
+
+  const card =
+    document.getElementById(
+      "balloonQuestionCard"
+    );
+
+  if(
+    !balloon ||
+    !stage ||
+    !card ||
+    balloon.dataset.popped === "1"
+  ){
+    return;
+  }
+
+  balloon.dataset.popped =
+    "1";
+
+  balloon.classList.add(
+    "popping"
+  );
+
+  const burst =
+    document.createElement(
+      "div"
+    );
+
+  burst.className =
+    "balloon-burst";
+
+  burst.textContent =
+    "💥";
+
+  stage.appendChild(
+    burst
+  );
+
+  playBalloonPopSound();
+
+  setTimeout(()=>{
+
+    balloon.classList.add(
+      "hidden"
+    );
+
+    burst.remove();
+
+    document
+      .getElementById(
+        "gameQuestion"
+      )
+      .textContent =
+        question.text ||
+        "Choose the correct answer.";
+
+    card.innerHTML = `
+      <div class="balloon-question-text">
+        ${esc(
+          question.text ||
+          "Choose the correct answer."
+        )}
+      </div>
+
+      <div class="balloon-options">
+
+        ${(question.answers || [])
+          .map((answer,index)=>`
+            <button
+              class="student-answer balloon-option"
+              type="button"
+              onclick="chooseBalloonAnswer(${index},this)">
+
+              ${
+                answer.image
+                  ? `<img src="${esc(answer.image)}" alt="">`
+                  : ""
+              }
+
+              <div>
+                ${esc(answer.text || "")}
+              </div>
+
+            </button>
+          `)
+          .join("")}
+
+      </div>
+    `;
+
+    card.classList.remove(
+      "hidden"
+    );
+
+  },330);
+
+}
+
+function chooseBalloonAnswer(
+  answerIndex,
+  clickedButton
+){
+
+  if(ANSWER_LOCKED){
+    return;
+  }
+
+  const question =
+    CURRENT_ACTIVITY
+      .questions[
+        CURRENT_QUESTION_INDEX
+      ];
+
+  const selected =
+    question.answers[
+      answerIndex
+    ];
+
+  const buttons = [
+    ...document.querySelectorAll(
+      ".balloon-option"
+    )
+  ];
+
+  const feedback =
+    document.getElementById(
+      "feedback"
+    );
+
+  ANSWER_LOCKED =
+    true;
+
+  buttons.forEach(
+    (button,index)=>{
+
+      button.disabled =
+        true;
+
+      if(
+        question.answers[index]
+          ?.correct
+      ){
+
+        button.classList.add(
+          "correct"
+        );
+
+      }
+
+    }
+  );
+
+  if(selected?.correct){
+
+    CURRENT_SCORE++;
+
+    clickedButton.classList.add(
+      "correct"
+    );
+
+    feedback.textContent =
+      "🎉 Correct Answer! Excellent";
+
+    feedback.className =
+      "feedback good";
+
+    launchSmallConfetti();
+    playCorrectSound();
+
+  }else{
+
+    clickedButton.classList.add(
+      "wrong"
+    );
+
+    feedback.textContent =
+      "❌ Incorrect Answer — See the Correct Answer";
+
+    feedback.className =
+      "feedback bad";
+
+    playWrongSound();
+
+  }
+
+  document
+    .getElementById(
+      "scorePill"
+    )
+    .textContent =
+      `⭐ ${CURRENT_SCORE}`;
+
+  showNextQuestionButton();
+
+}
 
 function chooseAnswer(answerIndex,clickedButton){
   if(ANSWER_LOCKED){
