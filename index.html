@@ -2671,15 +2671,39 @@ function collectQuestions(){
       answers.forEach(answer=>{ answer.correct = false; });
     }
 
-    if(type === "random"){
-      if(answers.length < 2){
-        throw new Error(`Random question ${index + 1} requires at least two images.`);
-      }
+   if(type === "random"){
 
-      if(answers.some(answer=>!answer.image)){
-        throw new Error(`Add an image URL for every item in random question ${index + 1}.`);
-      }
-    }
+  const validRandomAnswers =
+    answers.filter(
+      answer =>
+        String(
+          answer.image ||
+          ""
+        ).trim()
+    );
+
+  if(
+    validRandomAnswers.length < 2
+  ){
+
+    throw new Error(
+      `Random question ${index + 1} requires at least two successfully generated images.`
+    );
+
+  }
+
+  answers.length = 0;
+
+  answers.push(
+    ...validRandomAnswers.map(
+      answer => ({
+        ...answer,
+        correct:false
+      })
+    )
+  );
+
+}
 
     questions.push({
       type,
