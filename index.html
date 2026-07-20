@@ -3265,11 +3265,14 @@ async function generateRandomQuestionItemImages(question,index,settings){
             ""
           ).trim();
 
-    if(!url){
-      throw new Error(
-        `Image ${generatedIndex + 1} was not returned for random question ${index + 1}.`
-      );
-    }
+if(!url){
+
+  console.warn(
+    `Image ${generatedIndex + 1} was not returned for random question ${index + 1}.`
+  );
+
+  return;
+}
 
     preparedItems[targetIndex].image =
       url;
