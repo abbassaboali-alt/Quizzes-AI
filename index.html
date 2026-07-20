@@ -1947,49 +1947,122 @@ function appendAnswer(questionBox,answer){
   answersBox.appendChild(item);
 }
 function updateQuestionType(questionBox){
-  if(!questionBox) return;
 
-  const type = questionBox.querySelector(".q-type")?.value || "mcq";
-  questionBox.dataset.type = type;
+  if(!questionBox){
+    return;
+  }
 
-  const note = questionBox.querySelector(".q-type-note");
-  const labels = questionBox.querySelectorAll(".a-text-label");
-  const addButton = questionBox.querySelector(".answers-admin + .btn");
+  const type =
+    questionBox
+      .querySelector(".q-type")
+      ?.value ||
+    "mcq";
+
+  questionBox.dataset.type =
+    type;
+
+  const note =
+    questionBox.querySelector(
+      ".q-type-note"
+    );
+
+  const labels =
+    questionBox.querySelectorAll(
+      ".a-text-label"
+    );
+
+  const addButton =
+    questionBox.querySelector(
+      ".answers-admin + .btn"
+    );
 
   if(type === "match"){
-    note.textContent = "Each item contains a left value and its matching right value.";
-    labels.forEach(label=>label.textContent = "Left Item");
-    if(addButton) addButton.innerHTML = '<i class="fa-solid fa-plus"></i> Add Matching Pair';
-  }else if(type === "wheel"){
-    answersHtml = `
-      <div class="preview-options">
-        ${answers.map((answer,answerIndex)=>`
-          <div class="preview-option">
-            <strong>🎡 ${esc(answer.text || `Section ${answerIndex + 1}`)}</strong>
-            <div style="margin-top:6px">${esc(answer.right || "")}</div>
-            ${answer.image ? `<img src="${esc(answer.image)}" alt="Wheel media">` : ""}
-          </div>
-        `).join("")}
-      </div>
-    `;
+
+    note.textContent =
+      "Each item contains a left value and its matching right value.";
+
+    labels.forEach(label=>{
+      label.textContent =
+        "Left Item";
+    });
+
+    if(addButton){
+
+      addButton.innerHTML =
+        '<i class="fa-solid fa-plus"></i> Add Matching Pair';
+
+    }
 
   }else if(type === "order"){
-    note.textContent = "Enter the items in the correct order. They will be shuffled for the student.";
-    labels.forEach(label=>label.textContent = "Sequence Item");
-    if(addButton) addButton.innerHTML = '<i class="fa-solid fa-plus"></i> Add Sequence Item';
+
+    note.textContent =
+      "Enter the items in the correct order. They will be shuffled for the student.";
+
+    labels.forEach(label=>{
+      label.textContent =
+        "Sequence Item";
+    });
+
+    if(addButton){
+
+      addButton.innerHTML =
+        '<i class="fa-solid fa-plus"></i> Add Sequence Item';
+
+    }
+
   }else if(type === "random"){
-    note.textContent = "Add several images. They will change quickly and stop randomly. Text under each image is optional.";
-    labels.forEach(label=>label.textContent = "Optional Text");
-    if(addButton) addButton.innerHTML = '<i class="fa-solid fa-image"></i> Add Random Image';
+
+    note.textContent =
+      "Add several images. They will change quickly and stop randomly. Text under each image is optional.";
+
+    labels.forEach(label=>{
+      label.textContent =
+        "Optional Text";
+    });
+
+    if(addButton){
+
+      addButton.innerHTML =
+        '<i class="fa-solid fa-image"></i> Add Random Image';
+
+    }
+
   }else if(type === "wheel"){
-    note.textContent = "Each item is one wheel section. Write the category in the first field and its challenge/question in Matching Pair. Image is optional. Use Double Points as a category to award 2 points.";
-    labels.forEach(label=>label.textContent = "Wheel Category");
-    if(addButton) addButton.innerHTML = '<i class="fa-solid fa-circle-notch"></i> Add Wheel Section';
+
+    note.textContent =
+      "Each item is one wheel section. Write the category in the first field and its challenge/question in Matching Pair. Image is optional. Use Double Points as a category to award 2 points.";
+
+    labels.forEach(label=>{
+      label.textContent =
+        "Wheel Category";
+    });
+
+    if(addButton){
+
+      addButton.innerHTML =
+        '<i class="fa-solid fa-circle-notch"></i> Add Wheel Section';
+
+    }
+
   }else{
-    note.textContent = "Choose one correct answer. Answer images are optional.";
-    labels.forEach(label=>label.textContent = "Answer / Item");
-    if(addButton) addButton.innerHTML = '<i class="fa-solid fa-plus"></i> Add Item';
+
+    note.textContent =
+      "Choose one correct answer. Answer images are optional.";
+
+    labels.forEach(label=>{
+      label.textContent =
+        "Answer / Item";
+    });
+
+    if(addButton){
+
+      addButton.innerHTML =
+        '<i class="fa-solid fa-plus"></i> Add Item';
+
+    }
+
   }
+
 }
 
 function addAnswer(button){
