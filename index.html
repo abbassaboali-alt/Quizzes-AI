@@ -381,32 +381,215 @@ button{cursor:pointer}
 .question-box[data-type="order"] .match-right-field{display:none}
 .question-box[data-type="order"] .answer-image-field{display:none}
 
+/* =====================================
+   MATCH: TEXT WITH TEXT OR IMAGE
+===================================== */
+
 .match-game{
   display:grid;
-  gap:12px;
+  gap:18px;
+  width:100%;
 }
+
+.match-image-instruction{
+  width:100%;
+  text-align:center;
+  color:var(--blue);
+  background:#eef6fd;
+  border:1px solid #cfe0ef;
+  border-radius:14px;
+  padding:12px 15px;
+  font-weight:900;
+  line-height:1.6;
+}
+
+/*
+  كل عنصر Match في صف مستقل.
+*/
 .match-row{
-  display:grid;
-  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
-  gap:12px;
-  align-items:center;
-  padding:12px;
+  display:block;
+  width:100%;
+  padding:16px;
   border:1px solid var(--border);
-  border-radius:15px;
+  border-radius:18px;
   background:#fbfdff;
 }
+
+/*
+  الكلمة أو الجملة الموجودة في الطرف الأيسر.
+*/
 .match-left{
-  font-weight:900;
-  color:var(--blue);
-}
-.match-row select{
   width:100%;
-  border:1px solid var(--border);
-  border-radius:12px;
-  padding:11px;
+  margin-bottom:13px;
+  padding:12px 14px;
+  border-radius:13px;
+  background:linear-gradient(
+    135deg,
+    var(--blue),
+    var(--blue2)
+  );
+  color:#fff;
+  font-size:18px;
+  font-weight:900;
+  text-align:center;
+  overflow-wrap:anywhere;
+}
+
+/*
+  خيارات الطرف المقابل:
+  نص أو صورة أو كلاهما.
+*/
+.match-image-options{
+  display:grid;
+  grid-template-columns:repeat(
+    auto-fit,
+    minmax(150px,1fr)
+  );
+  gap:12px;
+  width:100%;
+}
+
+.match-image-option{
+  width:100%;
+  min-width:0;
+  min-height:130px;
+  padding:10px;
+  border:2px solid var(--border);
+  border-radius:16px;
   background:#fff;
+  color:var(--text);
   font-family:inherit;
-  font-weight:700;
+  font-size:15px;
+  font-weight:900;
+  line-height:1.5;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:9px;
+  transition:
+    transform .2s,
+    border-color .2s,
+    background .2s,
+    box-shadow .2s;
+  overflow:hidden;
+}
+
+.match-image-option:hover:not(:disabled){
+  transform:translateY(-3px);
+  border-color:var(--blue2);
+  box-shadow:0 8px 18px rgba(36,103,165,.13);
+}
+
+/*
+  صورة الخيار.
+*/
+.match-image-option img{
+  display:block;
+  width:100%;
+  height:135px;
+  object-fit:contain;
+  border-radius:11px;
+  background:#f3f7fb;
+}
+
+/*
+  نص الخيار.
+*/
+.match-image-option span{
+  display:block;
+  width:100%;
+  text-align:center;
+  overflow-wrap:anywhere;
+  word-break:break-word;
+}
+
+/*
+  الخيار المحدد.
+*/
+.match-image-option.selected{
+  border-color:var(--blue2);
+  background:#eef6fd;
+  box-shadow:
+    0 0 0 3px rgba(36,103,165,.13);
+}
+
+/*
+  الخيار الصحيح.
+*/
+.match-image-option.correct{
+  border-color:var(--green);
+  background:#eafaf4;
+  box-shadow:
+    0 0 0 3px rgba(23,166,115,.13);
+}
+
+/*
+  الخيار الخطأ.
+*/
+.match-image-option.wrong{
+  border-color:var(--red);
+  background:#fff0ee;
+  box-shadow:
+    0 0 0 3px rgba(231,76,60,.12);
+}
+
+/*
+  إظهار الخيار الصحيح بعد اختيار خاطئ.
+*/
+.match-image-option.correct-answer{
+  border-color:var(--green);
+  background:#eafaf4;
+  box-shadow:
+    0 0 0 4px rgba(23,166,115,.18);
+}
+
+.match-image-option:disabled{
+  cursor:default;
+  opacity:1;
+}
+
+/* الجوال والأجهزة اللوحية الصغيرة */
+@media(max-width:650px){
+
+  .match-row{
+    padding:12px;
+  }
+
+  .match-left{
+    font-size:16px;
+    padding:11px;
+  }
+
+  .match-image-options{
+    grid-template-columns:
+      repeat(2,minmax(0,1fr));
+    gap:9px;
+  }
+
+  .match-image-option{
+    min-height:110px;
+    padding:8px;
+    font-size:13px;
+  }
+
+  .match-image-option img{
+    height:100px;
+  }
+
+}
+
+/* شاشات الجوال الضيقة جدًا */
+@media(max-width:420px){
+
+  .match-image-options{
+    grid-template-columns:1fr;
+  }
+
+  .match-image-option img{
+    height:140px;
+  }
+
 }
 .order-game{
   display:grid;
@@ -451,9 +634,7 @@ button{cursor:pointer}
   flex-wrap:wrap;
   margin-top:15px;
 }
-@media(max-width:750px){
-  .match-row{grid-template-columns:1fr}
-}
+
 
 /* ===============================
    READ-ONLY ACTIVITY PREVIEW
@@ -2334,13 +2515,17 @@ function appendAnswer(questionBox,answer){
       <input class="a-text" value="${esc(answer.text || "")}" placeholder="Enter text">
     </div>
 
-    <div class="field match-right-field" style="margin-top:9px">
-      <label>Matching Pair</label>
-      <input class="a-right" value="${esc(answer.right || answer.match || "")}" placeholder="Enter the matching answer">
-    </div>
+ <div class="field match-right-field" style="margin-top:9px">
+  <label>Matching Pair — Optional if Image Exists</label>
+
+  <input
+    class="a-right"
+    value="${esc(answer.right || answer.match || "")}"
+    placeholder="Optional text match">
+</div>
 
     <div class="field answer-image-field" style="margin-top:9px">
-      <label>Answer Image URL</label>
+      <label>Matching Image URL</label>
       <input class="a-image" value="${esc(answer.image || "")}" placeholder="https://...">
       <img class="preview-img" alt="">
     </div>
@@ -2405,24 +2590,25 @@ function updateQuestionType(questionBox){
       ".answers-admin + .btn"
     );
 
-  if(type === "match"){
+if(type === "match"){
 
-    note.textContent =
-      "Each item contains a left value and its matching right value.";
+  note.textContent =
+    "Enter a Left Item, then use either Matching Pair text or an Answer Image. Matching Pair is optional when an image is provided.";
 
-    labels.forEach(label=>{
-      label.textContent =
-        "Left Item";
-    });
+  labels.forEach(label=>{
+    label.textContent =
+      "Word / Left Item";
+  });
 
-    if(addButton){
+  if(addButton){
 
-      addButton.innerHTML =
-        '<i class="fa-solid fa-plus"></i> Add Matching Pair';
+    addButton.innerHTML =
+      '<i class="fa-solid fa-plus"></i> Add Word / Image Pair';
 
-    }
+  }
 
-  }else if(type === "order"){
+}
+else if(type === "order"){
 
     note.textContent =
       "Enter the items in the correct order. They will be shuffled for the student.";
@@ -2649,11 +2835,55 @@ function collectQuestions(){
       }
     }
 
-    if(type === "match"){
-      if(answers.some(answer=>!answer.text || !answer.right)){
-        throw new Error(`Complete both sides of every matching pair in question ${index + 1}.`);
-      }
-    }
+  if(type === "match"){
+
+  const hasInvalidMatchItem =
+    answers.some(answer=>{
+
+      const leftText =
+        String(
+          answer.text ||
+          ""
+        ).trim();
+
+      const rightText =
+        String(
+          answer.right ||
+          ""
+        ).trim();
+
+      const rightImage =
+        String(
+          answer.image ||
+          ""
+        ).trim();
+
+      /*
+        يجب وجود الكلمة في اليسار.
+
+        في اليمين يكفي أحد الخيارين:
+        - Matching Pair نصي
+        - أو صورة
+      */
+      return (
+        !leftText ||
+        (
+          !rightText &&
+          !rightImage
+        )
+      );
+
+    });
+
+  if(hasInvalidMatchItem){
+
+    throw new Error(
+      `Question ${index + 1}: Each matching item requires a Left Item and either a Matching Pair or an Answer Image.`
+    );
+
+  }
+
+}
 
     if(type === "order"){
       if(answers.some(answer=>!answer.text)){
@@ -6777,57 +7007,239 @@ function shuffleArray(array){
   return copy;
 }
 
-function renderMatchQuestion(question,answersBox){
-  answersBox.className = "match-game";
+function renderMatchQuestion(
+  question,
+  answersBox
+){
 
-  const pairs = (question.answers || []).map((item,index)=>({
-    id:index,
-    left:item.text || "",
-    right:item.right || ""
-  }));
+  answersBox.className =
+    "match-game";
 
-  const rightOptions = shuffleArray(pairs.map(item=>item.right));
+  const pairs =
+    (question.answers || [])
+      .map((item,index)=>{
 
-  answersBox.innerHTML = pairs.map((pair,index)=>`
-    <div class="match-row">
-      <div class="match-left">${esc(pair.left)}</div>
+        const left =
+          String(
+            item?.text ||
+            ""
+          ).trim();
 
-      <select class="match-select" data-correct="${esc(pair.right)}">
-        <option value="">Select a match...</option>
-        ${rightOptions.map(option=>`
-          <option value="${esc(option)}">${esc(option)}</option>
-        `).join("")}
-      </select>
+        const right =
+          String(
+            item?.right ||
+            item?.match ||
+            ""
+          ).trim();
+
+        const image =
+          String(
+            item?.image ||
+            item?.imageUrl ||
+            item?.url ||
+            ""
+          ).trim();
+
+        return {
+          id:
+            index,
+
+          left:
+            left,
+
+          right:
+            right,
+
+          image:
+            image,
+
+          /*
+            معرف داخلي يمنع الاعتماد على النص
+            أو رابط الصورة في التحقق.
+          */
+          matchId:
+            `match_${index}`
+        };
+
+      })
+      .filter(pair=>
+        pair.left &&
+        (
+          pair.right ||
+          pair.image
+        )
+      );
+
+  if(
+    pairs.length < 2
+  ){
+
+    answersBox.innerHTML = `
+      <div class="empty">
+        This Match question requires at least two valid word/image pairs.
+      </div>
+    `;
+
+    return;
+
+  }
+
+  /*
+    خيارات الجهة اليمنى قد تكون:
+    - نصًا
+    - صورة
+  */
+  const rightOptions =
+    shuffleArray(
+      pairs.map(pair=>({
+        matchId:
+          pair.matchId,
+
+        text:
+          pair.right,
+
+        image:
+          pair.image
+      }))
+    );
+
+  answersBox.innerHTML = `
+    <div class="match-image-instruction">
+      Match each word with its correct word or image.
     </div>
-  `).join("") + `
+
+    ${pairs.map(pair=>`
+      <div
+        class="match-row"
+        data-correct-id="${esc(pair.matchId)}">
+
+        <div class="match-left">
+          ${esc(pair.left)}
+        </div>
+
+        <div class="match-image-options">
+
+          ${rightOptions.map(option=>`
+            <button
+              class="match-image-option"
+              type="button"
+              data-match-id="${esc(option.matchId)}"
+              onclick="selectMatchImageOption(this)">
+
+              ${
+                option.image
+                  ? `
+                    <img
+                      src="${esc(option.image)}"
+                      alt="Matching option">
+                  `
+                  : ""
+              }
+
+              ${
+                option.text
+                  ? `
+                    <span>
+                      ${esc(option.text)}
+                    </span>
+                  `
+                  : ""
+              }
+
+            </button>
+          `).join("")}
+
+        </div>
+
+      </div>
+    `).join("")}
+
     <div class="type-result-actions">
-      <button class="btn btn-primary" type="button" onclick="checkMatchAnswer()">
-        <i class="fa-solid fa-check"></i> Check Matches
+      <button
+        class="btn btn-primary"
+        type="button"
+        onclick="checkMatchAnswer()">
+
+        <i class="fa-solid fa-check"></i>
+        Check Matches
+
       </button>
     </div>
   `;
-}
 
+}
+function selectMatchImageOption(
+  button
+){
+
+  if(
+    ANSWER_LOCKED ||
+    !button
+  ){
+    return;
+  }
+
+  const row =
+    button.closest(
+      ".match-row"
+    );
+
+  if(!row){
+    return;
+  }
+
+  /*
+    إلغاء الخيار السابق داخل نفس الصف.
+  */
+  row
+    .querySelectorAll(
+      ".match-image-option"
+    )
+    .forEach(option=>{
+
+      option.classList.remove(
+        "selected"
+      );
+
+    });
+
+  button.classList.add(
+    "selected"
+  );
+
+  row.dataset.selectedId =
+    button.dataset.matchId ||
+    "";
+
+}
 function checkMatchAnswer(){
 
   if(ANSWER_LOCKED){
     return;
   }
 
-  const selects = [
+  const rows = [
     ...document.querySelectorAll(
-      ".match-select"
+      ".match-row"
     )
   ];
 
-  if(
-    selects.some(
-      select => !select.value
-    )
-  ){
+  if(!rows.length){
+    return;
+  }
+
+  const hasIncompleteRow =
+    rows.some(row=>
+      !String(
+        row.dataset.selectedId ||
+        ""
+      ).trim()
+    );
+
+  if(hasIncompleteRow){
 
     alert(
-      "Complete all matching pairs first."
+      "Match every word with an image or answer first."
     );
 
     return;
@@ -6836,30 +7248,72 @@ function checkMatchAnswer(){
 
   ANSWER_LOCKED = true;
 
-  const allCorrect =
-    selects.every(
-      select =>
-        select.value ===
-        select.dataset.correct
-    );
+  let allCorrect =
+    true;
 
-  selects.forEach(select=>{
+  rows.forEach(row=>{
 
-    select.disabled = true;
+    const correctId =
+      String(
+        row.dataset.correctId ||
+        ""
+      );
+
+    const selectedId =
+      String(
+        row.dataset.selectedId ||
+        ""
+      );
 
     const isCorrect =
-      select.value ===
-      select.dataset.correct;
+      selectedId === correctId;
 
-    select.style.borderColor =
-      isCorrect
-        ? "var(--green)"
-        : "var(--red)";
+    if(!isCorrect){
+      allCorrect = false;
+    }
 
-    select.style.background =
-      isCorrect
-        ? "#eafaf4"
-        : "#fff0ee";
+    row
+      .querySelectorAll(
+        ".match-image-option"
+      )
+      .forEach(option=>{
+
+        option.disabled =
+          true;
+
+        const optionId =
+          String(
+            option.dataset.matchId ||
+            ""
+          );
+
+        if(
+          optionId === selectedId
+        ){
+
+          option.classList.add(
+            isCorrect
+              ? "correct"
+              : "wrong"
+          );
+
+        }
+
+        /*
+          إظهار الإجابة الصحيحة عند الخطأ.
+        */
+        if(
+          !isCorrect &&
+          optionId === correctId
+        ){
+
+          option.classList.add(
+            "correct-answer"
+          );
+
+        }
+
+      });
 
   });
 
@@ -6883,7 +7337,6 @@ function checkMatchAnswer(){
     );
 
     launchSmallConfetti();
-
     playCorrectSound();
 
   }else{
@@ -6905,11 +7358,6 @@ function checkMatchAnswer(){
     )
     .textContent =
       `⭐ ${CURRENT_SCORE}`;
-
-  /*
-    لا ينتقل تلقائيًا.
-    يظهر زر Next Question.
-  */
 
   showNextQuestionButton();
 
