@@ -3251,11 +3251,45 @@ async function generateRandomQuestionItemImages(question,index,settings){
     );
   }
 
-  generatedItems.forEach((generated,generatedIndex)=>{
-    const targetIndex =
-      missingIndexes[generatedIndex];
+for(let generatedIndex = 0; generatedIndex < missingIndexes.length; generatedIndex++){
 
-    const url =
+  const targetIndex =
+    missingIndexes[generatedIndex];
+
+  let url = "";
+
+  while(!url){
+
+    const result =
+      await postToAiWorker({
+
+        task:"generate_random_question_images",
+
+        questionText:
+          question.text ||
+          "Look at the selected image and answer the question.",
+
+        imageStyle:
+          settings.imageStyle,
+
+        answers:[
+          {
+            text:
+              preparedItems[targetIndex].text,
+
+            mediaPrompt:
+              preparedItems[targetIndex].mediaPrompt
+          }
+        ]
+
+      });
+
+    const generated =
+      result?.answers?.[0] ||
+      result?.items?.[0] ||
+      result?.images?.[0];
+
+    url =
       typeof generated === "string"
         ? generated
         : String(
@@ -3265,18 +3299,23 @@ async function generateRandomQuestionItemImages(question,index,settings){
             ""
           ).trim();
 
-if(!url){
+    if(!url){
 
-  console.warn(
-    `Image ${generatedIndex + 1} was not returned for random question ${index + 1}.`
-  );
+      console.warn(
+        `Retrying image ${generatedIndex + 1} for question ${index + 1}...`
+      );
 
-  return;
+      await new Promise(resolve =>
+        setTimeout(resolve,2000)
+      );
+
+    }
+
+  }
+
+  preparedItems[targetIndex].image = url;
+
 }
-
-    preparedItems[targetIndex].image =
-      url;
-  });
 
   return {
     ...question,
