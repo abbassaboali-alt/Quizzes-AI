@@ -3184,27 +3184,73 @@ async function generateRandomQuestionItemImages(question,index,settings){
     );
   }
 
-  const preparedItems =
-    items.map((item,itemIndex)=>({
-      text:String(item?.text || "").trim(),
+const preparedItems =
+  items.map((item,itemIndex)=>({
 
-      mediaPrompt:String(
+    /*
+      الاحتفاظ بجميع بيانات الإجابة الأصلية:
+      right, correct وأي حقول إضافية.
+    */
+    ...item,
+
+    text:
+      String(
+        item?.text ||
+        ""
+      )
+      .trim(),
+
+    right:
+      String(
+        item?.right ||
+        ""
+      )
+      .trim(),
+
+    mediaPrompt:
+      String(
         item?.mediaPrompt ||
         item?.imagePrompt ||
         item?.prompt ||
         item?.text ||
-        `Educational image item ${itemIndex + 1} for: ${question.text}`
-      ).trim(),
+        `Educational image item ${itemIndex + 1} for: ${
+          question.text ||
+          ""
+        }`
+      )
+      .trim(),
 
-      image:String(
+    image:
+      String(
         item?.image ||
         item?.imageUrl ||
         item?.url ||
         ""
-      ).trim(),
+      )
+      .trim(),
 
-      correct:false
-    }));
+    /*
+      نحافظ على الإجابة الصحيحة في MCQ
+      وBalloon وMystery.
+
+      أما الأنواع التي لا تستخدم correct
+      فتبقى false.
+    */
+    correct:
+      ["random","wheel","match","order"]
+        .includes(
+          String(
+            question.type ||
+            ""
+          )
+          .toLowerCase()
+        )
+        ? false
+        : Boolean(
+            item?.correct
+          )
+
+  }));
 
   /*
     Generate only the missing images.
@@ -3267,44 +3313,9 @@ return {
     null
   );
 
-  const result =
-    await postToAiWorker({
-      task:"generate_random_question_images",
+  
 
-      questionText:
-        question.text ||
-        "Look at the selected image and answer the question.",
 
-      imageStyle:
-        settings.imageStyle,
-
-      answers:
-        missingIndexes.map(itemIndex=>({
-          text:
-            preparedItems[itemIndex].text,
-
-          mediaPrompt:
-            preparedItems[itemIndex].mediaPrompt
-        }))
-    });
-
-  const generatedItems =
-    Array.isArray(result?.answers)
-      ? result.answers
-      : Array.isArray(result?.items)
-        ? result.items
-        : Array.isArray(result?.images)
-          ? result.images
-          : [];
-
-  if(
-    generatedItems.length !==
-    missingIndexes.length
-  ){
-    throw new Error(
-      `The AI returned ${generatedItems.length} images for random question ${index + 1}, but ${missingIndexes.length} were required.`
-    );
-  }
 
 for(let generatedIndex = 0; generatedIndex < missingIndexes.length; generatedIndex++){
 
@@ -3312,13 +3323,23 @@ for(let generatedIndex = 0; generatedIndex < missingIndexes.length; generatedInd
     missingIndexes[generatedIndex];
 
   let url = "";
+let attempts = 0;
+const maxAttempts = 3;
 
-  while(!url){
+while(
+  !url &&
+  attempts < maxAttempts
+){
+
+  attempts++;
+
+  try{
 
     const result =
       await postToAiWorker({
 
-        task:"generate_random_question_images",
+        task:
+          "generate_random_question_images",
 
         questionText:
           question.text ||
@@ -3352,36 +3373,89 @@ for(let generatedIndex = 0; generatedIndex < missingIndexes.length; generatedInd
             generated?.imageUrl ||
             generated?.url ||
             ""
-          ).trim();
+          )
+          .trim();
 
-    if(!url){
+  }catch(error){
 
-      console.warn(
-        `Retrying image ${generatedIndex + 1} for question ${index + 1}...`
-      );
-
-      await new Promise(resolve =>
-        setTimeout(resolve,2000)
-      );
-
-    }
+    console.warn(
+      `Image attempt ${attempts} failed for question ${index + 1}:`,
+      error
+    );
 
   }
 
-  preparedItems[targetIndex].image = url;
+  if(
+    !url &&
+    attempts < maxAttempts
+  ){
+
+    await new Promise(
+      resolve =>
+        setTimeout(
+          resolve,
+          2000
+        )
+    );
+
+  }
 
 }
 
-  return {
-    ...question,
-    type:"random",
-    mediaType:"none",
-    mediaUrl:"",
-    image:"",
-    video:"",
-    audio:"",
-    answers:preparedItems
-  };
+if(!url){
+
+  console.warn(
+    `Image ${generatedIndex + 1} was skipped after ${maxAttempts} attempts.`
+  );
+
+  preparedItems[targetIndex].generationStatus =
+    "failed";
+
+  continue;
+
+}
+
+preparedItems[targetIndex].image =
+  url;
+
+preparedItems[targetIndex].generationStatus =
+  "completed";
+
+preparedItems[targetIndex].image =
+  url;
+
+}
+
+return {
+  ...question,
+
+  type:
+    question.type ||
+    "mcq",
+
+  mediaType:
+    question.mediaType ||
+    "none",
+
+  mediaUrl:
+    question.mediaUrl ||
+    "",
+
+  image:
+    question.image ||
+    "",
+
+  video:
+    question.video ||
+    "",
+
+  audio:
+    question.audio ||
+    "",
+
+  answers:
+    preparedItems
+};
 }
 
 async function generateOneQuestionMedia(
@@ -3597,37 +3671,90 @@ async function generateOneQuestionMedia(
 
 }
 
-async function generateMediaForQuestions(questions,settings){
+async function generateMediaForQuestions(
+  questions,
+  settings
+){
+
   const output = [];
 
-  for(let index=0;index<questions.length;index++){
-    const question = questions[index];
-    const percent = Math.round(
-      (index / Math.max(questions.length,1)) * 100
-    );
+  for(
+    let index = 0;
+    index < questions.length;
+    index++
+  ){
+
+    const question =
+      questions[index];
+
+    const percent =
+      Math.round(
+        (
+          index /
+          Math.max(
+            questions.length,
+            1
+          )
+        ) *
+        100
+      );
 
     setAiProgress(
-      question.type === "random"
-        ? `Creating random images for question ${index + 1} of ${questions.length}...`
-        : `Creating ${question.mediaType || "media"} for question ${index + 1} of ${questions.length}...`,
+      `Creating media for question ${index + 1} of ${questions.length}...`,
       percent
     );
 
-    const completed = await generateOneQuestionMedia(
-      question,
-      index,
-      settings
-    );
+    try{
 
-    output.push(completed);
+      const completed =
+        await generateOneQuestionMedia(
+          question,
+          index,
+          settings
+        );
+
+      output.push({
+        ...completed,
+        mediaGenerationStatus:
+          "completed"
+      });
+
+    }catch(error){
+
+      console.error(
+        `Media generation failed for question ${index + 1}:`,
+        error
+      );
+
+      /*
+        الاحتفاظ بالسؤال والمتابعة
+        إلى السؤال التالي.
+      */
+
+      output.push({
+        ...question,
+        mediaGenerationStatus:
+          "failed",
+
+        mediaGenerationError:
+          String(
+            error?.message ||
+            error ||
+            "Unknown media generation error."
+          )
+      });
+
+    }
+
   }
 
   setAiProgress(
-    "All question media has been generated and uploaded.",
+    "Question media processing completed.",
     100
   );
 
   return output;
+
 }
 /* =========================================
    REQUIRE FILE WHEN DESCRIPTION IS USED
@@ -4250,7 +4377,8 @@ QUESTION RULES:
   Set "right" to an empty string.
   Set "correct" to false for every item.
   Do not create one correct option because the trainer grades the spoken answer.
-  Set the question mediaType to "none".
+  Use the requested question-level media type.
+Random answer items may also contain image mediaPrompt values.
 
 - For Wheel of Fortune:
   Use type "wheel".
@@ -4261,7 +4389,8 @@ QUESTION RULES:
   For Video and Listening, write a practical prompt that can be used with teacher-provided or generated media.
   For Double Points, create a challenging bonus question.
   Set "correct" to false for every wheel section because the trainer grades the spoken answer.
-  Set question mediaType to "none".
+  Use the requested question-level media type.
+For Picture wheel sections, include a detailed answer mediaPrompt when appropriate.
 
 - For Balloon Pop:
   The browser will display one animated balloon first.
@@ -4359,7 +4488,15 @@ sourceTextLength:
         let defaultMediaType = requestedMediaType;
 
         if(defaultQuestionType === "mixed"){
-          const questionTypes = ["mcq","match","order","random","wheel"];
+          const questionTypes = [
+  "mcq",
+  "match",
+  "order",
+  "random",
+  "wheel",
+  "balloon",
+  "mystery"
+];
           defaultQuestionType = questionTypes[index % questionTypes.length];
         }
 
@@ -4368,9 +4505,7 @@ sourceTextLength:
           defaultMediaType = mediaTypes[index % mediaTypes.length];
         }
 
-        if(defaultQuestionType === "random"){
-          defaultMediaType = "none";
-        }
+    
 
         const normalizedQuestion =
           normalizeAiQuestion(
@@ -4402,11 +4537,7 @@ sourceTextLength:
         }
 
         if(requestedQuestionType === "random"){
-          normalizedQuestion.mediaType = "none";
-          normalizedQuestion.mediaUrl = "";
-          normalizedQuestion.image = "";
-          normalizedQuestion.video = "";
-          normalizedQuestion.audio = "";
+        
 
           normalizedQuestion.answers =
             (normalizedQuestion.answers || [])
