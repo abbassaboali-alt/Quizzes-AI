@@ -1468,6 +1468,165 @@ button{cursor:pointer}
 }
 
 
+
+/* =====================================
+   RACE GAME MODE
+===================================== */
+
+.race-board{
+  margin:0 0 16px;
+  padding:17px;
+  border:2px solid var(--gold);
+  border-radius:20px;
+  background:
+    linear-gradient(135deg,#fff9e7,#ffffff);
+  box-shadow:0 10px 25px rgba(22,68,120,.10);
+}
+
+.race-board-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-bottom:12px;
+}
+
+.race-board-title{
+  color:var(--blue);
+  font-size:18px;
+  font-weight:900;
+}
+
+.race-board-status{
+  padding:7px 11px;
+  border-radius:999px;
+  background:#edf4fa;
+  color:var(--blue);
+  font-size:12px;
+  font-weight:900;
+}
+
+.race-track{
+  position:relative;
+  height:88px;
+  overflow:hidden;
+  border:3px solid #24384a;
+  border-radius:16px;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      rgba(255,255,255,.08) 0 46px,
+      rgba(255,255,255,.22) 46px 48px
+    ),
+    linear-gradient(180deg,#596a79,#34495e);
+}
+
+.race-track::before,
+.race-track::after{
+  content:"";
+  position:absolute;
+  left:0;
+  right:0;
+  height:4px;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      #fff 0 18px,
+      transparent 18px 36px
+    );
+  opacity:.75;
+}
+
+.race-track::before{top:18px}
+.race-track::after{bottom:18px}
+
+.race-start{
+  position:absolute;
+  left:13px;
+  top:7px;
+  bottom:7px;
+  width:5px;
+  border-radius:4px;
+  background:#17a673;
+  z-index:2;
+}
+
+.race-finish{
+  position:absolute;
+  right:12px;
+  top:0;
+  bottom:0;
+  width:25px;
+  background:
+    conic-gradient(
+      #fff 25%,
+      #111 0 50%,
+      #fff 0 75%,
+      #111 0
+    ) 0 0 / 14px 14px;
+  border-left:2px solid #fff;
+  border-right:2px solid #fff;
+  z-index:2;
+}
+
+.race-player{
+  position:absolute;
+  left:18px;
+  top:50%;
+  transform:translateY(-50%);
+  z-index:4;
+  font-size:47px;
+  line-height:1;
+  filter:drop-shadow(0 5px 4px rgba(0,0,0,.35));
+  transition:left .65s cubic-bezier(.2,.8,.2,1);
+}
+
+.race-player.race-moving{
+  animation:racePlayerBounce .65s ease;
+}
+
+.race-player.race-finished{
+  animation:raceWinnerPulse .8s ease infinite alternate;
+}
+
+.race-step-dots{
+  display:flex;
+  justify-content:space-between;
+  gap:4px;
+  margin-top:10px;
+}
+
+.race-step-dot{
+  flex:1;
+  height:8px;
+  max-width:34px;
+  border-radius:999px;
+  background:#dce6ef;
+  transition:.3s;
+}
+
+.race-step-dot.done{
+  background:var(--green);
+}
+
+@keyframes racePlayerBounce{
+  0%,100%{transform:translateY(-50%) rotate(0)}
+  45%{transform:translateY(-66%) rotate(-5deg)}
+}
+
+@keyframes raceWinnerPulse{
+  from{transform:translateY(-50%) scale(1)}
+  to{transform:translateY(-50%) scale(1.12)}
+}
+
+@media(max-width:650px){
+  .race-board{padding:12px}
+  .race-track{height:76px}
+  .race-player{font-size:39px}
+  .race-finish{width:22px}
+}
+
 </style>
 </head>
 
@@ -1582,6 +1741,16 @@ button{cursor:pointer}
           <option value="open">Open to Students</option>
           <option value="closed">Closed</option>
         </select>
+
+        <label style="margin-top:12px">Game Mode</label>
+        <select id="activityGameMode">
+          <option value="normal">🎮 Normal Mode</option>
+          <option value="race">🏁 Race Game</option>
+        </select>
+
+        <div class="help">
+          In Race Game, every correct answer moves the player toward the finish line.
+        </div>
       </div>
     </div>
   </div>
@@ -1996,6 +2165,29 @@ Create:
 
     </div>
 
+    <div id="raceBoard" class="race-board hidden">
+      <div class="race-board-head">
+        <div class="race-board-title">
+          🏁 Race Game
+        </div>
+
+        <div id="raceBoardStatus" class="race-board-status">
+          0 correct answers
+        </div>
+      </div>
+
+      <div id="raceTrack" class="race-track">
+        <div class="race-start"></div>
+        <div class="race-finish"></div>
+
+        <div id="racePlayer" class="race-player" aria-label="Race player">
+          🏎️
+        </div>
+      </div>
+
+      <div id="raceStepDots" class="race-step-dots"></div>
+    </div>
+
     <div class="game-card">
       <div id="questionNumber" class="question-number"></div>
 
@@ -2152,6 +2344,284 @@ let WHEEL_IS_SPINNING = false;
 let WHEEL_SELECTED_INDEX = -1;
 let WHEEL_ROTATION = 0;
 let WHEEL_POINTS_MULTIPLIER = 1;
+
+let RACE_MODE_ACTIVE = false;
+let RACE_TOTAL_STEPS = 0;
+let RACE_POSITION = 0;
+let RACE_SCORE_OBSERVER = null;
+
+
+/* =====================================
+   RACE GAME
+===================================== */
+
+function getActivityGameMode(){
+
+  return String(
+    CURRENT_ACTIVITY?.gameMode ||
+    CURRENT_ACTIVITY?.activityGameMode ||
+    "normal"
+  )
+  .trim()
+  .toLowerCase();
+
+}
+
+function setupRaceGame(){
+
+  const board =
+    document.getElementById(
+      "raceBoard"
+    );
+
+  RACE_MODE_ACTIVE =
+    getActivityGameMode() ===
+    "race";
+
+  RACE_TOTAL_STEPS =
+    Math.max(
+      1,
+      Number(
+        CURRENT_ACTIVITY
+          ?.questions
+          ?.length ||
+        1
+      )
+    );
+
+  RACE_POSITION = 0;
+
+  if(!board){
+    return;
+  }
+
+  board.classList.toggle(
+    "hidden",
+    !RACE_MODE_ACTIVE
+  );
+
+  renderRaceGame(false);
+
+}
+
+function renderRaceGame(
+  animate = true
+){
+
+  if(
+    !RACE_MODE_ACTIVE
+  ){
+    return;
+  }
+
+  const player =
+    document.getElementById(
+      "racePlayer"
+    );
+
+  const status =
+    document.getElementById(
+      "raceBoardStatus"
+    );
+
+  const dots =
+    document.getElementById(
+      "raceStepDots"
+    );
+
+  if(
+    !player ||
+    !status ||
+    !dots
+  ){
+    return;
+  }
+
+  const safePosition =
+    Math.max(
+      0,
+      Math.min(
+        RACE_TOTAL_STEPS,
+        Number(
+          RACE_POSITION ||
+          0
+        )
+      )
+    );
+
+  const percent =
+    RACE_TOTAL_STEPS > 0
+      ? (
+          safePosition /
+          RACE_TOTAL_STEPS
+        ) * 100
+      : 0;
+
+  /*
+    The player travels from the start line to just
+    before the checkered finish strip.
+  */
+  const leftPercent =
+    2 + (
+      Math.min(
+        100,
+        percent
+      ) * 0.82
+    );
+
+  player.style.left =
+    `calc(${leftPercent}% - 18px)`;
+
+  if(animate){
+
+    player.classList.remove(
+      "race-moving"
+    );
+
+    void player.offsetWidth;
+
+    player.classList.add(
+      "race-moving"
+    );
+
+  }
+
+  const finished =
+    safePosition >=
+    RACE_TOTAL_STEPS;
+
+  player.classList.toggle(
+    "race-finished",
+    finished
+  );
+
+  status.textContent =
+    finished
+      ? "🏆 Finish Line Reached!"
+      : `${safePosition} / ${RACE_TOTAL_STEPS} steps`;
+
+  dots.innerHTML =
+    Array.from(
+      {
+        length:
+          Math.min(
+            RACE_TOTAL_STEPS,
+            30
+          )
+      },
+      (_,index)=>`
+        <span
+          class="race-step-dot ${
+            index <
+            Math.round(
+              (
+                safePosition /
+                RACE_TOTAL_STEPS
+              ) *
+              Math.min(
+                RACE_TOTAL_STEPS,
+                30
+              )
+            )
+              ? "done"
+              : ""
+          }">
+        </span>
+      `
+    )
+    .join("");
+
+}
+
+function syncRaceWithScore(){
+
+  if(
+    !RACE_MODE_ACTIVE
+  ){
+    return;
+  }
+
+  const newPosition =
+    Math.max(
+      0,
+      Math.min(
+        RACE_TOTAL_STEPS,
+        Number(
+          CURRENT_SCORE ||
+          0
+        )
+      )
+    );
+
+  const moved =
+    newPosition >
+    RACE_POSITION;
+
+  RACE_POSITION =
+    newPosition;
+
+  renderRaceGame(
+    moved
+  );
+
+}
+
+function observeScoreForRace(){
+
+  if(
+    RACE_SCORE_OBSERVER
+  ){
+
+    RACE_SCORE_OBSERVER
+      .disconnect();
+
+    RACE_SCORE_OBSERVER =
+      null;
+
+  }
+
+  const scorePill =
+    document.getElementById(
+      "scorePill"
+    );
+
+  if(!scorePill){
+    return;
+  }
+
+  RACE_SCORE_OBSERVER =
+    new MutationObserver(
+      ()=>{
+        syncRaceWithScore();
+      }
+    );
+
+  RACE_SCORE_OBSERVER.observe(
+    scorePill,
+    {
+      childList:true,
+      subtree:true,
+      characterData:true
+    }
+  );
+
+}
+
+function stopRaceObserver(){
+
+  if(
+    RACE_SCORE_OBSERVER
+  ){
+
+    RACE_SCORE_OBSERVER
+      .disconnect();
+
+    RACE_SCORE_OBSERVER =
+      null;
+
+  }
+
+}
 
 /* =====================================
    ANSWER SOUNDS
@@ -5290,6 +5760,11 @@ timerTotalSeconds,
 
       description:readText("activityDescription"),
 
+      gameMode:
+        document
+          .getElementById("activityGameMode")
+          .value || "normal",
+
       group:document.getElementById("activityGroup").value,
       status:document.getElementById("activityStatus").value,
 
@@ -5387,6 +5862,11 @@ function renderAdminActivities(){
         <span class="mini">🏫 ${esc(activity.branch || "Not Specified")}</span>
         <span class="mini">👥 ${esc(activity.group || "General")}</span>
         <span class="mini">
+          ${(activity.gameMode || "normal") === "race"
+            ? "🏁 Race Game"
+            : "🎮 Normal"}
+        </span>
+        <span class="mini">
           ${activity.status === "open" ? "🟢 Open" : "🔴 Closed"}
         </span>
       </div>
@@ -5437,6 +5917,9 @@ function editActivity(id){
 
   document.getElementById("activityStatus").value =
     activity.status || "open";
+
+  document.getElementById("activityGameMode").value =
+    activity.gameMode || "normal";
     document.getElementById("activityTimerType").value =
   activity.timerType || "open";
 
@@ -5494,6 +5977,7 @@ function resetEditor(){
   document.getElementById("activityDescription").value = "";
   document.getElementById("activityGroup").value = "General";
   document.getElementById("activityStatus").value = "open";
+  document.getElementById("activityGameMode").value = "normal";
 
   if(document.getElementById("aiQuestionType")){
     document.getElementById("aiQuestionType").value = "mcq";
@@ -5545,6 +6029,12 @@ function previewActivity(id){
           ${previewInfo("Department",activity.section || activity.department || "Not Specified")}
           ${previewInfo("Period",activity.period || "Not Specified")}
           ${previewInfo("Questions",questions.length)}
+          ${previewInfo(
+            "Game Mode",
+            (activity.gameMode || "normal") === "race"
+              ? "Race Game"
+              : "Normal Mode"
+          )}
         </div>
       </div>
 
@@ -6055,6 +6545,11 @@ function renderStudentActivities(){
       <div class="actions" style="justify-content:space-between;align-items:center">
         <strong>
           ❓ ${Number(activity.questionCount || activity.questions?.length || 0)} Questions
+          ${
+            (activity.gameMode || "normal") === "race"
+              ? " • 🏁 Race Game"
+              : ""
+          }
         </strong>
 
         <button
@@ -6113,8 +6608,12 @@ ACTIVITY_FINISHED = false;
     top:0,
     behavior:"smooth"
   });
-startActivityTimer();
+setupRaceGame();
+  observeScoreForRace();
+
+  startActivityTimer();
   renderStudentQuestion();
+  syncRaceWithScore();
 }
 
 /* ===============================
@@ -8277,6 +8776,18 @@ async function finishActivity(){
     .textContent =
       message;
 
+  if(
+    RACE_MODE_ACTIVE &&
+    RACE_POSITION >= RACE_TOTAL_STEPS
+  ){
+
+    document
+      .getElementById("resultMessage")
+      .textContent =
+        "🏁 Excellent! You reached the finish line.";
+
+  }
+
   launchBigConfetti();
 
   try{
@@ -8340,6 +8851,19 @@ async function finishActivity(){
 
         score:
           CURRENT_SCORE,
+
+        gameMode:
+          getActivityGameMode(),
+
+        racePosition:
+          RACE_MODE_ACTIVE
+            ? RACE_POSITION
+            : 0,
+
+        raceTotalSteps:
+          RACE_MODE_ACTIVE
+            ? RACE_TOTAL_STEPS
+            : 0,
 
         total:
           total,
@@ -8422,6 +8946,9 @@ function restartGame(){
   ANSWER_LOCKED = false;
   ACTIVITY_FINISHED = false;
 
+  setupRaceGame();
+  observeScoreForRace();
+
   document
     .getElementById("resultArea")
     .classList
@@ -8442,6 +8969,16 @@ function backToActivities(){
 
   clearRandomQuestionTimers();
   stopActivityTimer();
+  stopRaceObserver();
+
+  RACE_MODE_ACTIVE = false;
+  RACE_TOTAL_STEPS = 0;
+  RACE_POSITION = 0;
+
+  document
+    .getElementById("raceBoard")
+    ?.classList
+    .add("hidden");
 
   ACTIVITY_FINISHED = true;
 
