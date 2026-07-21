@@ -2186,6 +2186,13 @@ function startActivityTimer(){
 
   stopActivityTimer();
 
+  if(
+    ACTIVITY_FINISHED ||
+    !CURRENT_ACTIVITY
+  ){
+    return;
+  }
+
   ACTIVITY_FINISHED = false;
 
   const display =
@@ -2193,15 +2200,26 @@ function startActivityTimer(){
       "activityTimerDisplay"
     );
 
+  if(!display){
+    return;
+  }
+
   const timerType =
-    CURRENT_ACTIVITY?.timerType ||
-    "open";
+    String(
+      CURRENT_ACTIVITY?.timerType ||
+      "open"
+    )
+    .trim()
+    .toLowerCase();
 
   const totalSeconds =
-    Number(
-      CURRENT_ACTIVITY
-        ?.timerTotalSeconds ||
-      0
+    Math.max(
+      0,
+      Number(
+        CURRENT_ACTIVITY
+          ?.timerTotalSeconds ||
+        0
+      ) || 0
     );
 
   if(
@@ -2229,13 +2247,29 @@ function startActivityTimer(){
   ACTIVITY_TIMER_INTERVAL =
     setInterval(()=>{
 
-      ACTIVITY_TIME_LEFT--;
+      if(
+        ACTIVITY_FINISHED ||
+        !CURRENT_ACTIVITY
+      ){
+
+        stopActivityTimer();
+        return;
+
+      }
+
+      ACTIVITY_TIME_LEFT =
+        Math.max(
+          0,
+          ACTIVITY_TIME_LEFT - 1
+        );
 
       updateActivityTimerDisplay();
 
       if(
         ACTIVITY_TIME_LEFT <= 0
       ){
+
+        ACTIVITY_TIME_LEFT = 0;
 
         stopActivityTimer();
 
@@ -6787,6 +6821,17 @@ function popQuestionBalloon(
     selectedIndex
   );
 
+  /*
+    Ensure the countdown starts when the balloon is selected.
+    This also safely restarts a missing or stopped interval.
+  */
+  if(
+    CURRENT_ACTIVITY?.timerType === "limited" &&
+    !ACTIVITY_TIMER_INTERVAL
+  ){
+    startActivityTimer();
+  }
+
   const question =
     CURRENT_ACTIVITY
       .questions[
@@ -7197,6 +7242,17 @@ function openMysteryBox(
   moveSelectedQuestionToCurrent(
     selectedIndex
   );
+
+  /*
+    Ensure the countdown starts when the balloon is selected.
+    This also safely restarts a missing or stopped interval.
+  */
+  if(
+    CURRENT_ACTIVITY?.timerType === "limited" &&
+    !ACTIVITY_TIMER_INTERVAL
+  ){
+    startActivityTimer();
+  }
 
   const question =
     CURRENT_ACTIVITY
