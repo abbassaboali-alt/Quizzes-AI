@@ -6277,18 +6277,110 @@ function showNextQuestionButton(){
 
 }
 
+
+/* =====================================
+   COMPLETE BALLOON / MYSTERY GROUP FIRST
+   INSIDE MIXED ACTIVITIES
+===================================== */
+
+function moveNextGroupedQuestionToCurrent(
+  groupedType
+){
+
+  if(
+    !CURRENT_ACTIVITY ||
+    !Array.isArray(
+      CURRENT_ACTIVITY.questions
+    )
+  ){
+    return false;
+  }
+
+  const normalizedType =
+    String(
+      groupedType ||
+      ""
+    )
+    .trim()
+    .toLowerCase();
+
+  if(
+    normalizedType !== "balloon" &&
+    normalizedType !== "mystery"
+  ){
+    return false;
+  }
+
+  /*
+    Search only among the questions that have not
+    been answered yet.
+  */
+  const nextSameTypeIndex =
+    CURRENT_ACTIVITY.questions
+      .findIndex(
+        (question,index)=>
+          index >= CURRENT_QUESTION_INDEX &&
+          String(
+            question?.type ||
+            ""
+          )
+          .trim()
+          .toLowerCase() ===
+          normalizedType
+      );
+
+  if(
+    nextSameTypeIndex < 0
+  ){
+    return false;
+  }
+
+  /*
+    Move the next remaining balloon/box question
+    to the current position. The mixed question
+    that was there is preserved for later.
+  */
+  moveSelectedQuestionToCurrent(
+    nextSameTypeIndex
+  );
+
+  return true;
+}
+
 function nextQuestionManually(){
 
-  if(!ANSWER_LOCKED){
+  if(
+    !ANSWER_LOCKED ||
+    ACTIVITY_FINISHED
+  ){
     return;
   }
+
+  stopActivityTimer();
 
   document
     .getElementById(
       "nextQuestionArea"
     )
     .classList
-    .add("hidden");
+    .add(
+      "hidden"
+    );
+
+  /*
+    Save the type of the question that was just
+    answered before increasing the index.
+  */
+  const answeredType =
+    String(
+      CURRENT_ACTIVITY
+        ?.questions
+        ?.[CURRENT_QUESTION_INDEX]
+        ?.type ||
+      ""
+    )
+    .trim()
+    .toLowerCase();
 
   CURRENT_QUESTION_INDEX++;
 
@@ -6297,11 +6389,24 @@ function nextQuestionManually(){
     CURRENT_ACTIVITY.questions.length
   ){
 
+    /*
+      In a Mixed activity, continue all remaining
+      Balloon Pop or Mystery Box questions before
+      moving to another question type.
+    */
+    moveNextGroupedQuestionToCurrent(
+      answeredType
+    );
+
+    ANSWER_LOCKED = false;
+
     renderStudentQuestion();
+
+    prepareTimerForCurrentQuestion();
 
   }else{
 
-    finishActivity();
+    finishActivity(false);
 
   }
 
