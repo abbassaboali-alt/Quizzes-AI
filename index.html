@@ -5318,7 +5318,15 @@ function prepareAiSourceText(text){
 ========================================= */
 function parseDirectImportedQuestions(sourceText){
 
+  /*
+    تنظيف قوي للنص قبل التحليل:
+    - لا تتأثر الأسئلة بالأسطر الفارغة.
+    - لا تتأثر الخيارات بالمسافات قبلها أو بعدها.
+    - يدعم مسافات Word الخاصة والمخفية.
+    - يدعم النجمة قبل الإجابة أو بعدها أو قبل حرف الخيار.
+  */
   let cleanedText = String(sourceText || "")
+    .replace(/\u0000/g, "")
     .replace(/\r\n?/g, "\n")
     .replace(/\u00A0/g, " ")
     .replace(/[\u200B-\u200F\u202A-\u202E\u2060\uFEFF]/g, "")
@@ -5328,15 +5336,22 @@ function parseDirectImportedQuestions(sourceText){
     .replace(/[）]/g, ")")
     .replace(/[“”]/g, '"')
     .replace(/[‘’]/g, "'")
+    .replace(/[ ]{2,}/g, " ")
+    .replace(/[ \t]*\n[ \t]*/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
     .trim();
 
   if(!cleanedText){
-    throw new Error("No readable text was found in the selected file.");
+    throw new Error(
+      "No readable text was found in the selected file."
+    );
   }
 
   /*
-    حماية الأرقام العشرية والأوقات مثل:
-    11.30 - 7.00 - 10.15
+    حماية الأرقام العشرية والأوقات:
+    7.00
+    11.30
+    10.15
   */
   cleanedText = cleanedText.replace(
     /(\d+)\s*\.\s*(\d+)/g,
@@ -5344,15 +5359,18 @@ function parseDirectImportedQuestions(sourceText){
   );
 
   /*
-    التعرف على رقم السؤال دون الاعتماد على المسافات:
+    وضع علامة قبل رقم السؤال.
+
+    يدعم:
     1. Question
     1.Question
-    1 )Question
-    1- Question
-    1:Question
+    1 ) Question
+    1)Question
+    1-Question
+    1 : Question
   */
   cleanedText = cleanedText.replace(
-    /(^|[^0-9])\s*(\d{1,3})\s*[\.\)\-:]\s*/g,
+    /(^|[\n\s])(\d{1,3})\s*[\.\)\-:]\s*/g,
     function(fullMatch, before, questionNumber){
       return (
         before +
@@ -5365,7 +5383,11 @@ function parseDirectImportedQuestions(sourceText){
 
   const blocks = cleanedText
     .split("__QUESTION_START__")
-    .map(block => String(block || "").trim())
+    .map(block =>
+      String(block || "")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim()
+    )
     .filter(Boolean);
 
   const questions = [];
@@ -5376,127 +5398,132 @@ function parseDirectImportedQuestions(sourceText){
       .replace(/__DECIMAL_DOT__/g, ".")
       .trim();
 
-    const numberMatch = block.match(/^(\d{1,3})__(.*)$/s);
-    if(!numberMatch) continue;
+    const numberMatch =
+      block.match(/^(\d{1,3})__(.*)$/s);
 
-    const content = String(numberMatch[2] || "").trim();
-    if(!content) continue;
+    if(!numberMatch){
+      continue;
+    }
+
+    const content = String(numberMatch[2] || "")
+      .replace(/[ \t]*\n[ \t]*/g, "\n")
+      .trim();
+
+    if(!content){
+      continue;
+    }
 
     /*
-      استخراج كل علامات الخيارات المحتملة دون تأثر بالمسافات:
+      اكتشاف الخيارات دون الاعتماد على المسافات أو الأسطر.
 
+      يدعم:
       A) answer
       A ) answer
       A.answer
       A . answer
       A-answer
-      A :answer
+      A : answer
       *A) answer
       A*) answer
-
-      ثم نختار تسلسلاً صحيحاً يبدأ من A ثم B ثم C...
-      حتى لا يتم اعتبار a.m. خياراً بالخطأ.
+      A) *answer
     */
     const optionRegex =
-      /(^|[^A-Za-z0-9])(\*)?\s*([a-hA-H])\s*(\*)?\s*[\)\.\-:]\s*/g;
+      /(^|[\s\n])(\*)?\s*([a-hA-H])\s*(\*)?\s*[\)\.\-:]\s*/g;
 
-    const candidates = [];
-    let optionMatch;
-
-    while((optionMatch = optionRegex.exec(content)) !== null){
-
-      const prefix = String(optionMatch[1] || "");
-      const markerStart = optionMatch.index + prefix.length;
-
-      candidates.push({
-        index: markerStart,
-        end: optionRegex.lastIndex,
-        letter: String(optionMatch[3] || "").toLowerCase(),
-        markerCorrect: Boolean(optionMatch[2] || optionMatch[4])
-      });
-    }
-
-    let optionMatches = [];
-
-    for(let startIndex = 0; startIndex < candidates.length; startIndex++){
-
-      if(candidates[startIndex].letter !== "a") continue;
-
-      const sequence = [candidates[startIndex]];
-      let expectedCode = "b".charCodeAt(0);
-
-      for(let i = startIndex + 1; i < candidates.length; i++){
-
-        const expectedLetter = String.fromCharCode(expectedCode);
-
-        if(candidates[i].letter === expectedLetter){
-          sequence.push(candidates[i]);
-          expectedCode++;
-          continue;
-        }
-
-        if(candidates[i].letter === "a"){
-          break;
-        }
-      }
-
-      if(sequence.length >= 2){
-        optionMatches = sequence;
-        break;
-      }
-    }
+    const optionMatches =
+      Array.from(content.matchAll(optionRegex));
 
     if(optionMatches.length < 2){
-      console.warn("DIRECT IMPORT OPTIONS NOT FOUND:", content);
       continue;
     }
 
+    const firstOptionPosition =
+      optionMatches[0].index;
+
     const questionText = content
-      .substring(0, optionMatches[0].index)
+      .substring(0, firstOptionPosition)
+      .replace(/\n+/g, " ")
       .replace(/\s+/g, " ")
       .trim();
 
-    if(!questionText) continue;
+    if(!questionText){
+      continue;
+    }
 
     const answers = [];
     let correctCount = 0;
 
-    for(let i = 0; i < optionMatches.length; i++){
+    for(
+      let i = 0;
+      i < optionMatches.length;
+      i++
+    ){
 
-      const current = optionMatches[i];
-      const optionStart = current.end;
-      const optionEnd = optionMatches[i + 1]
-        ? optionMatches[i + 1].index
-        : content.length;
+      const current =
+        optionMatches[i];
+
+      const optionStart =
+        current.index +
+        current[0].length;
+
+      const optionEnd =
+        optionMatches[i + 1]
+          ? optionMatches[i + 1].index
+          : content.length;
 
       let optionText = content
         .substring(optionStart, optionEnd)
+        .replace(/\n+/g, " ")
         .replace(/\s+/g, " ")
         .trim();
 
-      if(!optionText) continue;
+      if(!optionText){
+        continue;
+      }
 
-      const textHasCorrectMarker =
-        optionText.includes("*") ||
-        /\(\s*correct\s*\)|\[\s*correct\s*\]|\{\s*correct\s*\}/i
+      /*
+        النجمة قد تكون:
+        *A) answer
+        A*) answer
+        A) *answer
+        A) answer*
+        A) answer *
+      */
+      const markerBeforeLetter =
+        current[2] === "*";
+
+      const markerAfterLetter =
+        current[4] === "*";
+
+      const markerInsideAnswer =
+        optionText.includes("*");
+
+      const correctWordMarker =
+        /\(correct\)|\[correct\]|\{correct\}/i
           .test(optionText);
 
       const isCorrect =
-        current.markerCorrect ||
-        textHasCorrectMarker;
+        markerBeforeLetter ||
+        markerAfterLetter ||
+        markerInsideAnswer ||
+        correctWordMarker;
 
       optionText = optionText
         .replace(/\*/g, "")
         .replace(
-          /\(\s*correct\s*\)|\[\s*correct\s*\]|\{\s*correct\s*\}/gi,
+          /\(correct\)|\[correct\]|\{correct\}/gi,
           ""
         )
         .replace(/\s+/g, " ")
         .trim();
 
-      if(!optionText) continue;
+      if(!optionText){
+        continue;
+      }
 
-      if(isCorrect) correctCount++;
+      if(isCorrect){
+        correctCount++;
+      }
 
       answers.push({
         text: optionText,
@@ -5506,17 +5533,23 @@ function parseDirectImportedQuestions(sourceText){
       });
     }
 
-    if(answers.length < 2) continue;
+    if(answers.length < 2){
+      continue;
+    }
 
+    /*
+      يجب أن يحتوي كل سؤال على إجابة صحيحة واحدة فقط.
+    */
     if(correctCount !== 1){
       console.warn(
-        "DIRECT IMPORT CORRECT ANSWER ERROR:",
+        "DIRECT IMPORT SKIPPED:",
         {
           question: questionText,
           correctCount,
           answers
         }
       );
+
       continue;
     }
 
