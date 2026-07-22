@@ -12,6 +12,7 @@
 <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore-compat.js"></script>
 <!-- قراءة ملفات Word -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
 <!-- قراءة ملفات PDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -5149,6 +5150,329 @@ function wordHtmlToNumberedText(html){
     .trim();
 }
 
+/* =====================================================
+   Read real Word automatic numbering from DOCX XML
+===================================================== */
+async function readWordAutomaticNumberingText(arrayBuffer){
+
+  if(typeof JSZip === "undefined"){
+    return "";
+  }
+
+  function localName(node){
+    return String(node?.localName || node?.nodeName || "")
+      .replace(/^.*:/, "");
+  }
+
+  function directChildrenByName(parent, name){
+    return Array.from(parent?.childNodes || [])
+      .filter(node =>
+        node.nodeType === Node.ELEMENT_NODE &&
+        localName(node) === name
+      );
+  }
+
+  function firstDirectChild(parent, name){
+    return directChildrenByName(parent, name)[0] || null;
+  }
+
+  function firstDescendant(parent, name){
+    return Array.from(parent?.getElementsByTagNameNS?.("*", name) || [])[0] || null;
+  }
+
+  function attrValue(node, name){
+    if(!node) return "";
+
+    return (
+      node.getAttribute(`w:${name}`) ||
+      node.getAttribute(name) ||
+      node.getAttributeNS?.(
+        "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
+        name
+      ) ||
+      ""
+    );
+  }
+
+  function numberToLetters(number, upper){
+    let value = Math.max(1, Number(number) || 1);
+    let result = "";
+
+    while(value > 0){
+      value--;
+      result = String.fromCharCode(97 + (value % 26)) + result;
+      value = Math.floor(value / 26);
+    }
+
+    return upper ? result.toUpperCase() : result;
+  }
+
+  function numberToRoman(number, upper){
+    let value = Math.max(1, Number(number) || 1);
+    const pairs = [
+      [1000,"M"],[900,"CM"],[500,"D"],[400,"CD"],
+      [100,"C"],[90,"XC"],[50,"L"],[40,"XL"],
+      [10,"X"],[9,"IX"],[5,"V"],[4,"IV"],[1,"I"]
+    ];
+
+    let result = "";
+
+    for(const [amount, symbol] of pairs){
+      while(value >= amount){
+        result += symbol;
+        value -= amount;
+      }
+    }
+
+    return upper ? result : result.toLowerCase();
+  }
+
+  function formatNumber(number, format){
+    const value = Math.max(1, Number(number) || 1);
+
+    switch(String(format || "decimal")){
+      case "lowerLetter":
+        return numberToLetters(value, false);
+      case "upperLetter":
+        return numberToLetters(value, true);
+      case "lowerRoman":
+        return numberToRoman(value, false);
+      case "upperRoman":
+        return numberToRoman(value, true);
+      case "bullet":
+        return "•";
+      default:
+        return String(value);
+    }
+  }
+
+  try{
+    const zip = await JSZip.loadAsync(arrayBuffer);
+
+    const documentFile = zip.file("word/document.xml");
+
+    if(!documentFile){
+      return "";
+    }
+
+    const documentXml = await documentFile.async("string");
+    const numberingFile = zip.file("word/numbering.xml");
+    const numberingXml = numberingFile
+      ? await numberingFile.async("string")
+      : "";
+
+    const parser = new DOMParser();
+    const documentDoc = parser.parseFromString(documentXml, "application/xml");
+    const numberingDoc = numberingXml
+      ? parser.parseFromString(numberingXml, "application/xml")
+      : null;
+
+    const numToAbstract = new Map();
+    const abstractLevels = new Map();
+
+    if(numberingDoc){
+      const abstractNodes = Array.from(
+        numberingDoc.getElementsByTagNameNS("*", "abstractNum")
+      );
+
+      abstractNodes.forEach(abstractNode => {
+        const abstractId = attrValue(abstractNode, "abstractNumId");
+        const levels = new Map();
+
+        Array.from(
+          abstractNode.getElementsByTagNameNS("*", "lvl")
+        ).forEach(levelNode => {
+          const level = Number(attrValue(levelNode, "ilvl") || 0);
+          const startNode = firstDescendant(levelNode, "start");
+          const formatNode = firstDescendant(levelNode, "numFmt");
+          const textNode = firstDescendant(levelNode, "lvlText");
+
+          levels.set(level, {
+            start: Number(attrValue(startNode, "val") || 1),
+            format: attrValue(formatNode, "val") || "decimal",
+            pattern: attrValue(textNode, "val") || `%${level + 1}.`
+          });
+        });
+
+        abstractLevels.set(abstractId, levels);
+      });
+
+      Array.from(
+        numberingDoc.getElementsByTagNameNS("*", "num")
+      ).forEach(numNode => {
+        const numId = attrValue(numNode, "numId");
+        const abstractNode = firstDescendant(numNode, "abstractNumId");
+        const abstractId = attrValue(abstractNode, "val");
+
+        if(numId !== "" && abstractId !== ""){
+          numToAbstract.set(numId, abstractId);
+        }
+      });
+    }
+
+    const countersByNumId = new Map();
+    const output = [];
+    const body = Array.from(
+      documentDoc.getElementsByTagNameNS("*", "body")
+    )[0];
+
+    if(!body){
+      return "";
+    }
+
+    function paragraphText(paragraph){
+      const parts = [];
+
+      function walk(node){
+        if(node.nodeType === Node.TEXT_NODE){
+          return;
+        }
+
+        if(node.nodeType !== Node.ELEMENT_NODE){
+          return;
+        }
+
+        const name = localName(node);
+
+        if(name === "t"){
+          parts.push(node.textContent || "");
+          return;
+        }
+
+        if(name === "tab"){
+          parts.push(" ");
+          return;
+        }
+
+        if(name === "br" || name === "cr"){
+          parts.push("\n");
+          return;
+        }
+
+        Array.from(node.childNodes || []).forEach(walk);
+      }
+
+      Array.from(paragraph.childNodes || []).forEach(walk);
+
+      return parts.join("")
+        .replace(/\u00A0/g, " ")
+        .replace(/[\u200B-\u200F\u202A-\u202E\u2060\uFEFF]/g, "")
+        .replace(/[ \t]+/g, " ")
+        .replace(/\s*\n\s*/g, " ")
+        .trim();
+    }
+
+    function numberingPrefix(paragraph){
+      const pPr = firstDirectChild(paragraph, "pPr");
+      const numPr = firstDirectChild(pPr, "numPr");
+
+      if(!numPr){
+        return "";
+      }
+
+      const numIdNode = firstDirectChild(numPr, "numId");
+      const ilvlNode = firstDirectChild(numPr, "ilvl");
+      const numId = attrValue(numIdNode, "val");
+      const level = Number(attrValue(ilvlNode, "val") || 0);
+
+      if(numId === "" || numId === "0"){
+        return "";
+      }
+
+      const abstractId = numToAbstract.get(numId);
+      const levels = abstractLevels.get(abstractId) || new Map();
+      const definition = levels.get(level) || {
+        start: 1,
+        format: "decimal",
+        pattern: `%${level + 1}.`
+      };
+
+      let counters = countersByNumId.get(numId);
+
+      if(!counters){
+        counters = [];
+        countersByNumId.set(numId, counters);
+      }
+
+      for(let index = 0; index <= level; index++){
+        if(!Number.isFinite(counters[index])){
+          const levelDefinition = levels.get(index) || { start: 1 };
+          counters[index] = Number(levelDefinition.start || 1) - 1;
+        }
+      }
+
+      counters[level]++;
+      counters.length = level + 1;
+
+      let prefix = String(definition.pattern || `%${level + 1}.`);
+
+      prefix = prefix.replace(/%(\d+)/g, (_, positionText) => {
+        const position = Number(positionText) - 1;
+        const levelDefinition = levels.get(position) || definition;
+        const counter = Number.isFinite(counters[position])
+          ? counters[position]
+          : Number(levelDefinition.start || 1);
+
+        return formatNumber(counter, levelDefinition.format);
+      });
+
+      return String(prefix || "").trim();
+    }
+
+    Array.from(body.childNodes || []).forEach(node => {
+      if(node.nodeType !== Node.ELEMENT_NODE){
+        return;
+      }
+
+      const name = localName(node);
+
+      if(name === "p"){
+        const text = paragraphText(node);
+
+        if(!text){
+          return;
+        }
+
+        const prefix = numberingPrefix(node);
+        output.push(prefix ? `${prefix} ${text}` : text);
+        return;
+      }
+
+      if(name === "tbl"){
+        Array.from(node.getElementsByTagNameNS("*", "tr")).forEach(row => {
+          const cells = Array.from(row.getElementsByTagNameNS("*", "tc"))
+            .map(cell => {
+              return Array.from(cell.getElementsByTagNameNS("*", "p"))
+                .map(paragraphText)
+                .filter(Boolean)
+                .join(" ");
+            })
+            .filter(Boolean);
+
+          if(cells.length){
+            output.push(cells.join(" | "));
+          }
+        });
+      }
+    });
+
+    return output
+      .map(value => String(value || "").trim())
+      .filter(Boolean)
+      .join("\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+
+  }catch(error){
+    console.warn(
+      "WORD AUTOMATIC NUMBERING READ FAILED:",
+      error
+    );
+
+    return "";
+  }
+}
+
 async function readAiWordFile(file){
 
   if(typeof mammoth === "undefined"){
@@ -5165,19 +5489,31 @@ async function readAiWordFile(file){
 
   const arrayBuffer = await file.arrayBuffer();
 
-  const htmlResult = await mammoth.convertToHtml(
-    { arrayBuffer },
-    { includeDefaultStyleMap:true }
-  );
+  /*
+    أولًا: قراءة XML مباشرة للحفاظ على الترقيم التلقائي الحقيقي في Word.
+  */
+  let text = await readWordAutomaticNumberingText(arrayBuffer);
 
-  let text = wordHtmlToNumberedText(htmlResult.value || "");
-
+  /*
+    ثانيًا: Mammoth كخيار احتياطي.
+  */
   if(!String(text || "").trim()){
-    text = convertWordHtmlToImportText(htmlResult.value || "");
+    const htmlResult = await mammoth.convertToHtml(
+      { arrayBuffer },
+      { includeDefaultStyleMap:true }
+    );
+
+    text = wordHtmlToNumberedText(htmlResult.value || "");
+
+    if(!String(text || "").trim()){
+      text = convertWordHtmlToImportText(htmlResult.value || "");
+    }
   }
 
+  /*
+    ثالثًا: النص الخام كآخر خيار احتياطي.
+  */
   if(!String(text || "").trim()){
-
     const rawResult = await mammoth.extractRawText({ arrayBuffer });
     text = rawResult.value || "";
   }
@@ -5320,21 +5656,20 @@ function parseDirectImportedQuestions(sourceText){
 
   /*
     ==========================================
-    DIRECT IMPORT — NUMBERED QUESTIONS
+    DIRECT IMPORT — FIXED FINAL PARSER
     ==========================================
 
-    القاعدة الأساسية:
-    - أي سطر يبدأ برقم سؤال مثل:
-      1. Question
-      2) Question
-      3- Question
-      يعتبر بداية سؤال جديد.
-    - كل الأسطر التالية تعتبر إجابات حتى يظهر رقم سؤال جديد.
-    - لا يشترط 4 إجابات؛ يقبل أي عدد من الإجابات (2 أو أكثر).
-    - يدعم a) / b) / c) إذا كانت موجودة، ويزيلها من النص.
-    - يدعم ترقيم Word التلقائي عندما تختفي أحرف الخيارات.
-    - النجمة * تحدد الإجابة الصحيحة.
-    - لا يتأثر بالأوقات مثل 7:00 أو 11.30am أو 1pm.
+    يدعم:
+    - أي عدد من الإجابات، بشرط وجود إجابتين على الأقل.
+    - a) / b) / c) أو A. / B. / C.
+    - ترقيم Word التلقائي للخيارات مثل:
+      1. First answer
+      2. Second answer
+      3. Third answer
+    - اختفاء حروف الخيارات من Word.
+    - الأوقات: 7:00 am / 11.30am / 1pm.
+    - النجمة * قبل الإجابة أو بعدها.
+    - يمنع اعتبار أرقام الخيارات أسئلة جديدة.
   */
 
   const cleanedText = String(sourceText || "")
@@ -5362,11 +5697,35 @@ function parseDirectImportedQuestions(sourceText){
 
   const importedQuestions = [];
   let currentQuestion = null;
+  let lastQuestionNumber = null;
 
   function cleanLine(value){
     return String(value || "")
       .replace(/\s+/g, " ")
       .trim();
+  }
+
+  function countWords(value){
+    return cleanLine(value)
+      .split(/\s+/)
+      .filter(Boolean)
+      .length;
+  }
+
+  function looksLikeQuestion(value){
+    const text = cleanLine(value);
+
+    if(!text){
+      return false;
+    }
+
+    return (
+      text.includes("?") ||
+      text.includes("؟") ||
+      text.includes("_____") ||
+      text.includes("____") ||
+      countWords(text) >= 4
+    );
   }
 
   function hasCorrectMarker(value){
@@ -5389,45 +5748,9 @@ function parseDirectImportedQuestions(sourceText){
     );
   }
 
-  function removeOptionPrefix(value){
-    let text = cleanLine(value);
-
-    /*
-      يدعم:
-      a) Answer
-      A. Answer
-      b- Answer
-      c: Answer
-      *a) Answer
-      a*) Answer
-    */
-    text = text.replace(
-      /^(\*)?\s*[a-hA-H]\s*(\*)?\s*[\)\.\-:]\s*/,
-      ""
-    );
-
-    /*
-      يدعم الرموز النقطية.
-    */
-    text = text.replace(
-      /^[●•▪■◦]\s*/,
-      ""
-    );
-
-    return cleanLine(text);
-  }
-
-  function isTimeOrDecimalLine(value){
+  function isTimeOrDecimal(value){
     const text = cleanLine(value);
 
-    /*
-      هذه أمثلة لا تعتبر أسئلة:
-      7:00 am
-      11.30am
-      1pm
-      2:45
-      3.14
-    */
     return (
       /^\d{1,2}\s*:\s*\d{1,2}\s*(?:am|pm)?$/i.test(text) ||
       /^\d{1,2}\s*\.\s*\d{1,2}\s*(?:am|pm)?$/i.test(text) ||
@@ -5435,17 +5758,15 @@ function parseDirectImportedQuestions(sourceText){
     );
   }
 
-  function parseQuestionStart(value){
+  function parseNumberedLine(value){
     const text = cleanLine(value);
 
-    if(!text || isTimeOrDecimalLine(text)){
+    if(!text || isTimeOrDecimal(text)){
       return null;
     }
 
     /*
-      مهم:
-      لا نستخدم النقطتين : كفاصل سؤال،
-      حتى لا يعتبر 7:00 سؤالًا جديدًا.
+      لا نستخدم : حتى لا يتعارض مع 7:00.
     */
     const match = text.match(
       /^(\d{1,4})\s*[\.\)\-]\s*(.*)$/
@@ -5455,13 +5776,79 @@ function parseDirectImportedQuestions(sourceText){
       return null;
     }
 
-    const number = Number(match[1]);
-    const questionText = cleanLine(match[2]);
-
     return {
-      number,
-      text: questionText
+      number: Number(match[1]),
+      rest: cleanLine(match[2])
     };
+  }
+
+  function isRealQuestionStart(numberedLine){
+
+    if(!numberedLine){
+      return false;
+    }
+
+    const number = numberedLine.number;
+    const text = numberedLine.rest;
+
+    /*
+      أول سؤال:
+      نقبله إذا كان النص يبدو كسؤال.
+    */
+    if(lastQuestionNumber === null){
+      return looksLikeQuestion(text);
+    }
+
+    /*
+      بعد ذلك يجب أن يكون رقم السؤال متسلسلًا:
+      1 ثم 2 ثم 3...
+      هذا يمنع أرقام خيارات Word مثل 1. و2. و3.
+    */
+    if(number !== lastQuestionNumber + 1){
+      return false;
+    }
+
+    return looksLikeQuestion(text);
+  }
+
+  function removeOptionPrefix(value){
+    let text = cleanLine(value);
+
+    /*
+      خيارات بالحروف:
+      a) Answer
+      A. Answer
+      *b) Answer
+      c*) Answer
+    */
+    text = text.replace(
+      /^(\*)?\s*[a-hA-H]\s*(\*)?\s*[\)\.\-:]\s*/,
+      ""
+    );
+
+    /*
+      خيارات Word المرقمة تلقائيًا:
+      1. Answer
+      2. Answer
+      3. 11.30am
+
+      نزيل رقم الخيار فقط.
+      لا يؤثر على 11.30am لأنه لا يبدأ بمسافة بعد النقطة.
+    */
+    text = text.replace(
+      /^\d{1,2}\s*[\.\)]\s+(.+)$/,
+      "$1"
+    );
+
+    /*
+      رموز نقطية.
+    */
+    text = text.replace(
+      /^[●•▪■◦]\s*/,
+      ""
+    );
+
+    return cleanLine(text);
   }
 
   function finalizeCurrentQuestion(){
@@ -5479,7 +5866,7 @@ function parseDirectImportedQuestions(sourceText){
         const rawText =
           removeOptionPrefix(item.text);
 
-        const correct =
+        const isCorrect =
           item.correct === true ||
           hasCorrectMarker(rawText);
 
@@ -5494,7 +5881,7 @@ function parseDirectImportedQuestions(sourceText){
           text: answerText,
           right: "",
           image: "",
-          correct
+          correct: isCorrect
         };
       })
       .filter(Boolean);
@@ -5548,63 +5935,80 @@ function parseDirectImportedQuestions(sourceText){
       continue;
     }
 
-    const questionStart =
-      parseQuestionStart(line);
+    const numberedLine =
+      parseNumberedLine(line);
 
-    if(questionStart){
+    if(isRealQuestionStart(numberedLine)){
 
-      /*
-        عندما يظهر رقم سؤال جديد:
-        نحفظ السؤال السابق أولًا.
-      */
       finalizeCurrentQuestion();
 
       currentQuestion = {
-        number: questionStart.number,
-        text: questionStart.text,
+        number: numberedLine.number,
+        text: numberedLine.rest,
         answers: []
       };
 
-      /*
-        إذا كان رقم السؤال في سطر مستقل:
-        5.
-        How long does Tom swim for?
-
-        نأخذ أول سطر غير فارغ بعده كنص السؤال.
-      */
-      if(!currentQuestion.text){
-
-        for(
-          let nextIndex = index + 1;
-          nextIndex < lines.length;
-          nextIndex++
-        ){
-
-          const nextLine =
-            cleanLine(lines[nextIndex]);
-
-          if(!nextLine){
-            continue;
-          }
-
-          /*
-            إذا جاء رقم سؤال جديد مباشرة،
-            لا نستخدمه كنص للسؤال السابق.
-          */
-          if(parseQuestionStart(nextLine)){
-            break;
-          }
-
-          currentQuestion.text =
-            nextLine;
-
-          index = nextIndex;
-
-          break;
-        }
-      }
+      lastQuestionNumber =
+        numberedLine.number;
 
       continue;
+    }
+
+    /*
+      سؤال برقم في سطر منفصل:
+      5.
+      How long does Tom swim for?
+    */
+    if(
+      numberedLine &&
+      numberedLine.rest === "" &&
+      (
+        lastQuestionNumber === null ||
+        numberedLine.number === lastQuestionNumber + 1
+      )
+    ){
+
+      let nextText = "";
+      let nextTextIndex = -1;
+
+      for(
+        let nextIndex = index + 1;
+        nextIndex < lines.length;
+        nextIndex++
+      ){
+
+        const nextLine =
+          cleanLine(lines[nextIndex]);
+
+        if(!nextLine){
+          continue;
+        }
+
+        if(looksLikeQuestion(nextLine)){
+          nextText = nextLine;
+          nextTextIndex = nextIndex;
+        }
+
+        break;
+      }
+
+      if(nextText){
+
+        finalizeCurrentQuestion();
+
+        currentQuestion = {
+          number: numberedLine.number,
+          text: nextText,
+          answers: []
+        };
+
+        lastQuestionNumber =
+          numberedLine.number;
+
+        index = nextTextIndex;
+
+        continue;
+      }
     }
 
     if(!currentQuestion){
@@ -5612,23 +6016,12 @@ function parseDirectImportedQuestions(sourceText){
     }
 
     /*
-      كل سطر بعد السؤال يعتبر إجابة
-      حتى يظهر رقم سؤال جديد.
-
+      أي سطر آخر بعد السؤال يعتبر إجابة.
       لا يوجد حد أقصى لعدد الإجابات.
     */
-    const prefixedCorrect =
-      /^(\*)?\s*[a-hA-H]\s*(\*)?\s*[\)\.\-:]/.test(line) &&
-      (
-        /^\s*\*/.test(line) ||
-        /^[a-hA-H]\s*\*/i.test(line)
-      );
-
     currentQuestion.answers.push({
       text: line,
-      correct:
-        prefixedCorrect ||
-        hasCorrectMarker(line)
+      correct: hasCorrectMarker(line)
     });
   }
 
