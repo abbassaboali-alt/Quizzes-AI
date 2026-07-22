@@ -320,16 +320,16 @@ button{cursor:pointer}
 }
 
 /* ===============================
-   AI Question Generator
+   Question File Import
 ================================ */
-.ai-generator{
+.import-generator{
   border:1px solid #cfe0ef;
   background:linear-gradient(135deg,#f7fbff,#fffaf0);
 }
-.ai-generator .panel-title{
+.import-generator .panel-title{
   margin-bottom:14px;
 }
-.ai-note{
+.import-note{
   padding:11px 13px;
   border-radius:13px;
   background:#eef6fd;
@@ -357,7 +357,7 @@ button{cursor:pointer}
 .media-preview-box audio{
   width:100%;
 }
-.ai-loading{
+.import-loading{
   display:inline-flex;
   align-items:center;
   gap:8px;
@@ -1820,249 +1820,54 @@ button{cursor:pointer}
   Open Time means the student can complete the activity without a countdown.
 </div>
 
-  <div class="panel ai-generator">
+  <div class="panel" id="questionImportPanel">
     <div class="panel-title">
       <h2>
-        <i class="fa-solid fa-wand-magic-sparkles"></i>
-        Generate Questions with AI
+        <i class="fa-solid fa-file-import"></i>
+        Import Questions from Word, PDF, or TXT
       </h2>
-      <span class="badge">AI</span>
+      <span class="badge">IMPORT</span>
     </div>
 
-    <div class="grid grid-3">
+    <div class="grid grid-2">
       <div class="field">
-        <label>Question Topic</label>
-        <input id="aiTopic" placeholder="Example: Personal information, animals, present simple">
-      </div>
-
-      <div class="field">
-        <label>Level</label>
-        <select id="aiLevel">
-          <option value="Foundation">Foundation</option>
-          <option value="Beginner">Beginner</option>
-          <option value="Elementary">Elementary</option>
-          <option value="Pre-Intermediate">Pre-Intermediate</option>
-          <option value="Intermediate">Intermediate</option>
-          <option value="Upper-Intermediate">Upper-Intermediate</option>
-          <option value="Advanced">Advanced</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label>Number of Questions</label>
-        <input id="aiQuestionCount" type="number" min="1" max="30" value="5">
-      </div>
-    </div>
-
-    <div class="grid" style="grid-template-columns:repeat(4,minmax(0,1fr));margin-top:14px">
-      <div class="field">
-        <label>Question Language</label>
-        <select id="aiLanguage">
-          <option value="English">English</option>
-          <option value="Arabic">Arabic</option>
-          <option value="English with Arabic instructions">English + Arabic Instructions</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label>AI Question Type</label>
-        <select id="aiQuestionType">
-          <option value="mcq">Multiple Choice</option>
-          <option value="match">Match</option>
-          <option value="order">Order / Sequence</option>
-          <option value="random">Random Image Question</option>
-          <option value="wheel">🎡 Wheel of Fortune</option>
-          <option value="balloon">🎈 Balloon Pop</option>
-          <option value="mystery">🎁 Mystery Box</option>
-          <option value="mixed">Mixed Types</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label>Media Type</label>
-        <select id="aiMediaType" onchange="toggleAiMediaUrl()">
-          <option value="none">No Media</option>
-          <option value="image">Image</option>
-          <option value="video">Video</option>
-          <option value="audio">Audio</option>
-          <option value="mixed">Mixed</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label>Automatic Media</label>
-
-        <label style="
-          display:flex;
-          align-items:center;
-          gap:9px;
-          min-height:46px;
-          padding:10px 12px;
-          border:1px solid var(--border);
-          border-radius:13px;
-          background:#fff;
-        ">
-          <input
-            id="aiGenerateMedia"
-            type="checkbox"
-            checked
-            style="width:auto"
-            onchange="toggleAiMediaOptions()">
-
-          Generate real media automatically
+        <label>
+          <i class="fa-solid fa-file-arrow-up"></i>
+          Questions File
         </label>
-
+        <input
+          id="importSourceFile"
+          type="file"
+          accept=".pdf,.docx,.txt"
+          onchange="showImportSelectedFile()">
         <div class="help">
-          Images, audio, and videos are generated and uploaded automatically.
+          Supported files: Word DOCX, PDF, and TXT. Automatic Word numbering is preserved.
+          Put * beside exactly one correct answer for each question.
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Selected File</label>
+        <div
+          id="importSelectedFileInfo"
+          style="min-height:46px;padding:12px 13px;border:1px solid var(--border);border-radius:13px;background:#fff;color:var(--muted);overflow-wrap:anywhere;">
+          No file selected
         </div>
       </div>
     </div>
 
-    <div id="aiMediaOptions" class="grid grid-3" style="margin-top:14px">
-      <div class="field">
-        <label>Image Style</label>
-        <select id="aiImageStyle">
-          <option value="educational illustration">Educational Illustration</option>
-          <option value="realistic educational photo">Realistic</option>
-          <option value="colorful cartoon for learners">Cartoon</option>
-          <option value="simple children book illustration">Children Style</option>
-          <option value="clean flashcard illustration">Flashcard</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label>Audio Voice</label>
-        <select id="aiVoice">
-          <option value="Kore">Kore</option>
-          <option value="Puck">Puck</option>
-          <option value="Charon">Charon</option>
-          <option value="Fenrir">Fenrir</option>
-          <option value="Aoede">Aoede</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label>Video Aspect Ratio</label>
-        <select id="aiVideoAspect">
-          <option value="16:9">Landscape 16:9</option>
-          <option value="9:16">Portrait 9:16</option>
-        </select>
-      </div>
-    </div>
-
-    <div id="aiGenerationProgress" class="ai-note hidden"></div>
-<!-- =====================================
-     AI SOURCE FILE
-===================================== -->
-
-<div class="grid grid-2" style="margin-top:14px">
-
-  <div class="field">
-
-    <label>
-      <i class="fa-solid fa-file-arrow-up"></i>
-      Source File
-    </label>
-
-<input
-  id="aiSourceFile"
-  type="file"
-  accept=".pdf,.docx,.txt"
-  onchange="
-    showAiSelectedFile();
-    checkAiFileRequirement();
-  ">
-
-    <div class="help">
-      Supported files: PDF, Word DOCX, and TXT. Word automatic numbering is preserved.
-    </div>
-
-  </div>
-
-  <div class="field">
-
-    <label>Selected File</label>
-
-    <div
-      id="aiSelectedFileInfo"
-      style="
-        min-height:46px;
-        padding:12px 13px;
-        border:1px solid var(--border);
-        border-radius:13px;
-        background:#fff;
-        color:var(--muted);
-        overflow-wrap:anywhere;
-      ">
-
-      No file selected
-
-    </div>
-
-  </div>
-
-</div>
-<div class="field" style="margin-top:14px">
-
-  <label>
-    Describe What You Want
-  </label>
-
-<textarea
-  id="aiInstructions"
-  style="min-height:130px"
-  oninput="checkAiFileRequirement()"
-  placeholder="Upload a PDF, DOCX, or TXT file first, then describe what questions you want.
-
-Example:
-
-Use only Units 1 and 2 from the uploaded file.
-
-Create:
-- 10 grammar multiple-choice questions
-- 10 vocabulary multiple-choice questions
-- 4 choices for each question
-- Exactly one correct answer">
-</textarea>
-
-<div
-  id="aiFileRequiredMessage"
-  class="help"
-  style="
-    display:none;
-    margin-top:8px;
-    padding:10px 12px;
-    border-radius:11px;
-    background:#fff0ee;
-    color:#c0392b;
-    font-weight:800;
-  ">
-  <i class="fa-solid fa-triangle-exclamation"></i>
-  You must upload a PDF, DOCX, or TXT file when using this description box.
-</div>
-
-  <div class="help">
-    Describe the units, topics, question types, difficulty, language,
-    and any special requirements.
-  </div>
-
-</div>
+    <div id="importProgress" class="import-note hidden" style="margin-top:14px"></div>
 
     <div class="actions">
-      <button class="btn btn-gold" id="generateAiBtn" onclick="generateQuestionsWithAI()">
-        <i class="fa-solid fa-wand-magic-sparkles"></i>
-        Generate Questions
+      <button class="btn btn-gold" id="importQuestionsBtn" type="button" onclick="importQuestionsFromSelectedFile()">
+        <i class="fa-solid fa-file-import"></i>
+        Import Questions
       </button>
 
-      <button class="btn btn-light" onclick="clearGeneratedQuestions()">
+      <button class="btn btn-light" type="button" onclick="clearCurrentQuestions()">
         <i class="fa-solid fa-broom"></i>
         Clear Current Questions
       </button>
-    </div>
-
-    <div class="ai-note">
-      The system generates the questions first, then automatically creates and uploads the selected
-      image, audio, or video. Video generation can take several minutes and is checked automatically.
     </div>
   </div>
 
@@ -2070,7 +1875,7 @@ Create:
     <div class="panel-title">
       <h2><i class="fa-solid fa-circle-question"></i> Activity Questions</h2>
 
-      <button class="btn btn-light" onclick="addQuestion()">
+      <button class="btn btn-light" id="addQuestionBtn" onclick="addQuestion()">
         <i class="fa-solid fa-plus"></i> Add Question
       </button>
     </div>
@@ -2315,12 +2120,30 @@ const ACTIVITIES_COLLECTION = "FunActivities";
 const COURSES_COLLECTION = "Courses";
 const RESULTS_COLLECTION = "FunActivityResults";
 
-/*
-  Place your Cloudflare Worker URL here.
-  It must accept POST requests and return JSON containing questions.
-*/
-const AI_WORKER_URL = "https://muddy-frost-dfd0.abbassaboali.workers.dev";
-const AI_TASK = "generate_activity_questions";
+const CURRENT_USER_ROLE = String(
+  localStorage.getItem("role") || ""
+).trim().toLowerCase();
+
+const IS_ADMIN_USER = CURRENT_USER_ROLE === "admin";
+let LOCKED_QUESTIONS_SNAPSHOT = [];
+
+function requireAdminForQuestions(){
+  if(IS_ADMIN_USER){
+    return true;
+  }
+
+  alert("Only the admin user can add, delete, import, or modify activity questions.");
+  return false;
+}
+
+function cloneQuestions(value){
+  try{
+    return JSON.parse(JSON.stringify(Array.isArray(value) ? value : []));
+  }catch(error){
+    return [];
+  }
+}
+
 
 let EDIT_ACTIVITY_ID = "";
 let QUESTION_COUNTER = 0;
@@ -3189,6 +3012,8 @@ function fillSelectedCourseInfo(){
 ================================ */
 
 function addQuestion(data = null){
+  if(!data && !requireAdminForQuestions()) return;
+
   QUESTION_COUNTER++;
 
   const q = data || {
@@ -3301,6 +3126,36 @@ function addQuestion(data = null){
   updateQuestionMediaPreview(box);
   refreshQuestionNumbers();
 }
+function applyQuestionPermissions(questionBox){
+  if(!questionBox || IS_ADMIN_USER){
+    return;
+  }
+
+  questionBox.classList.add("questions-readonly");
+
+  questionBox.querySelectorAll("input, textarea, select, button").forEach(element=>{
+    element.disabled = true;
+  });
+
+  questionBox.querySelectorAll(".btn-danger, .answers-admin + .btn").forEach(element=>{
+    element.style.display = "none";
+  });
+}
+
+function applyGlobalQuestionPermissions(){
+  const importPanel = document.getElementById("questionImportPanel");
+  if(importPanel && !IS_ADMIN_USER){
+    importPanel.style.display = "none";
+  }
+
+  const addQuestionButton = document.getElementById("addQuestionBtn");
+  if(addQuestionButton && !IS_ADMIN_USER){
+    addQuestionButton.style.display = "none";
+  }
+
+  document.querySelectorAll(".question-box").forEach(applyQuestionPermissions);
+}
+
 function appendAnswer(questionBox,answer){
   const answersBox = questionBox.querySelector(".answers-admin");
   const item = document.createElement("div");
@@ -3514,6 +3369,7 @@ else if(type === "order"){
 }
 
 function addAnswer(button){
+  if(!requireAdminForQuestions()) return;
   const questionBox = button.closest(".question-box");
   const count = questionBox.querySelectorAll(".answer-admin").length;
 
@@ -3533,6 +3389,7 @@ function addAnswer(button){
 }
 
 function removeAnswer(button){
+  if(!requireAdminForQuestions()) return;
   const questionBox = button.closest(".question-box");
   const items = questionBox.querySelectorAll(".answer-admin");
 
@@ -3556,6 +3413,7 @@ function removeAnswer(button){
 }
 
 function removeQuestion(button){
+  if(!requireAdminForQuestions()) return;
   if(!confirm("Delete this question?")){
     return;
   }
@@ -3762,1096 +3620,47 @@ function collectQuestions(){
 }
 
 /* ===============================
-   AI Question Generation
+   QUESTION FILE IMPORT
 ================================ */
 
-function toggleAiMediaUrl(){
-  toggleAiMediaOptions();
-}
-
-function toggleAiMediaOptions(){
-  const mediaType = document.getElementById("aiMediaType").value;
-  const enabled = document.getElementById("aiGenerateMedia").checked;
-  const options = document.getElementById("aiMediaOptions");
-
-  options.classList.toggle(
-    "hidden",
-    mediaType === "none" || !enabled
-  );
-}
-
-function setAiProgress(message,percent=null){
-  const box = document.getElementById("aiGenerationProgress");
+function setImportProgress(message,percent=null){
+  const box = document.getElementById("importProgress");
+  if(!box) return;
 
   if(!message){
+    box.textContent = "";
     box.classList.add("hidden");
-    box.innerHTML = "";
     return;
   }
 
   box.classList.remove("hidden");
-
   box.innerHTML = `
-    <div style="font-weight:900;margin-bottom:${percent === null ? 0 : 8}px">
-      ${esc(message)}
-    </div>
-
-    ${
-      percent === null
-        ? ""
-        : `
-          <div style="
-            height:10px;
-            background:#dce8f2;
-            border-radius:999px;
-            overflow:hidden;
-          ">
-            <div style="
-              height:100%;
-              width:${Math.max(0,Math.min(100,percent))}%;
-              background:linear-gradient(90deg,var(--gold),var(--green));
-              transition:.25s;
-            "></div>
-          </div>
-        `
-    }
+    <div style="font-weight:900">${esc(message)}</div>
+    ${percent === null ? "" : `
+      <div style="height:9px;background:#e8edf3;border-radius:999px;overflow:hidden;margin-top:9px">
+        <div style="height:100%;width:${Math.max(0,Math.min(100,Number(percent)||0))}%;background:var(--blue)"></div>
+      </div>
+    `}
   `;
 }
-function clearGeneratedQuestions(){
-  if(!confirm("Clear all current questions?")){
-    return;
-  }
+
+function clearCurrentQuestions(){
+  if(!requireAdminForQuestions()) return;
+
+  if(!confirm("Clear all current questions?")) return;
 
   document.getElementById("questionsContainer").innerHTML = "";
   QUESTION_COUNTER = 0;
-  const fileInput =
-  document.getElementById(
-    "aiSourceFile"
-  );
-
-if(fileInput){
-  fileInput.value = "";
+  refreshQuestionNumbers();
 }
 
-const fileInfo =
-  document.getElementById(
-    "aiSelectedFileInfo"
-  );
-
-if(fileInfo){
-  fileInfo.textContent =
-    "No file selected";
-}
-  addQuestion();
-}
-
-function extractJsonText(value){
-  let text = String(value || "").trim();
-
-  text = text
-    .replace(/^```json\s*/i,"")
-    .replace(/^```\s*/,"")
-    .replace(/```$/,"")
-    .trim();
-
-  const firstBrace = text.indexOf("{");
-  const firstBracket = text.indexOf("[");
-  let start = -1;
-
-  if(firstBrace === -1) start = firstBracket;
-  else if(firstBracket === -1) start = firstBrace;
-  else start = Math.min(firstBrace,firstBracket);
-
-  if(start > 0){
-    text = text.slice(start);
-  }
-
-  return text;
-}
-
-function getAiResponsePayload(data){
-  if(Array.isArray(data)){
-    return data;
-  }
-
-  if(Array.isArray(data?.questions)){
-    return data.questions;
-  }
-
-  if(Array.isArray(data?.result?.questions)){
-    return data.result.questions;
-  }
-
-  const raw =
-    data?.text ||
-    data?.result ||
-    data?.output ||
-    data?.message ||
-    data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-    "";
-
-  if(typeof raw === "object" && Array.isArray(raw.questions)){
-    return raw.questions;
-  }
-
-  if(typeof raw === "string"){
-    const parsed = JSON.parse(extractJsonText(raw));
-
-    if(Array.isArray(parsed)){
-      return parsed;
-    }
-
-    if(Array.isArray(parsed?.questions)){
-      return parsed.questions;
-    }
-  }
-
-  throw new Error("The AI did not return questions in a valid format.");
-}
-
-function normalizeAiQuestion(question,index,defaultQuestionType,defaultMediaType,defaultMediaUrl){
-  const rawAnswers =
-    question.answers ||
-    question.options ||
-    question.choices ||
-    question.items ||
-    question.pairs ||
-    [];
-
-  let type = String(
-    question.type ||
-    question.questionType ||
-    defaultQuestionType ||
-    "mcq"
-  ).trim().toLowerCase();
-
-  /*
-    Respect the type selected by the user.
-
-    A selected MCQ, Match, Order, or Random type is enforced
-    for every generated question.
-
-    Mixed keeps the distributed mixed types.
-  */
-  if(
-    defaultQuestionType &&
-    defaultQuestionType !== "mixed" &&
-    ["mcq","match","order","random","wheel","balloon","mystery"].includes(defaultQuestionType)
-  ){
-    type = defaultQuestionType;
-  }
-
-  if(type === "multiple-choice" || type === "multiple_choice"){
-    type = "mcq";
-  }
-
-  if(!["mcq","match","order","random","wheel","balloon","mystery"].includes(type)){
-    type = "mcq";
-  }
-
-  const correctIndex =
-    Number.isInteger(question.correctIndex)
-      ? question.correctIndex
-      : Number.isInteger(question.correctAnswerIndex)
-        ? question.correctAnswerIndex
-        : -1;
-
-  const correctValue =
-    String(
-      question.correctAnswer ??
-      question.answer ??
-      ""
-    ).trim();
-
-  const answers = rawAnswers.map((answer,answerIndex)=>{
-    if(typeof answer === "string"){
-      return {
-        text:answer,
-        right:"",
-        image:"",
-        correct:
-          (type === "mcq" || type === "balloon" || type === "mystery") &&
-          (
-            answerIndex === correctIndex ||
-            (!!correctValue && answer.trim() === correctValue)
-          )
-      };
-    }
-
-    return {
-      text:String(
-        answer?.text ??
-        answer?.left ??
-        answer?.item ??
-        answer?.label ??
-        answer?.answer ??
-        ""
-      ).trim(),
-
-      right:String(
-        answer?.right ??
-        answer?.match ??
-        answer?.pair ??
-        answer?.meaning ??
-        ""
-      ).trim(),
-
-      image:String(answer?.image ?? answer?.imageUrl ?? answer?.url ?? "").trim(),
-
-      mediaPrompt:String(
-        answer?.mediaPrompt ??
-        answer?.imagePrompt ??
-        answer?.visualPrompt ??
-        answer?.prompt ??
-        answer?.text ??
-        answer?.label ??
-        ""
-      ).trim(),
-
-      correct:
-        (type === "mcq" || type === "balloon" || type === "mystery") &&
-        (
-          answer?.correct === true ||
-          answer?.isCorrect === true ||
-          answerIndex === correctIndex ||
-          (
-            !!correctValue &&
-            String(answer?.text ?? answer?.label ?? "").trim() === correctValue
-          )
-        )
-    };
-  });
-
-  if(answers.length < 2){
-    throw new Error(`Generated question ${index + 1} does not contain enough items.`);
-  }
-
-  if((type === "mcq" || type === "balloon" || type === "mystery") && !answers.some(answer=>answer.correct)){
-    answers[0].correct = true;
-  }
-
-  let mediaType =
-    String(question.mediaType || defaultMediaType || "none")
-      .trim()
-      .toLowerCase();
-
-  if(!["none","image","video","audio"].includes(mediaType)){
-    mediaType = "none";
-  }
-
-  const mediaUrl =
-    String(
-      question.mediaUrl ||
-      question.image ||
-      question.imageUrl ||
-      question.video ||
-      question.videoUrl ||
-      question.audio ||
-      question.audioUrl ||
-      defaultMediaUrl ||
-      ""
-    ).trim();
-
-  if(type === "wheel"){
-    mediaType = "none";
-    answers.forEach((answer,answerIndex)=>{
-      answer.correct = false;
-      if(!answer.text){
-        answer.text = ["Grammar","Vocabulary","Speaking","Reading","Picture","Video","Listening","Double Points"][answerIndex % 8];
-      }
-      if(!answer.right){
-        answer.right = `Complete the ${answer.text} challenge.`;
-      }
-    });
-  }
-
-  if(type === "random"){
-    mediaType = "none";
-
-    answers.forEach((answer,answerIndex)=>{
-      answer.correct = false;
-      answer.right = "";
-
-      if(!answer.mediaPrompt){
-        answer.mediaPrompt =
-          answer.text ||
-          `Educational random image item ${answerIndex + 1} for: ${
-            question.text ||
-            question.question ||
-            question.prompt ||
-            "the activity"
-          }`;
-      }
-    });
-  }
-
-  return {
-    type,
-    text:String(question.text || question.question || question.prompt || "").trim(),
-
-    mediaType,
-    mediaUrl,
-
-    mediaPrompt:String(
-      question.mediaPrompt ||
-      question.visualPrompt ||
-      question.mediaDescription ||
-      ""
-    ).trim(),
-
-    audioText:String(
-      question.audioText ||
-      question.speechText ||
-      question.listeningText ||
-      ""
-    ).trim(),
-
-    image:mediaType === "image" ? mediaUrl : "",
-    video:mediaType === "video" ? mediaUrl : "",
-    audio:mediaType === "audio" ? mediaUrl : "",
-
-    answers
-  };
-}
-
-async function postToAiWorker(payload){
-
-  const response =
-    await fetch(
-      AI_WORKER_URL,
-      {
-        method:"POST",
-
-        headers:{
-          "Content-Type":
-            "application/json"
-        },
-
-        body:
-          JSON.stringify(payload)
-      }
-    );
-
-  const responseText =
-    await response.text();
-
-  let data;
-
-  try{
-
-    data =
-      JSON.parse(
-        responseText
-      );
-
-  }catch{
-
-    data = {
-      error:responseText
-    };
-
-  }
-
-  if(!response.ok){
-
-    throw new Error(
-      data?.error ||
-      data?.message ||
-      `AI API Error (${response.status})`
-    );
-
-  }
-
-  return data;
-
-}
-
-async function waitForVideo(operationName,questionNumber){
-  const startedAt = Date.now();
-  const timeoutMs = 12 * 60 * 1000;
-
-  while(Date.now() - startedAt < timeoutMs){
-    setAiProgress(
-      `Question ${questionNumber}: waiting for the AI video to finish...`,
-      null
-    );
-
-    const result = await postToAiWorker({
-      task:"check_video_generation",
-      operationName
-    });
-
-    if(result.status === "completed" && result.url){
-      return result.url;
-    }
-
-    if(result.status === "failed"){
-      throw new Error(
-        result.error ||
-        `Video generation failed for question ${questionNumber}.`
-      );
-    }
-
-    await new Promise(resolve=>setTimeout(resolve,10000));
-  }
-
-  throw new Error(
-    `Video generation timed out for question ${questionNumber}.`
-  );
-}
-
-async function generateRandomQuestionItemImages(question,index,settings){
-
-  const items =
-    Array.isArray(question.answers)
-      ? question.answers
-      : [];
-
-  if(items.length < 2){
-    throw new Error(
-      `Random question ${index + 1} requires at least two image items.`
-    );
-  }
-
-const preparedItems =
-  items.map((item,itemIndex)=>({
-
-    /*
-      الاحتفاظ بجميع بيانات الإجابة الأصلية:
-      right, correct وأي حقول إضافية.
-    */
-    ...item,
-
-    text:
-      String(
-        item?.text ||
-        ""
-      )
-      .trim(),
-
-    right:
-      String(
-        item?.right ||
-        ""
-      )
-      .trim(),
-
-    mediaPrompt:
-      String(
-        item?.mediaPrompt ||
-        item?.imagePrompt ||
-        item?.prompt ||
-        item?.text ||
-        `Educational image item ${itemIndex + 1} for: ${
-          question.text ||
-          ""
-        }`
-      )
-      .trim(),
-
-    image:
-      String(
-        item?.image ||
-        item?.imageUrl ||
-        item?.url ||
-        ""
-      )
-      .trim(),
-
-    /*
-      نحافظ على الإجابة الصحيحة في MCQ
-      وBalloon وMystery.
-
-      أما الأنواع التي لا تستخدم correct
-      فتبقى false.
-    */
-    correct:
-      ["random","wheel","match","order"]
-        .includes(
-          String(
-            question.type ||
-            ""
-          )
-          .toLowerCase()
-        )
-        ? false
-        : Boolean(
-            item?.correct
-          )
-
-  }));
-
-  /*
-    Generate only the missing images.
-    Existing image URLs are preserved.
-  */
-  const missingIndexes = [];
-
-  preparedItems.forEach((item,itemIndex)=>{
-    if(!item.image){
-      missingIndexes.push(itemIndex);
-    }
-  });
-
-  if(!missingIndexes.length){
-return {
-  ...question,
-
-  /*
-    نحافظ على نوع السؤال الأصلي:
-    mcq, match, order, wheel, balloon,
-    mystery أو random.
-  */
-
-  type:
-    question.type ||
-    "mcq",
-
-  /*
-    لا نمسح وسائط السؤال؛
-    حتى يستطيع بعدها توليد الصوت أو الفيديو.
-  */
-
-  mediaType:
-    question.mediaType ||
-    "none",
-
-  mediaUrl:
-    question.mediaUrl ||
-    "",
-
-  image:
-    question.image ||
-    "",
-
-  video:
-    question.video ||
-    "",
-
-  audio:
-    question.audio ||
-    "",
-
-  answers:
-    preparedItems
-};
-  }
-
-  setAiProgress(
-    `Creating random image set for question ${index + 1}...`,
-    null
-  );
-
-  
-
-
-
-for(let generatedIndex = 0; generatedIndex < missingIndexes.length; generatedIndex++){
-
-  const targetIndex =
-    missingIndexes[generatedIndex];
-
-  let url = "";
-let attempts = 0;
-const maxAttempts = 3;
-
-while(
-  !url &&
-  attempts < maxAttempts
-){
-
-  attempts++;
-
-  try{
-
-    const result =
-      await postToAiWorker({
-
-        task:
-          "generate_random_question_images",
-
-        questionText:
-          question.text ||
-          "Look at the selected image and answer the question.",
-
-        imageStyle:
-          settings.imageStyle,
-
-        answers:[
-          {
-            text:
-              preparedItems[targetIndex].text,
-
-            mediaPrompt:
-              preparedItems[targetIndex].mediaPrompt
-          }
-        ]
-
-      });
-
-    const generated =
-      result?.answers?.[0] ||
-      result?.items?.[0] ||
-      result?.images?.[0];
-
-    url =
-      typeof generated === "string"
-        ? generated
-        : String(
-            generated?.image ||
-            generated?.imageUrl ||
-            generated?.url ||
-            ""
-          )
-          .trim();
-
-  }catch(error){
-
-    console.warn(
-      `Image attempt ${attempts} failed for question ${index + 1}:`,
-      error
-    );
-
-  }
-
-  if(
-    !url &&
-    attempts < maxAttempts
-  ){
-
-    await new Promise(
-      resolve =>
-        setTimeout(
-          resolve,
-          2000
-        )
-    );
-
-  }
-
-}
-
-if(!url){
-
-  console.warn(
-    `Image ${generatedIndex + 1} was skipped after ${maxAttempts} attempts.`
-  );
-
-  preparedItems[targetIndex].generationStatus =
-    "failed";
-
-  continue;
-
-}
-
-preparedItems[targetIndex].image =
-  url;
-
-preparedItems[targetIndex].generationStatus =
-  "completed";
-
-preparedItems[targetIndex].image =
-  url;
-
-}
-
-return {
-  ...question,
-
-  type:
-    question.type ||
-    "mcq",
-
-  mediaType:
-    question.mediaType ||
-    "none",
-
-  mediaUrl:
-    question.mediaUrl ||
-    "",
-
-  image:
-    question.image ||
-    "",
-
-  video:
-    question.video ||
-    "",
-
-  audio:
-    question.audio ||
-    "",
-
-  answers:
-    preparedItems
-};
-}
-
-async function generateOneQuestionMedia(
-  question,
-  index,
-  settings
-){
-
-  /*
-    نبدأ بنسخة من السؤال.
-
-    قد نضيف أولًا صور العناصر،
-    ثم نضيف صوتًا أو فيديو أو صورة للسؤال نفسه.
-  */
-
-  let preparedQuestion = {
-    ...question
-  };
-
-  /* =====================================
-     GENERATE ANSWER ITEM IMAGES
-     FOR ANY QUESTION TYPE
-  ===================================== */
-
-  const hasAnswerImagePrompts =
-    Array.isArray(
-      preparedQuestion.answers
-    ) &&
-    preparedQuestion.answers.some(
-      answer =>
-        answer &&
-        !String(
-          answer.image ||
-          answer.imageUrl ||
-          answer.url ||
-          ""
-        ).trim() &&
-        Boolean(
-          String(
-            answer.mediaPrompt ||
-            answer.imagePrompt ||
-            ""
-          ).trim()
-        )
-    );
-
-  if(
-    hasAnswerImagePrompts
-  ){
-
-    preparedQuestion =
-      await generateRandomQuestionItemImages(
-        preparedQuestion,
-        index,
-        settings
-      );
-
-  }
-
-  /* =====================================
-     QUESTION-LEVEL MEDIA
-     IMAGE / AUDIO / VIDEO
-  ===================================== */
-
-  const mediaType =
-    String(
-      preparedQuestion.mediaType ||
-      question.mediaType ||
-      "none"
-    )
-    .trim()
-    .toLowerCase();
-
-  /*
-    إذا لم يتم اختيار وسائط للسؤال،
-    نعيده مع صور العناصر التي تم توليدها.
-  */
-
-  if(
-    mediaType === "none"
-  ){
-
-    return preparedQuestion;
-
-  }
-
-  const mediaPrompt =
-    String(
-      preparedQuestion.mediaPrompt ||
-      question.mediaPrompt ||
-      `Create educational media for this question without showing the answer: ${
-        preparedQuestion.text ||
-        question.text ||
-        ""
-      }`
-    )
-    .trim();
-
-  /*
-    النص الذي سيقرأه الصوت.
-
-    الأولوية:
-    1. audioText القادم من الذكاء الاصطناعي.
-    2. نص السؤال نفسه.
-  */
-
-  const audioText =
-    String(
-      preparedQuestion.audioText ||
-      question.audioText ||
-      preparedQuestion.text ||
-      question.text ||
-      ""
-    )
-    .trim();
-
-  const result =
-    await postToAiWorker({
-      task:
-        "generate_question_media",
-
-      mediaType:
-        mediaType,
-
-      mediaPrompt:
-        mediaPrompt,
-
-      audioText:
-        audioText,
-
-      imageStyle:
-        settings.imageStyle,
-
-      voice:
-        settings.voice,
-
-      videoAspectRatio:
-        settings.videoAspectRatio,
-
-      questionText:
-        preparedQuestion.text ||
-        question.text ||
-        ""
-    });
-
-  let url =
-    String(
-      result?.url ||
-      ""
-    )
-    .trim();
-
-  /*
-    الفيديو يحتاج انتظار انتهاء المعالجة.
-  */
-
-  if(
-    mediaType === "video" &&
-    result?.operationName
-  ){
-
-    url =
-      await waitForVideo(
-        result.operationName,
-        index + 1
-      );
-
-  }
-
-  if(
-    !url
-  ){
-
-    throw new Error(
-      `The ${mediaType} URL was not returned for question ${index + 1}.`
-    );
-
-  }
-
-  return {
-    ...preparedQuestion,
-
-    mediaType:
-      mediaType,
-
-    mediaUrl:
-      url,
-
-    image:
-      mediaType === "image"
-        ? url
-        : String(
-            preparedQuestion.image ||
-            ""
-          ),
-
-    video:
-      mediaType === "video"
-        ? url
-        : String(
-            preparedQuestion.video ||
-            ""
-          ),
-
-    audio:
-      mediaType === "audio"
-        ? url
-        : String(
-            preparedQuestion.audio ||
-            ""
-          )
-  };
-
-}
-
-async function generateMediaForQuestions(
-  questions,
-  settings
-){
-
-  const output = [];
-
-  for(
-    let index = 0;
-    index < questions.length;
-    index++
-  ){
-
-    const question =
-      questions[index];
-
-    const percent =
-      Math.round(
-        (
-          index /
-          Math.max(
-            questions.length,
-            1
-          )
-        ) *
-        100
-      );
-
-    setAiProgress(
-      `Creating media for question ${index + 1} of ${questions.length}...`,
-      percent
-    );
-
-    try{
-
-      const completed =
-        await generateOneQuestionMedia(
-          question,
-          index,
-          settings
-        );
-
-      output.push({
-        ...completed,
-        mediaGenerationStatus:
-          "completed"
-      });
-
-    }catch(error){
-
-      console.error(
-        `Media generation failed for question ${index + 1}:`,
-        error
-      );
-
-      /*
-        الاحتفاظ بالسؤال والمتابعة
-        إلى السؤال التالي.
-      */
-
-      output.push({
-        ...question,
-        mediaGenerationStatus:
-          "failed",
-
-        mediaGenerationError:
-          String(
-            error?.message ||
-            error ||
-            "Unknown media generation error."
-          )
-      });
-
-    }
-
-  }
-
-  setAiProgress(
-    "Question media processing completed.",
-    100
-  );
-
-  return output;
-
-}
-/* =========================================
-   REQUIRE FILE WHEN DESCRIPTION IS USED
-========================================= */
-
-function checkAiFileRequirement(){
-
-  const instructions =
-    document
-      .getElementById("aiInstructions")
-      ?.value
-      .trim() || "";
-
-  const fileInput =
-    document.getElementById(
-      "aiSourceFile"
-    );
-
-  const sourceFile =
-    fileInput?.files?.[0] ||
-    null;
-
-  const message =
-    document.getElementById(
-      "aiFileRequiredMessage"
-    );
-
-  const descriptionNeedsFile =
-    instructions.length > 0 &&
-    !sourceFile;
-
-  if(message){
-
-    message.style.display =
-      descriptionNeedsFile
-        ? "block"
-        : "none";
-
-  }
-
-  if(fileInput){
-
-    fileInput.style.borderColor =
-      descriptionNeedsFile
-        ? "#e74c3c"
-        : "";
-
-    fileInput.style.boxShadow =
-      descriptionNeedsFile
-        ? "0 0 0 3px rgba(231,76,60,.12)"
-        : "";
-
-  }
-
-  return !descriptionNeedsFile;
-
-}
-/* =========================================
-   SHOW SELECTED AI FILE
-========================================= */
-
-function showAiSelectedFile(){
+function showImportSelectedFile(){
 
   const input =
-    document.getElementById("aiSourceFile");
+    document.getElementById("importSourceFile");
 
   const info =
-    document.getElementById("aiSelectedFileInfo");
+    document.getElementById("importSelectedFileInfo");
 
   const file =
     input.files?.[0];
@@ -4883,10 +3692,10 @@ function showAiSelectedFile(){
 
 
 /* =========================================
-   READ AI SOURCE FILE
+   READ SOURCE FILE
 ========================================= */
 
-async function readAiSourceFile(file){
+async function readImportSourceFile(file){
 
   if(!file){
     return "";
@@ -4898,19 +3707,19 @@ async function readAiSourceFile(file){
 
   if(fileName.endsWith(".txt")){
 
-    return await readAiTxtFile(file);
+    return await readImportTxtFile(file);
 
   }
 
   if(fileName.endsWith(".docx")){
 
-    return await readAiWordFile(file);
+    return await readImportWordFile(file);
 
   }
 
   if(fileName.endsWith(".pdf")){
 
-    return await readAiPdfFile(file);
+    return await readImportPdfFile(file);
 
   }
 
@@ -4925,7 +3734,7 @@ async function readAiSourceFile(file){
    READ TXT
 ========================================= */
 
-async function readAiTxtFile(file){
+async function readImportTxtFile(file){
 
   const text =
     await file.text();
@@ -5465,7 +4274,7 @@ async function readWordAutomaticNumberingText(arrayBuffer){
 
   }catch(error){
     console.warn(
-      "WORD AUTOMATIC NUMBERING READ FAILED:",
+      "WORD AUTOMATIC NUMBERING READ FLED:",
       error
     );
 
@@ -5473,7 +4282,7 @@ async function readWordAutomaticNumberingText(arrayBuffer){
   }
 }
 
-async function readAiWordFile(file){
+async function readImportWordFile(file){
 
   if(typeof mammoth === "undefined"){
     throw new Error("The Word reader library was not loaded.");
@@ -5537,7 +4346,7 @@ async function readAiWordFile(file){
 /* =========================================
    READ PDF - preserve lines like importPDF
 ========================================= */
-async function readAiPdfFile(file){
+async function readImportPdfFile(file){
 
   if(typeof pdfjsLib === "undefined"){
     throw new Error("The PDF reader library was not loaded.");
@@ -5551,7 +4360,7 @@ async function readAiPdfFile(file){
 
   for(let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++){
 
-    setAiProgress(
+    setImportProgress(
       `Reading PDF page ${pageNumber} of ${pdf.numPages}...`,
       Math.round(pageNumber / Math.max(pdf.numPages,1) * 30)
     );
@@ -5610,7 +4419,7 @@ async function readAiPdfFile(file){
    CLEAN AND LIMIT SOURCE TEXT
 ========================================= */
 
-function prepareAiSourceText(text){
+function prepareImportSourceText(text){
 
   let output =
     String(text || "")
@@ -5649,7 +4458,7 @@ function prepareAiSourceText(text){
 
 /* =========================================
    DIRECT WORD / PDF / TXT QUESTION IMPORT
-   No AI is used when the instructions box is empty.
+   No  is used when the instructions box is empty.
    The correct answer is detected from * or (correct).
 ========================================= */
 function parseDirectImportedQuestions(sourceText){
@@ -6032,21 +4841,21 @@ function parseDirectImportedQuestions(sourceText){
 
 async function importSelectedSourceFileDirectly(sourceFile){
 
-  const button = document.getElementById("generateAiBtn");
+  const button = document.getElementById("importQuestionsBtn");
 
   button.disabled = true;
   button.innerHTML = `
-    <span class="ai-loading">
+    <span class="import-loading">
       <i class="fa-solid fa-spinner fa-spin"></i>
       Importing questions...
     </span>
   `;
 
-  setAiProgress(`Reading ${sourceFile.name} without AI...`, 15);
+  setImportProgress(`Reading ${sourceFile.name} ...`, 15);
 
-  const sourceText = await readAiSourceFile(sourceFile);
+  const sourceText = await readImportSourceFile(sourceFile);
 
-  setAiProgress("Detecting questions and starred answers...", 55);
+  setImportProgress("Detecting questions and starred answers...", 55);
 
   const importedQuestions = parseDirectImportedQuestions(sourceText);
 
@@ -6069,8 +4878,8 @@ async function importSelectedSourceFileDirectly(sourceFile){
     document.getElementById("activityTitle").value = cleanName || "Imported Activity";
   }
 
-  setAiProgress("Questions imported successfully without AI.", 100);
-  toast(`Imported ${importedQuestions.length} questions without AI ✅`);
+  setImportProgress("Questions imported successfully .", 100);
+  toast(`Imported ${importedQuestions.length} questions  ✅`);
 
   document.getElementById("questionsContainer").scrollIntoView({
     behavior: "smooth",
@@ -6078,560 +4887,33 @@ async function importSelectedSourceFileDirectly(sourceFile){
   });
 }
 
-async function generateQuestionsWithAI(){
+async function importQuestionsFromSelectedFile(){
+  if(!requireAdminForQuestions()) return;
 
-  const button =
-    document.getElementById("generateAiBtn");
+  const input = document.getElementById("importSourceFile");
+  const file = input?.files?.[0] || null;
+
+  if(!file){
+    alert("Select a Word, PDF, or TXT file first.");
+    return;
+  }
+
+  const button = document.getElementById("importQuestionsBtn");
 
   try{
-
-    const topic =
-      readText("aiTopic");
-
-    const instructions =
-      readText("aiInstructions");
-
-    const directSourceInput =
-      document.getElementById("aiSourceFile");
-
-    const directSourceFile =
-      directSourceInput?.files?.[0] || null;
-
-    /*
-      File selected + empty instructions:
-      import directly and do not call the AI Worker.
-    */
-    if(directSourceFile && !instructions){
-      await importSelectedSourceFileDirectly(directSourceFile);
-      return;
-    }
-
-    /* AI is used only when instructions are entered,
-       or when generating from a topic without a source file. */
-    if(
-      !AI_WORKER_URL ||
-      AI_WORKER_URL.includes("PUT_YOUR")
-    ){
-      throw new Error(
-        "Set the Cloudflare Worker URL in AI_WORKER_URL first."
-      );
-    }
-
-    /* =====================================
-       بيانات إنشاء الأسئلة
-    ===================================== */
-
-    const count =
-      Math.max(
-        1,
-        Math.min(
-          30,
-          Number(
-            document
-              .getElementById("aiQuestionCount")
-              .value || 5
-          )
-        )
-      );
-
-    const level =
-      document
-        .getElementById("aiLevel")
-        .value;
-
-    const language =
-      document
-        .getElementById("aiLanguage")
-        .value;
-
-    const requestedQuestionType =
-      document
-        .getElementById("aiQuestionType")
-        .value;
-
-    /*
-      Balloon Pop uses normal MCQ generation in the existing Worker.
-      The browser converts the returned MCQ into Balloon Pop.
-      Therefore the Cloudflare Worker does not need any modification.
-    */
-    const workerQuestionType =
-      (
-        requestedQuestionType === "balloon" ||
-        requestedQuestionType === "mystery"
-      )
-        ? "mcq"
-        : requestedQuestionType;
-
-    const requestedMediaType =
-      document
-        .getElementById("aiMediaType")
-        .value;
-
-    const generateMedia =
-      document
-        .getElementById("aiGenerateMedia")
-        .checked;
-
-    const imageStyle =
-      document
-        .getElementById("aiImageStyle")
-        .value;
-
-    const voice =
-      document
-        .getElementById("aiVoice")
-        .value;
-
-    const videoAspectRatio =
-      document
-        .getElementById("aiVideoAspect")
-        .value;
-
-    const mediaUrl = "";
-
-    /* =====================================
-       الملف اختياري
-    ===================================== */
-
-    const sourceFileInput =
-      document.getElementById(
-        "aiSourceFile"
-      );
-
-    const sourceFile =
-      sourceFileInput?.files?.[0] ||
-      null;
-/* =====================================
-   الوصف يتطلب رفع ملف
-===================================== */
-
-if(
-  instructions &&
-  !sourceFile
-){
-
-  checkAiFileRequirement();
-
-  throw new Error(
-    "Upload a PDF, DOCX, or TXT file before using the description box."
-  );
-
-}
-    let sourceFileText = "";
-    let sourceFileName = "";
-
-    /* =====================================
-       قراءة الملف فقط عند اختياره
-    ===================================== */
-
-    if(sourceFile){
-
-      sourceFileName =
-        String(sourceFile.name || "");
-
-      setAiProgress(
-        `Reading ${sourceFileName}...`,
-        5
-      );
-
-      sourceFileText =
-        await readAiSourceFile(
-          sourceFile
-        );
-
-      sourceFileText =
-        prepareAiSourceText(
-          sourceFileText
-        );
-
-    }
-
-    /* =====================================
-       يجب توفير وصف أو موضوع أو ملف
-    ===================================== */
-if(
-  !topic &&
-  !sourceFile
-){
-
-  throw new Error(
-    "Enter a question topic or upload a source file."
-  );
-
-}
-
-    const courseId =
-      document
-        .getElementById("courseSelect")
-        .value;
-
-const course =
-  OPEN_COURSES_CACHE.find(
-    item => item.id === courseId
-  );
-
-button.disabled = true;
-
-button.innerHTML = `
-  <span class="ai-loading">
-    <i class="fa-solid fa-spinner fa-spin"></i>
-    Generating questions...
-  </span>
-`;
-
-setAiProgress(
-  sourceFile
-    ? `Creating questions from ${sourceFileName}...`
-    : "Creating questions from your description...",
-  35
-);
-
-   const prompt = `
-You are an expert educational question writer.
-
-Create exactly ${count} educational activity questions.
-
-GENERAL SETTINGS:
-
-Topic:
-${topic || "Use the topic and content found in the uploaded source file."}
-
-Level:
-${level}
-
-Language:
-${language}
-
-Course:
-${course ? getCourseName(course) : "Not selected"}
-
-Requested question type:
-${requestedQuestionType}
-
-Requested media type:
-${requestedMediaType}
-
-Teacher instructions:
-${instructions || "Create clear questions based on the provided topic or source file."}
-
-SOURCE FILE INFORMATION:
-
-File name:
-${sourceFileName || "No file uploaded"}
-
-Source file content:
-${sourceFileText || "No source file content was provided."}
-
-IMPORTANT SOURCE RULES:
-
-- When source file content is provided, use it as the main source.
-- Do not invent facts that are not supported by the source.
-- Follow the teacher instructions carefully.
-- Use only the requested units or sections when they are specified.
-- Do not copy long paragraphs directly from the source.
-- Turn the source content into clear educational questions.
-- Avoid duplicate questions.
-- Make every question appropriate for the selected level.
-
-Return valid JSON only in this exact structure:
-
-{
-  "questions": [
-    {
-      "type": "mcq|match|order|random|wheel|balloon|mystery",
-      "text": "Question text or instructions",
-      "mediaType": "none|image|video|audio",
-      "mediaUrl": "",
-      "mediaPrompt": "A detailed prompt for generating an image or video",
-      "audioText": "The exact text that should be spoken for an audio question",
-      "answers": [
-        {
-          "text": "Left item, answer, or sequence item",
-          "right": "Matching pair only; otherwise empty",
-          "mediaPrompt": "Detailed image prompt for random items; otherwise empty",
-          "image": "",
-          "correct": true
-        }
-      ]
-    }
-  ]
-}
-
-QUESTION RULES:
-
-- Return exactly ${count} questions.
-- Follow the requested question type.
-- If the requested type is "mixed", use a balanced mix of:
-  mcq, match, order, random, wheel, balloon, and mystery.
-
-- For MCQ:
-  Create exactly 4 choices.
-  Mark exactly one answer as correct.
-  The other three answers must be plausible but incorrect.
-
-- For Match:
-  Create exactly 4 matching pairs.
-  Put the left value in "text".
-  Put its correct matching value in "right".
-  Set "correct" to false because matching questions do not use it.
-
-- For Order:
-  Create between 4 and 6 sequence items.
-  Return the items in their correct order.
-  Put each sequence item in "text".
-  Set "correct" to false.
-
-- For Random Image Question:
-  Use type "random".
-  Create between 4 and 8 different visual items.
-  Put an optional short label in each answer "text".
-  Put a detailed image-generation description in each answer "mediaPrompt".
-  Keep each answer "image" empty because the backend generates it.
-  Set "right" to an empty string.
-  Set "correct" to false for every item.
-  Do not create one correct option because the trainer grades the spoken answer.
-  Use the requested question-level media type.
-Random answer items may also contain image mediaPrompt values.
-
-- For Wheel of Fortune:
-  Use type "wheel".
-  Create exactly 8 wheel sections in this order: Grammar, Vocabulary, Speaking, Reading, Picture, Video, Listening, Double Points.
-  Put the wheel category in each answer "text".
-  Put a clear category-appropriate challenge or question in each answer "right".
-  For Picture, write a visual identification challenge and add a detailed image prompt in "mediaPrompt".
-  For Video and Listening, write a practical prompt that can be used with teacher-provided or generated media.
-  For Double Points, create a challenging bonus question.
-  Set "correct" to false for every wheel section because the trainer grades the spoken answer.
-  Use the requested question-level media type.
-For Picture wheel sections, include a detailed answer mediaPrompt when appropriate.
-
-- For Balloon Pop:
-  The browser will display one animated balloon first.
-  After the student pops it, the hidden question and its answer choices appear.
-  Create a normal four-choice multiple-choice question.
-  Use type "balloon".
-  Mark exactly one answer as correct.
-  Do not put the answer inside the balloon text.
-  The balloon is only the reveal animation.
-
-- For Mystery Box:
-  The browser will display a closed mystery gift box first.
-  After the student opens it, the hidden question and its answer choices appear.
-  Create a normal four-choice multiple-choice question.
-  Use type "mystery".
-  Mark exactly one answer as correct.
-  The box is only the reveal animation.
-
-MEDIA RULES:
-
-- Always keep mediaUrl empty.
-- The backend creates and uploads the real media.
-- For image questions, provide a precise educational mediaPrompt.
-- For video questions, provide a short and visually clear mediaPrompt.
-- For audio questions, provide the exact audioText.
-- Media must support the question.
-- Media must never reveal the correct answer.
-
-Return JSON only.
-Do not add Markdown.
-Do not use code fences.
-Do not add explanations before or after the JSON.
-`.trim();
-
-    const response = await fetch(AI_WORKER_URL,{
-      method:"POST",
-      headers:{
-        "Content-Type":"application/json"
-      },
-body:JSON.stringify({
-  task:AI_TASK,
-
-  /* The current Worker reads text instead of prompt */
-  text:prompt,
-
-  /* Send prompt as well for compatibility */
-  prompt:prompt,
-
-  topic:topic,
-  sourceFileName:
-  sourceFileName,
-
-hasSourceFile:
-  !!sourceFile,
-
-sourceTextLength:
-  sourceFileText.length,
-  count:count,
-  level:level,
-  language:language,
-  questionType:workerQuestionType,
-  mediaType:requestedMediaType,
-  mediaUrl:mediaUrl,
-  generateMedia:generateMedia,
-  imageStyle:imageStyle,
-  voice:voice,
-  videoAspectRatio:videoAspectRatio,
-  instructions:instructions,
-  responseFormat:"json"
-})
-    });
-
-    const responseText = await response.text();
-
-    if(!response.ok){
-      throw new Error(
-        `AI API Error (${response.status}): ${responseText.slice(0,250)}`
-      );
-    }
-
-    let data;
-
-    try{
-      data = JSON.parse(responseText);
-    }catch{
-      data = {text:responseText};
-    }
-
-    const rawQuestions = getAiResponsePayload(data);
-
-    const normalized = rawQuestions
-      .slice(0,count)
-      .map((question,index)=>{
-        let defaultQuestionType = (requestedQuestionType === "balloon" || requestedQuestionType === "mystery") ? "mcq" : requestedQuestionType;
-        let defaultMediaType = requestedMediaType;
-
-        if(defaultQuestionType === "mixed"){
-          const questionTypes = [
-  "mcq",
-  "match",
-  "order",
-  "random",
-  "wheel",
-  "balloon",
-  "mystery"
-];
-          defaultQuestionType = questionTypes[index % questionTypes.length];
-        }
-
-        if(defaultMediaType === "mixed"){
-          const mediaTypes = ["image","video","audio","none"];
-          defaultMediaType = mediaTypes[index % mediaTypes.length];
-        }
-
-    
-
-        const normalizedQuestion =
-          normalizeAiQuestion(
-            question,
-            index,
-            defaultQuestionType,
-            defaultMediaType,
-            mediaUrl
-          );
-
-        /*
-          Final safeguard:
-          the generated type must match the user's selected type.
-        */
-        if(
-          requestedQuestionType !== "mixed" &&
-          ["mcq","match","order","random","wheel","balloon","mystery"].includes(requestedQuestionType)
-        ){
-          normalizedQuestion.type =
-            requestedQuestionType;
-        }
-
-        if(requestedQuestionType === "balloon"){
-          normalizedQuestion.type = "balloon";
-        }
-
-        if(requestedQuestionType === "mystery"){
-          normalizedQuestion.type = "mystery";
-        }
-
-        if(requestedQuestionType === "random"){
-        
-
-          normalizedQuestion.answers =
-            (normalizedQuestion.answers || [])
-              .map((answer,answerIndex)=>({
-                ...answer,
-                right:"",
-                correct:false,
-                mediaPrompt:
-                  answer.mediaPrompt ||
-                  answer.text ||
-                  `Educational random image item ${answerIndex + 1} for: ${
-                    normalizedQuestion.text ||
-                    topic ||
-                    "the activity"
-                  }`
-              }));
-        }
-
-        return normalizedQuestion;
-      })
-      .filter(question=>question.text);
-
-    if(!normalized.length){
-      throw new Error("No valid questions were generated.");
-    }
-
-    let finalQuestions = normalized;
-
-    const hasRandomQuestions =
-      normalized.some(
-        question=>question.type === "random"
-      );
-
-    if(
-      generateMedia &&
-      (
-        requestedMediaType !== "none" ||
-        hasRandomQuestions
-      )
-    ){
-      finalQuestions = await generateMediaForQuestions(
-        normalized,
-        {
-          imageStyle,
-          voice,
-          videoAspectRatio
-        }
-      );
-    }
-
-    document.getElementById("questionsContainer").innerHTML = "";
-    QUESTION_COUNTER = 0;
-
-    finalQuestions.forEach(question=>{
-      addQuestion(question);
-    });
-
-    if(!readText("activityTitle")){
-      document.getElementById("activityTitle").value =
-        `AI Activity - ${topic}`;
-    }
-
-    toast(`Generated ${finalQuestions.length} questions successfully ✅`);
-
-    document.getElementById("questionsContainer").scrollIntoView({
-      behavior:"smooth",
-      block:"start"
-    });
-
+    await importSelectedSourceFileDirectly(file);
   }catch(error){
     console.error(error);
-    alert(error.message || "Unable to generate questions.");
+    alert(error.message || "Unable to import questions.");
   }finally{
-    setAiProgress("");
-    button.disabled = false;
-    button.innerHTML = `
-      <i class="fa-solid fa-wand-magic-sparkles"></i>
-      Generate Questions
-    `;
+    setImportProgress("");
+    if(button){
+      button.disabled = false;
+      button.innerHTML = '<i class="fa-solid fa-file-import"></i> Import Questions';
+    }
   }
 }
+
 /* =====================================
    TIMER SETTINGS
 ===================================== */
@@ -6680,7 +4962,13 @@ async function saveActivity(){
       throw new Error("Unable to find the course data.");
     }
 
-    const questions = collectQuestions();
+    const questions = IS_ADMIN_USER
+      ? collectQuestions()
+      : cloneQuestions(LOCKED_QUESTIONS_SNAPSHOT);
+
+    if(!IS_ADMIN_USER && !EDIT_ACTIVITY_ID){
+      throw new Error("Only the admin user can create an activity with questions.");
+    }
 const timerType =
   document
     .getElementById("activityTimerType")
@@ -6858,16 +5146,18 @@ function renderAdminActivities(){
 
       <div class="actions">
         <button class="btn btn-primary" onclick="editActivity('${activity.id}')">
-          <i class="fa-solid fa-pen"></i> Edit
+          <i class="fa-solid ${IS_ADMIN_USER ? "fa-pen" : "fa-eye"}"></i>
+          ${IS_ADMIN_USER ? "Edit" : "View Details"}
         </button>
 
         <button class="btn btn-success" onclick="previewActivity('${activity.id}')">
           <i class="fa-solid fa-eye"></i> Preview
         </button>
 
+        ${IS_ADMIN_USER ? `
         <button class="btn btn-danger" onclick="deleteActivity('${activity.id}')">
           <i class="fa-solid fa-trash"></i> Delete
-        </button>
+        </button>` : ""}
       </div>
     </article>
   `).join("");
@@ -6885,6 +5175,7 @@ function editActivity(id){
   }
 
   EDIT_ACTIVITY_ID = id;
+  LOCKED_QUESTIONS_SNAPSHOT = cloneQuestions(activity.questions || []);
 
   document.getElementById("activityTitle").value =
     activity.title || "";
@@ -6922,6 +5213,8 @@ toggleActivityTimerFields();
     addQuestion(question);
   });
 
+  applyGlobalQuestionPermissions();
+
   window.scrollTo({
     top:0,
     behavior:"smooth"
@@ -6931,6 +5224,10 @@ toggleActivityTimerFields();
 }
 
 async function deleteActivity(id){
+  if(!IS_ADMIN_USER){
+    alert("Only the admin user can delete activities.");
+    return;
+  }
   if(!confirm("Do you want to delete this activity? Previous results will not be deleted.")){
     return;
   }
@@ -6952,6 +5249,7 @@ async function deleteActivity(id){
 
 function resetEditor(){
   EDIT_ACTIVITY_ID = "";
+  LOCKED_QUESTIONS_SNAPSHOT = [];
 
   document.getElementById("activityTitle").value = "";
   document.getElementById("courseSelect").value = "";
@@ -10060,6 +8358,11 @@ window.addEventListener("DOMContentLoaded",async()=>{
   toggleAiMediaOptions();
 
   await loadActivities();
+});
+
+
+window.addEventListener("DOMContentLoaded",()=>{
+  applyGlobalQuestionPermissions();
 });
 </script>
 
