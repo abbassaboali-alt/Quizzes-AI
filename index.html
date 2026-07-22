@@ -2120,14 +2120,91 @@ const ACTIVITIES_COLLECTION = "FunActivities";
 const COURSES_COLLECTION = "Courses";
 const RESULTS_COLLECTION = "FunActivityResults";
 
-const CURRENT_USER_ROLE = String(
+let CURRENT_USER_ROLE = String(
   localStorage.getItem("role") || ""
 ).trim().toLowerCase();
 
-const IS_ADMIN_USER = CURRENT_USER_ROLE === "admin";
+let IS_ADMIN_USER = CURRENT_USER_ROLE === "admin";
 let LOCKED_QUESTIONS_SNAPSHOT = [];
 
+function updateCurrentUserRole(roleValue){
+
+  const normalizedRole = String(
+    roleValue ||
+    localStorage.getItem("role") ||
+    ""
+  )
+    .trim()
+    .toLowerCase();
+
+  CURRENT_USER_ROLE = normalizedRole;
+  IS_ADMIN_USER = normalizedRole === "admin";
+
+  /*
+    في حالة تشغيل الصفحة داخل iframe:
+    تصل بيانات المستخدم من الصفحة الرئيسية عبر PRUDLE_AUTH.
+  */
+  if(normalizedRole){
+    try{
+      localStorage.setItem("role", normalizedRole);
+    }catch(error){
+      console.warn("Unable to save role locally:", error);
+    }
+  }
+
+  applyGlobalQuestionPermissions();
+
+  /*
+    عند دخول الأدمن لأول مرة، نظهر سؤالًا فارغًا
+    إذا لم توجد أسئلة في المحرر.
+  */
+  const container = document.getElementById("questionsContainer");
+
+  if(
+    IS_ADMIN_USER &&
+    container &&
+    !container.querySelector(".question-box") &&
+    !EDIT_ACTIVITY_ID
+  ){
+    addQuestion();
+  }
+}
+
+window.addEventListener("message", function(event){
+
+  const data = event?.data;
+
+  if(
+    data &&
+    typeof data === "object" &&
+    data.type === "PRUDLE_AUTH"
+  ){
+    if(data.username){
+      try{
+        localStorage.setItem("username", String(data.username));
+      }catch(error){}
+    }
+
+    if(data.loginDate){
+      try{
+        localStorage.setItem("loginDate", String(data.loginDate));
+      }catch(error){}
+    }
+
+    updateCurrentUserRole(data.role);
+  }
+});
+
 function requireAdminForQuestions(){
+
+  /*
+    نقرأ الدور من جديد في كل عملية،
+    لأن بيانات iframe قد تصل بعد تحميل الصفحة.
+  */
+  updateCurrentUserRole(
+    localStorage.getItem("role") || CURRENT_USER_ROLE
+  );
+
   if(IS_ADMIN_USER){
     return true;
   }
@@ -3143,17 +3220,62 @@ function applyQuestionPermissions(questionBox){
 }
 
 function applyGlobalQuestionPermissions(){
-  const importPanel = document.getElementById("questionImportPanel");
-  if(importPanel && !IS_ADMIN_USER){
-    importPanel.style.display = "none";
+
+  const importPanel =
+    document.getElementById("questionImportPanel");
+
+  if(importPanel){
+    /*
+      زر الاستيراد الأصفر ولوحة الاستيراد تظهر للأدمن فقط.
+    */
+    importPanel.style.display =
+      IS_ADMIN_USER ? "" : "none";
   }
 
-  const addQuestionButton = document.getElementById("addQuestionBtn");
-  if(addQuestionButton && !IS_ADMIN_USER){
-    addQuestionButton.style.display = "none";
+  const addQuestionButton =
+    document.getElementById("addQuestionBtn");
+
+  if(addQuestionButton){
+    addQuestionButton.style.display =
+      IS_ADMIN_USER ? "" : "none";
+
+    addQuestionButton.disabled =
+      !IS_ADMIN_USER;
   }
 
-  document.querySelectorAll(".question-box").forEach(applyQuestionPermissions);
+  document
+    .querySelectorAll(".question-box")
+    .forEach(questionBox=>{
+
+      if(IS_ADMIN_USER){
+
+        questionBox.classList.remove(
+          "questions-readonly"
+        );
+
+        questionBox
+          .querySelectorAll(
+            "input, textarea, select, button"
+          )
+          .forEach(element=>{
+            element.disabled = false;
+          });
+
+        questionBox
+          .querySelectorAll(
+            ".btn-danger, .answers-admin + .btn"
+          )
+          .forEach(element=>{
+            element.style.display = "";
+          });
+
+      }else{
+
+        applyQuestionPermissions(
+          questionBox
+        );
+      }
+    });
 }
 
 function appendAnswer(questionBox,answer){
@@ -5261,16 +5383,19 @@ function resetEditor(){
   document.getElementById("activityGroup").value = "General";
   document.getElementById("activityStatus").value = "open";
   document.getElementById("activityGameMode").value = "normal";
-
-  if(document.getElementById("aiQuestionType")){
-    document.getElementById("aiQuestionType").value = "mcq";
-  }
-
   document.getElementById("questionsContainer").innerHTML = "";
 
   QUESTION_COUNTER = 0;
 
-  addQuestion();
+  /*
+    الأدمن يرى السؤال الافتراضي وأزرار التعديل.
+    غير الأدمن لا يستطيع إنشاء أو تعديل الأسئلة.
+  */
+  if(IS_ADMIN_USER){
+    addQuestion();
+  }
+
+  applyGlobalQuestionPermissions();
 }
 
 /* ===============================
@@ -8354,15 +8479,33 @@ function launchBigConfetti(){
 window.addEventListener("DOMContentLoaded",async()=>{
   await loadOpenCourses();
 
+  updateCurrentUserRole(
+    localStorage.getItem("role") || CURRENT_USER_ROLE
+  );
+
   resetEditor();
-  toggleAiMediaOptions();
 
   await loadActivities();
 });
 
 
 window.addEventListener("DOMContentLoaded",()=>{
+
+  updateCurrentUserRole(
+    localStorage.getItem("role") || CURRENT_USER_ROLE
+  );
+
   applyGlobalQuestionPermissions();
+
+  /*
+    نطلب بيانات الدخول من الصفحة الأم عند العمل داخل iframe.
+  */
+  if(window.self !== window.top){
+    window.parent.postMessage(
+      "PRUDLE_REQUEST_AUTH",
+      "*"
+    );
+  }
 });
 </script>
 
