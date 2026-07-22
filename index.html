@@ -5334,17 +5334,32 @@ function parseDirectImportedQuestions(sourceText){
     throw new Error("No readable text was found in the selected file.");
   }
 
-  // Protect decimal values and times such as 11.30.
+  /*
+    حماية الأرقام العشرية والأوقات مثل:
+    11.30 - 7.00 - 10.15
+  */
   cleanedText = cleanedText.replace(
-    /(\d+)\.(\d+)/g,
+    /(\d+)\s*\.\s*(\d+)/g,
     "$1__DECIMAL_DOT__$2"
   );
 
-  // Mark question numbers: 1.  1)  1-  1:
+  /*
+    التعرف على رقم السؤال دون الاعتماد على المسافات:
+    1. Question
+    1.Question
+    1 )Question
+    1- Question
+    1:Question
+  */
   cleanedText = cleanedText.replace(
-    /(^|[^0-9])(\d{1,3})\s*[\.\)\-:]\s*/g,
+    /(^|[^0-9])\s*(\d{1,3})\s*[\.\)\-:]\s*/g,
     function(fullMatch, before, questionNumber){
-      return before + "\n__QUESTION_START__" + questionNumber + "__";
+      return (
+        before +
+        "\n__QUESTION_START__" +
+        questionNumber +
+        "__"
+      );
     }
   );
 
@@ -5367,15 +5382,77 @@ function parseDirectImportedQuestions(sourceText){
     const content = String(numberMatch[2] || "").trim();
     if(!content) continue;
 
-    // Supports a) answer, a.answer, a-answer, A: answer.
-    const optionRegex = /(?:^|\s)([a-hA-H])\s*[\)\.\-:]\s*/g;
-    const optionMatches = Array.from(content.matchAll(optionRegex));
+    /*
+      استخراج كل علامات الخيارات المحتملة دون تأثر بالمسافات:
 
-    if(optionMatches.length < 2) continue;
+      A) answer
+      A ) answer
+      A.answer
+      A . answer
+      A-answer
+      A :answer
+      *A) answer
+      A*) answer
 
-    const firstOptionPosition = optionMatches[0].index;
+      ثم نختار تسلسلاً صحيحاً يبدأ من A ثم B ثم C...
+      حتى لا يتم اعتبار a.m. خياراً بالخطأ.
+    */
+    const optionRegex =
+      /(^|[^A-Za-z0-9])(\*)?\s*([a-hA-H])\s*(\*)?\s*[\)\.\-:]\s*/g;
+
+    const candidates = [];
+    let optionMatch;
+
+    while((optionMatch = optionRegex.exec(content)) !== null){
+
+      const prefix = String(optionMatch[1] || "");
+      const markerStart = optionMatch.index + prefix.length;
+
+      candidates.push({
+        index: markerStart,
+        end: optionRegex.lastIndex,
+        letter: String(optionMatch[3] || "").toLowerCase(),
+        markerCorrect: Boolean(optionMatch[2] || optionMatch[4])
+      });
+    }
+
+    let optionMatches = [];
+
+    for(let startIndex = 0; startIndex < candidates.length; startIndex++){
+
+      if(candidates[startIndex].letter !== "a") continue;
+
+      const sequence = [candidates[startIndex]];
+      let expectedCode = "b".charCodeAt(0);
+
+      for(let i = startIndex + 1; i < candidates.length; i++){
+
+        const expectedLetter = String.fromCharCode(expectedCode);
+
+        if(candidates[i].letter === expectedLetter){
+          sequence.push(candidates[i]);
+          expectedCode++;
+          continue;
+        }
+
+        if(candidates[i].letter === "a"){
+          break;
+        }
+      }
+
+      if(sequence.length >= 2){
+        optionMatches = sequence;
+        break;
+      }
+    }
+
+    if(optionMatches.length < 2){
+      console.warn("DIRECT IMPORT OPTIONS NOT FOUND:", content);
+      continue;
+    }
+
     const questionText = content
-      .substring(0, firstOptionPosition)
+      .substring(0, optionMatches[0].index)
       .replace(/\s+/g, " ")
       .trim();
 
@@ -5387,7 +5464,7 @@ function parseDirectImportedQuestions(sourceText){
     for(let i = 0; i < optionMatches.length; i++){
 
       const current = optionMatches[i];
-      const optionStart = current.index + current[0].length;
+      const optionStart = current.end;
       const optionEnd = optionMatches[i + 1]
         ? optionMatches[i + 1].index
         : content.length;
@@ -5399,13 +5476,21 @@ function parseDirectImportedQuestions(sourceText){
 
       if(!optionText) continue;
 
-      const isCorrect =
+      const textHasCorrectMarker =
         optionText.includes("*") ||
-        /\(correct\)|\[correct\]|\{correct\}/i.test(optionText);
+        /\(\s*correct\s*\)|\[\s*correct\s*\]|\{\s*correct\s*\}/i
+          .test(optionText);
+
+      const isCorrect =
+        current.markerCorrect ||
+        textHasCorrectMarker;
 
       optionText = optionText
         .replace(/\*/g, "")
-        .replace(/\(correct\)|\[correct\]|\{correct\}/gi, "")
+        .replace(
+          /\(\s*correct\s*\)|\[\s*correct\s*\]|\{\s*correct\s*\}/gi,
+          ""
+        )
         .replace(/\s+/g, " ")
         .trim();
 
@@ -5423,8 +5508,17 @@ function parseDirectImportedQuestions(sourceText){
 
     if(answers.length < 2) continue;
 
-    // Exactly one starred answer is required.
-    if(correctCount !== 1) continue;
+    if(correctCount !== 1){
+      console.warn(
+        "DIRECT IMPORT CORRECT ANSWER ERROR:",
+        {
+          question: questionText,
+          correctCount,
+          answers
+        }
+      );
+      continue;
+    }
 
     questions.push({
       type: "mcq",
