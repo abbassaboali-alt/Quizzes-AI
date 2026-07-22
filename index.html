@@ -5324,6 +5324,7 @@ function parseDirectImportedQuestions(sourceText){
     - لا تتأثر الخيارات بالمسافات قبلها أو بعدها.
     - يدعم مسافات Word الخاصة والمخفية.
     - يدعم النجمة قبل الإجابة أو بعدها أو قبل حرف الخيار.
+    - يدعم خيارات Word Automatic Numbering حتى لو اختفت a) b) c).
   */
   let cleanedText = String(sourceText || "")
     .replace(/\u0000/g, "")
@@ -5370,7 +5371,7 @@ function parseDirectImportedQuestions(sourceText){
     1 : Question
   */
   cleanedText = cleanedText.replace(
-    /(^|[\n\s])(\d{1,3})\s*[\.\)\-:]\s*/g,
+    /^(?:\s*)(\d{1,3})\s*[\.\)\-]\s*/gm,
     function(fullMatch, before, questionNumber){
       return (
         before +
@@ -5407,25 +5408,22 @@ function parseDirectImportedQuestions(sourceText){
 
     const content = String(numberMatch[2] || "")
       .replace(/[ \t]*\n[ \t]*/g, "\n")
+      .replace(/\n{3,}/g, "\n\n")
       .trim();
 
     if(!content){
       continue;
     }
 
-    /*
-      اكتشاف الخيارات دون الاعتماد على المسافات أو الأسطر.
+    let questionText = "";
+    let answers = [];
 
-      يدعم:
+    /*
+      الحالة الأولى:
+      الخيارات مكتوبة بوضوح:
       A) answer
-      A ) answer
-      A.answer
-      A . answer
-      A-answer
-      A : answer
-      *A) answer
-      A*) answer
-      A) *answer
+      B) answer*
+      C) answer
     */
     const optionRegex =
       /(^|[\s\n])(\*)?\s*([a-hA-H])\s*(\*)?\s*[\)\.\-:]\s*/g;
@@ -5433,109 +5431,172 @@ function parseDirectImportedQuestions(sourceText){
     const optionMatches =
       Array.from(content.matchAll(optionRegex));
 
-    if(optionMatches.length < 2){
-      continue;
+    if(optionMatches.length >= 2){
+
+      const firstOptionPosition =
+        optionMatches[0].index;
+
+      questionText = content
+        .substring(0, firstOptionPosition)
+        .replace(/\n+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+      for(
+        let i = 0;
+        i < optionMatches.length;
+        i++
+      ){
+
+        const current =
+          optionMatches[i];
+
+        const optionStart =
+          current.index +
+          current[0].length;
+
+        const optionEnd =
+          optionMatches[i + 1]
+            ? optionMatches[i + 1].index
+            : content.length;
+
+        let optionText = content
+          .substring(optionStart, optionEnd)
+          .replace(/\n+/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+
+        if(!optionText){
+          continue;
+        }
+
+        const markerBeforeLetter =
+          current[2] === "*";
+
+        const markerAfterLetter =
+          current[4] === "*";
+
+        const markerInsideAnswer =
+          optionText.includes("*");
+
+        const correctWordMarker =
+          /\(correct\)|\[correct\]|\{correct\}/i
+            .test(optionText);
+
+        const isCorrect =
+          markerBeforeLetter ||
+          markerAfterLetter ||
+          markerInsideAnswer ||
+          correctWordMarker;
+
+        optionText = optionText
+          .replace(/\*/g, "")
+          .replace(
+            /\(correct\)|\[correct\]|\{correct\}/gi,
+            ""
+          )
+          .replace(/\s+/g, " ")
+          .trim();
+
+        if(!optionText){
+          continue;
+        }
+
+        answers.push({
+          text: optionText,
+          right: "",
+          image: "",
+          correct: isCorrect
+        });
+      }
+
+    }else{
+
+      /*
+        الحالة الثانية:
+        Word Automatic Numbering حذف a) b) c) من النص المستخرج.
+
+        مثال:
+        1. Question
+        First answer
+        Second answer*
+        Third answer
+
+        أول سطر = السؤال
+        وكل سطر بعده = خيار
+        حتى يبدأ رقم السؤال التالي.
+      */
+      const lines = content
+        .split("\n")
+        .map(line =>
+          String(line || "")
+            .replace(/\s+/g, " ")
+            .trim()
+        )
+        .filter(Boolean);
+
+      if(lines.length < 3){
+        continue;
+      }
+
+      questionText =
+        String(lines[0] || "").trim();
+
+      const rawOptions =
+        lines.slice(1);
+
+      for(const rawOption of rawOptions){
+
+        let optionText =
+          String(rawOption || "").trim();
+
+        if(!optionText){
+          continue;
+        }
+
+        const correctWordMarker =
+          /\(correct\)|\[correct\]|\{correct\}/i
+            .test(optionText);
+
+        const isCorrect =
+          optionText.includes("*") ||
+          correctWordMarker;
+
+        optionText = optionText
+          .replace(/^\s*[a-hA-H]\s*[\)\.\-:]\s*/i, "")
+          .replace(/\*/g, "")
+          .replace(
+            /\(correct\)|\[correct\]|\{correct\}/gi,
+            ""
+          )
+          .replace(/\s+/g, " ")
+          .trim();
+
+        if(!optionText){
+          continue;
+        }
+
+        answers.push({
+          text: optionText,
+          right: "",
+          image: "",
+          correct: isCorrect
+        });
+      }
     }
-
-    const firstOptionPosition =
-      optionMatches[0].index;
-
-    const questionText = content
-      .substring(0, firstOptionPosition)
-      .replace(/\n+/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
 
     if(!questionText){
       continue;
     }
 
-    const answers = [];
-    let correctCount = 0;
-
-    for(
-      let i = 0;
-      i < optionMatches.length;
-      i++
-    ){
-
-      const current =
-        optionMatches[i];
-
-      const optionStart =
-        current.index +
-        current[0].length;
-
-      const optionEnd =
-        optionMatches[i + 1]
-          ? optionMatches[i + 1].index
-          : content.length;
-
-      let optionText = content
-        .substring(optionStart, optionEnd)
-        .replace(/\n+/g, " ")
-        .replace(/\s+/g, " ")
-        .trim();
-
-      if(!optionText){
-        continue;
-      }
-
-      /*
-        النجمة قد تكون:
-        *A) answer
-        A*) answer
-        A) *answer
-        A) answer*
-        A) answer *
-      */
-      const markerBeforeLetter =
-        current[2] === "*";
-
-      const markerAfterLetter =
-        current[4] === "*";
-
-      const markerInsideAnswer =
-        optionText.includes("*");
-
-      const correctWordMarker =
-        /\(correct\)|\[correct\]|\{correct\}/i
-          .test(optionText);
-
-      const isCorrect =
-        markerBeforeLetter ||
-        markerAfterLetter ||
-        markerInsideAnswer ||
-        correctWordMarker;
-
-      optionText = optionText
-        .replace(/\*/g, "")
-        .replace(
-          /\(correct\)|\[correct\]|\{correct\}/gi,
-          ""
-        )
-        .replace(/\s+/g, " ")
-        .trim();
-
-      if(!optionText){
-        continue;
-      }
-
-      if(isCorrect){
-        correctCount++;
-      }
-
-      answers.push({
-        text: optionText,
-        right: "",
-        image: "",
-        correct: isCorrect
-      });
-    }
-
     if(answers.length < 2){
       continue;
     }
+
+    const correctCount =
+      answers.filter(answer =>
+        answer.correct === true
+      ).length;
 
     /*
       يجب أن يحتوي كل سؤال على إجابة صحيحة واحدة فقط.
