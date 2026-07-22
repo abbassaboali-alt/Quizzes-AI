@@ -265,6 +265,32 @@ button{cursor:pointer}
   max-width:500px;width:100%;max-height:270px;object-fit:contain;
   display:block;margin:0 auto 20px;border-radius:18px;background:#f5f8fa
 }
+.question-youtube{
+  width:min(720px,100%);
+  aspect-ratio:16/9;
+  display:block;
+  margin:0 auto 20px;
+  border:0;
+  border-radius:18px;
+  background:#000;
+  box-shadow:0 10px 24px rgba(22,68,120,.14);
+}
+.q-media-preview iframe{
+  width:100%;
+  aspect-ratio:16/9;
+  border:0;
+  border-radius:12px;
+  background:#000;
+}
+.preview-youtube{
+  width:100%;
+  aspect-ratio:16/9;
+  border:0;
+  border-radius:13px;
+  display:block;
+  margin:10px auto;
+  background:#000;
+}
 .student-answers{
   display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px
 }
@@ -2064,6 +2090,14 @@ button{cursor:pointer}
 
       <video id="gameQuestionVideo" class="question-image hidden" controls playsinline></video>
 
+      <iframe
+        id="gameQuestionYouTube"
+        class="question-youtube hidden"
+        title="YouTube video"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowfullscreen>
+      </iframe>
+
       <audio id="gameQuestionAudio" class="hidden" controls style="width:100%;margin:0 auto 20px"></audio>
 
       <div id="studentAnswers" class="student-answers"></div>
@@ -2918,6 +2952,125 @@ function esc(value){
     .replaceAll(">","&gt;")
     .replaceAll('"',"&quot;")
     .replaceAll("'","&#039;");
+}
+
+function getYouTubeVideoId(value){
+
+  const raw = String(value || "").trim();
+
+  if(!raw){
+    return "";
+  }
+
+  try{
+
+    const normalized =
+      /^https?:\/\//i.test(raw)
+        ? raw
+        : "https://" + raw;
+
+    const url = new URL(normalized);
+    const host = url.hostname
+      .replace(/^www\./i,"")
+      .toLowerCase();
+
+    if(host === "youtu.be"){
+      return String(
+        url.pathname
+          .split("/")
+          .filter(Boolean)[0] || ""
+      ).trim();
+    }
+
+    if(
+      host === "youtube.com" ||
+      host === "m.youtube.com" ||
+      host === "music.youtube.com" ||
+      host === "youtube-nocookie.com"
+    ){
+
+      const watchId =
+        String(
+          url.searchParams.get("v") || ""
+        ).trim();
+
+      if(watchId){
+        return watchId;
+      }
+
+      const parts =
+        url.pathname
+          .split("/")
+          .filter(Boolean);
+
+      const knownPrefixes = [
+        "embed",
+        "shorts",
+        "live"
+      ];
+
+      if(
+        parts.length >= 2 &&
+        knownPrefixes.includes(
+          String(parts[0]).toLowerCase()
+        )
+      ){
+        return String(parts[1] || "").trim();
+      }
+    }
+
+  }catch(error){
+    console.warn(
+      "Invalid YouTube URL:",
+      error
+    );
+  }
+
+  const fallbackMatch =
+    raw.match(
+      /(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:watch\?.*?v=|embed\/|shorts\/|live\/))([A-Za-z0-9_-]{6,})/i
+    );
+
+  return fallbackMatch
+    ? String(fallbackMatch[1] || "").trim()
+    : "";
+}
+
+function isYouTubeUrl(value){
+  return Boolean(
+    getYouTubeVideoId(value)
+  );
+}
+
+function toYouTubeEmbedUrl(value){
+
+  const videoId =
+    getYouTubeVideoId(value);
+
+  if(!videoId){
+    return "";
+  }
+
+  return (
+    "https://www.youtube-nocookie.com/embed/" +
+    encodeURIComponent(videoId) +
+    "?rel=0"
+  );
+}
+
+function normalizeVideoUrl(value){
+
+  const raw =
+    String(value || "").trim();
+
+  if(!raw){
+    return "";
+  }
+
+  return (
+    toYouTubeEmbedUrl(raw) ||
+    raw
+  );
 }
 
 function clean(value){
@@ -3812,11 +3965,31 @@ function updateQuestionMediaPreview(questionBox){
   preview.classList.remove("hidden");
 
   if(type === "image"){
-    preview.innerHTML = `<img src="${esc(url)}" alt="Question image">`;
+    preview.innerHTML =
+      `<img src="${esc(url)}" alt="Question image">`;
+
   }else if(type === "video"){
-    preview.innerHTML = `<video src="${esc(url)}" controls playsinline></video>`;
+
+    const youtubeEmbedUrl =
+      toYouTubeEmbedUrl(url);
+
+    if(youtubeEmbedUrl){
+      preview.innerHTML = `
+        <iframe
+          src="${esc(youtubeEmbedUrl)}"
+          title="YouTube video preview"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen>
+        </iframe>
+      `;
+    }else{
+      preview.innerHTML =
+        `<video src="${esc(url)}" controls playsinline></video>`;
+    }
+
   }else if(type === "audio"){
-    preview.innerHTML = `<audio src="${esc(url)}" controls></audio>`;
+    preview.innerHTML =
+      `<audio src="${esc(url)}" controls></audio>`;
   }
 }
 
@@ -5811,14 +5984,36 @@ function buildReadOnlyQuestion(question,index){
         src="${esc(mediaUrl)}"
         alt="Question media">
     `;
-  }else if(mediaUrl && mediaType === "video"){
-    mediaHtml = `
-      <div class="preview-option">
-        <i class="fa-solid fa-video"></i>
-        Video attached to this question:<br>
-        <span style="font-size:11px;overflow-wrap:anywhere">${esc(mediaUrl)}</span>
-      </div>
-    `;
+  }else if(
+    mediaUrl &&
+    mediaType === "video"
+  ){
+
+    const youtubeEmbedUrl =
+      toYouTubeEmbedUrl(
+        mediaUrl
+      );
+
+    if(youtubeEmbedUrl){
+      mediaHtml = `
+        <iframe
+          class="preview-youtube"
+          src="${esc(youtubeEmbedUrl)}"
+          title="YouTube video"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen>
+        </iframe>
+      `;
+    }else{
+      mediaHtml = `
+        <div class="preview-option">
+          <i class="fa-solid fa-video"></i>
+          Video attached to this question:<br>
+          <span style="font-size:11px;overflow-wrap:anywhere">${esc(mediaUrl)}</span>
+        </div>
+      `;
+    }
+
   }else if(mediaUrl && mediaType === "audio"){
     mediaHtml = `
       <audio class="preview-audio" controls src="${esc(mediaUrl)}"></audio>
@@ -6507,16 +6702,34 @@ document
   document.getElementById("progressBar").style.width =
     progress + "%";
 
-  const questionImage = document.getElementById("gameQuestionImage");
-  const questionVideo = document.getElementById("gameQuestionVideo");
-  const questionAudio = document.getElementById("gameQuestionAudio");
+  const questionImage =
+    document.getElementById(
+      "gameQuestionImage"
+    );
+
+  const questionVideo =
+    document.getElementById(
+      "gameQuestionVideo"
+    );
+
+  const questionYouTube =
+    document.getElementById(
+      "gameQuestionYouTube"
+    );
+
+  const questionAudio =
+    document.getElementById(
+      "gameQuestionAudio"
+    );
 
   questionImage.classList.add("hidden");
   questionVideo.classList.add("hidden");
+  questionYouTube.classList.add("hidden");
   questionAudio.classList.add("hidden");
 
   questionImage.removeAttribute("src");
   questionVideo.removeAttribute("src");
+  questionYouTube.removeAttribute("src");
   questionAudio.removeAttribute("src");
 
   const mediaType =
@@ -6530,16 +6743,61 @@ document
     question.image ||
     "";
 
-  if(mediaUrl && mediaType === "image"){
-    questionImage.src = mediaUrl;
-    questionImage.classList.remove("hidden");
-  }else if(mediaUrl && mediaType === "video"){
-    questionVideo.src = mediaUrl;
-    questionVideo.classList.remove("hidden");
-    questionVideo.load();
-  }else if(mediaUrl && mediaType === "audio"){
-    questionAudio.src = mediaUrl;
-    questionAudio.classList.remove("hidden");
+  if(
+    mediaUrl &&
+    mediaType === "image"
+  ){
+
+    questionImage.src =
+      mediaUrl;
+
+    questionImage
+      .classList
+      .remove("hidden");
+
+  }else if(
+    mediaUrl &&
+    mediaType === "video"
+  ){
+
+    const youtubeEmbedUrl =
+      toYouTubeEmbedUrl(
+        mediaUrl
+      );
+
+    if(youtubeEmbedUrl){
+
+      questionYouTube.src =
+        youtubeEmbedUrl;
+
+      questionYouTube
+        .classList
+        .remove("hidden");
+
+    }else{
+
+      questionVideo.src =
+        mediaUrl;
+
+      questionVideo
+        .classList
+        .remove("hidden");
+
+      questionVideo.load();
+    }
+
+  }else if(
+    mediaUrl &&
+    mediaType === "audio"
+  ){
+
+    questionAudio.src =
+      mediaUrl;
+
+    questionAudio
+      .classList
+      .remove("hidden");
+
     questionAudio.load();
   }
 
