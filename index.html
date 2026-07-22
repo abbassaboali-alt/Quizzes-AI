@@ -1628,6 +1628,48 @@ button{cursor:pointer}
   .race-finish{width:22px}
 }
 
+
+
+/* =====================================
+   QUESTION EDITING LOCK
+===================================== */
+.question-lock-tools{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:9px;
+  flex-wrap:wrap;
+}
+.question-lock-status{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  padding:8px 12px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:900;
+  border:1px solid var(--border);
+}
+.question-lock-status.locked{
+  background:#fff0ee;
+  color:#c0392b;
+  border-color:#f3c1ba;
+}
+.question-lock-status.unlocked{
+  background:#eafaf4;
+  color:#12835b;
+  border-color:#bce8d6;
+}
+.questions-readonly{
+  opacity:.92;
+}
+.questions-readonly input,
+.questions-readonly textarea,
+.questions-readonly select{
+  background:#f3f6f8!important;
+  cursor:not-allowed;
+}
+
 </style>
 </head>
 
@@ -1875,9 +1917,28 @@ button{cursor:pointer}
     <div class="panel-title">
       <h2><i class="fa-solid fa-circle-question"></i> Activity Questions</h2>
 
-      <button class="btn btn-light" id="addQuestionBtn" onclick="addQuestion()">
-        <i class="fa-solid fa-plus"></i> Add Question
-      </button>
+      <div class="question-lock-tools">
+        <span
+          id="questionLockStatus"
+          class="question-lock-status unlocked">
+          <i class="fa-solid fa-lock-open"></i>
+          Editing Enabled
+        </span>
+
+        <button
+          class="btn btn-gold"
+          id="toggleQuestionLockBtn"
+          type="button"
+          onclick="toggleCurrentActivityQuestionLock()"
+          style="display:none">
+          <i class="fa-solid fa-lock"></i>
+          Lock Questions
+        </button>
+
+        <button class="btn btn-light" id="addQuestionBtn" onclick="addQuestion()">
+          <i class="fa-solid fa-plus"></i> Add Question
+        </button>
+      </div>
     </div>
 
     <div id="questionsContainer"></div>
@@ -2126,6 +2187,7 @@ let CURRENT_USER_ROLE = String(
 
 let IS_ADMIN_USER = CURRENT_USER_ROLE === "admin";
 let LOCKED_QUESTIONS_SNAPSHOT = [];
+let CURRENT_ACTIVITY_QUESTIONS_LOCKED = false;
 
 function updateCurrentUserRole(roleValue){
 
@@ -2161,7 +2223,7 @@ function updateCurrentUserRole(roleValue){
   const container = document.getElementById("questionsContainer");
 
   if(
-    IS_ADMIN_USER &&
+    canEditCurrentQuestions() &&
     container &&
     !container.querySelector(".question-box") &&
     !EDIT_ACTIVITY_ID
@@ -2195,21 +2257,25 @@ window.addEventListener("message", function(event){
   }
 });
 
+function canEditCurrentQuestions(){
+  return IS_ADMIN_USER || !CURRENT_ACTIVITY_QUESTIONS_LOCKED;
+}
+
 function requireAdminForQuestions(){
 
   /*
-    نقرأ الدور من جديد في كل عملية،
-    لأن بيانات iframe قد تصل بعد تحميل الصفحة.
+    الأدمن يستطيع التعديل دائمًا.
+    غير الأدمن يستطيع التعديل فقط عندما يكون القفل مفتوحًا.
   */
   updateCurrentUserRole(
     localStorage.getItem("role") || CURRENT_USER_ROLE
   );
 
-  if(IS_ADMIN_USER){
+  if(canEditCurrentQuestions()){
     return true;
   }
 
-  alert("Only the admin user can add, delete, import, or modify activity questions.");
+  alert("Questions are locked. Only the admin can unlock question editing.");
   return false;
 }
 
@@ -3204,7 +3270,7 @@ function addQuestion(data = null){
   refreshQuestionNumbers();
 }
 function applyQuestionPermissions(questionBox){
-  if(!questionBox || IS_ADMIN_USER){
+  if(!questionBox || canEditCurrentQuestions()){
     return;
   }
 
@@ -3219,63 +3285,162 @@ function applyQuestionPermissions(questionBox){
   });
 }
 
+function renderQuestionLockControls(){
+  const locked = Boolean(CURRENT_ACTIVITY_QUESTIONS_LOCKED);
+  const status = document.getElementById("questionLockStatus");
+  const button = document.getElementById("toggleQuestionLockBtn");
+
+  if(status){
+    status.className =
+      "question-lock-status " +
+      (locked ? "locked" : "unlocked");
+
+    status.innerHTML = locked
+      ? '<i class="fa-solid fa-lock"></i> Editing Locked'
+      : '<i class="fa-solid fa-lock-open"></i> Editing Enabled';
+  }
+
+  if(button){
+    button.style.display = IS_ADMIN_USER ? "" : "none";
+    button.disabled = !IS_ADMIN_USER;
+    button.innerHTML = locked
+      ? '<i class="fa-solid fa-lock-open"></i> Unlock Questions'
+      : '<i class="fa-solid fa-lock"></i> Lock Questions';
+  }
+}
+
 function applyGlobalQuestionPermissions(){
+
+  const editable = canEditCurrentQuestions();
 
   const importPanel =
     document.getElementById("questionImportPanel");
 
   if(importPanel){
-    /*
-      زر الاستيراد الأصفر ولوحة الاستيراد تظهر للأدمن فقط.
-    */
-    importPanel.style.display =
-      IS_ADMIN_USER ? "" : "none";
+    importPanel.style.display = editable ? "" : "none";
   }
 
   const addQuestionButton =
     document.getElementById("addQuestionBtn");
 
   if(addQuestionButton){
-    addQuestionButton.style.display =
-      IS_ADMIN_USER ? "" : "none";
-
-    addQuestionButton.disabled =
-      !IS_ADMIN_USER;
+    addQuestionButton.style.display = editable ? "" : "none";
+    addQuestionButton.disabled = !editable;
   }
+
+  renderQuestionLockControls();
 
   document
     .querySelectorAll(".question-box")
     .forEach(questionBox=>{
 
-      if(IS_ADMIN_USER){
+      if(editable){
 
-        questionBox.classList.remove(
-          "questions-readonly"
-        );
+        questionBox.classList.remove("questions-readonly");
 
         questionBox
-          .querySelectorAll(
-            "input, textarea, select, button"
-          )
+          .querySelectorAll("input, textarea, select, button")
           .forEach(element=>{
             element.disabled = false;
           });
 
         questionBox
-          .querySelectorAll(
-            ".btn-danger, .answers-admin + .btn"
-          )
+          .querySelectorAll(".btn-danger, .answers-admin + .btn")
           .forEach(element=>{
             element.style.display = "";
           });
 
       }else{
-
-        applyQuestionPermissions(
-          questionBox
-        );
+        applyQuestionPermissions(questionBox);
       }
     });
+}
+
+async function toggleCurrentActivityQuestionLock(){
+  if(!IS_ADMIN_USER){
+    alert("Only the admin can lock or unlock question editing.");
+    return;
+  }
+
+  const nextLocked = !CURRENT_ACTIVITY_QUESTIONS_LOCKED;
+
+  try{
+    if(EDIT_ACTIVITY_ID){
+      await db
+        .collection(ACTIVITIES_COLLECTION)
+        .doc(EDIT_ACTIVITY_ID)
+        .update({
+          questionsLocked:nextLocked,
+          questionsLockedAt:
+            firebase.firestore.FieldValue.serverTimestamp(),
+          questionsLockedBy:
+            String(localStorage.getItem("username") || "admin")
+        });
+
+      const cached = ACTIVITIES_CACHE.find(item=>item.id === EDIT_ACTIVITY_ID);
+      if(cached){
+        cached.questionsLocked = nextLocked;
+      }
+    }
+
+    CURRENT_ACTIVITY_QUESTIONS_LOCKED = nextLocked;
+    applyGlobalQuestionPermissions();
+    renderAdminActivities();
+
+    toast(
+      nextLocked
+        ? "Question editing locked for non-admin users 🔒"
+        : "Question editing enabled for non-admin users 🔓"
+    );
+  }catch(error){
+    console.error(error);
+    alert("Unable to change the question lock status.");
+  }
+}
+
+async function toggleActivityQuestionsLock(id){
+  if(!IS_ADMIN_USER){
+    alert("Only the admin can lock or unlock question editing.");
+    return;
+  }
+
+  const activity = ACTIVITIES_CACHE.find(item=>item.id === id);
+  if(!activity){
+    return;
+  }
+
+  const nextLocked = !Boolean(activity.questionsLocked);
+
+  try{
+    await db
+      .collection(ACTIVITIES_COLLECTION)
+      .doc(id)
+      .update({
+        questionsLocked:nextLocked,
+        questionsLockedAt:
+          firebase.firestore.FieldValue.serverTimestamp(),
+        questionsLockedBy:
+          String(localStorage.getItem("username") || "admin")
+      });
+
+    activity.questionsLocked = nextLocked;
+
+    if(EDIT_ACTIVITY_ID === id){
+      CURRENT_ACTIVITY_QUESTIONS_LOCKED = nextLocked;
+      applyGlobalQuestionPermissions();
+    }
+
+    renderAdminActivities();
+
+    toast(
+      nextLocked
+        ? "Question editing locked 🔒"
+        : "Question editing unlocked 🔓"
+    );
+  }catch(error){
+    console.error(error);
+    alert("Unable to change the question lock status.");
+  }
 }
 
 function appendAnswer(questionBox,answer){
@@ -5084,12 +5249,12 @@ async function saveActivity(){
       throw new Error("Unable to find the course data.");
     }
 
-    const questions = IS_ADMIN_USER
+    const questions = canEditCurrentQuestions()
       ? collectQuestions()
       : cloneQuestions(LOCKED_QUESTIONS_SNAPSHOT);
 
     if(!IS_ADMIN_USER && !EDIT_ACTIVITY_ID){
-      throw new Error("Only the admin user can create an activity with questions.");
+      throw new Error("Only the admin user can create a new activity.");
     }
 const timerType =
   document
@@ -5163,6 +5328,7 @@ timerTotalSeconds,
       group:document.getElementById("activityGroup").value,
       status:document.getElementById("activityStatus").value,
 
+      questionsLocked:Boolean(CURRENT_ACTIVITY_QUESTIONS_LOCKED),
       questions,
       questionCount:questions.length,
 
@@ -5211,7 +5377,8 @@ async function loadActivities(){
 
     ACTIVITIES_CACHE = snap.docs.map(doc=>({
       id:doc.id,
-      ...doc.data()
+      ...doc.data(),
+      questionsLocked:Boolean(doc.data().questionsLocked)
     }));
 
     renderAdminActivities();
@@ -5224,7 +5391,8 @@ async function loadActivities(){
 
       ACTIVITIES_CACHE = snap.docs.map(doc=>({
         id:doc.id,
-        ...doc.data()
+        ...doc.data(),
+        questionsLocked:Boolean(doc.data().questionsLocked)
       }));
 
       renderAdminActivities();
@@ -5264,6 +5432,11 @@ function renderAdminActivities(){
         <span class="mini">
           ${activity.status === "open" ? "🟢 Open" : "🔴 Closed"}
         </span>
+        <span class="mini">
+          ${activity.questionsLocked
+            ? "🔒 Questions Locked"
+            : "🔓 Questions Editable"}
+        </span>
       </div>
 
       <div class="actions">
@@ -5277,6 +5450,11 @@ function renderAdminActivities(){
         </button>
 
         ${IS_ADMIN_USER ? `
+        <button class="btn btn-gold" onclick="toggleActivityQuestionsLock('${activity.id}')">
+          <i class="fa-solid ${activity.questionsLocked ? "fa-lock-open" : "fa-lock"}"></i>
+          ${activity.questionsLocked ? "Unlock Questions" : "Lock Questions"}
+        </button>
+
         <button class="btn btn-danger" onclick="deleteActivity('${activity.id}')">
           <i class="fa-solid fa-trash"></i> Delete
         </button>` : ""}
@@ -5298,6 +5476,7 @@ function editActivity(id){
 
   EDIT_ACTIVITY_ID = id;
   LOCKED_QUESTIONS_SNAPSHOT = cloneQuestions(activity.questions || []);
+  CURRENT_ACTIVITY_QUESTIONS_LOCKED = Boolean(activity.questionsLocked);
 
   document.getElementById("activityTitle").value =
     activity.title || "";
@@ -5372,6 +5551,7 @@ async function deleteActivity(id){
 function resetEditor(){
   EDIT_ACTIVITY_ID = "";
   LOCKED_QUESTIONS_SNAPSHOT = [];
+  CURRENT_ACTIVITY_QUESTIONS_LOCKED = false;
 
   document.getElementById("activityTitle").value = "";
   document.getElementById("courseSelect").value = "";
@@ -5391,7 +5571,7 @@ function resetEditor(){
     الأدمن يرى السؤال الافتراضي وأزرار التعديل.
     غير الأدمن لا يستطيع إنشاء أو تعديل الأسئلة.
   */
-  if(IS_ADMIN_USER){
+  if(canEditCurrentQuestions()){
     addQuestion();
   }
 
