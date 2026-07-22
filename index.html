@@ -5743,8 +5743,9 @@ function renderAdminActivities(){
         <button class="btn btn-gold" onclick="toggleActivityQuestionsLock('${activity.id}')">
           <i class="fa-solid ${activity.questionsLocked ? "fa-lock-open" : "fa-lock"}"></i>
           ${activity.questionsLocked ? "Unlock Questions" : "Lock Questions"}
-        </button>
+        </button>` : ""}
 
+        ${(IS_ADMIN_USER || !activity.questionsLocked) ? `
         <button class="btn btn-danger" onclick="deleteActivity('${activity.id}')">
           <i class="fa-solid fa-trash"></i> Delete
         </button>` : ""}
@@ -5815,26 +5816,66 @@ toggleActivityTimerFields();
 }
 
 async function deleteActivity(id){
-  if(!IS_ADMIN_USER){
-    alert("Only the admin user can delete activities.");
+
+  const activity =
+    ACTIVITIES_CACHE.find(item=>item.id === id);
+
+  if(!activity){
+    alert("Activity not found.");
     return;
   }
-  if(!confirm("Do you want to delete this activity? Previous results will not be deleted.")){
+
+  /*
+    Admin can always delete.
+    Other users can delete only while questions are unlocked.
+  */
+  if(
+    !IS_ADMIN_USER &&
+    activity.questionsLocked === true
+  ){
+    alert(
+      "This activity cannot be deleted because its questions are locked. " +
+      "Only the admin can delete a locked activity."
+    );
+    return;
+  }
+
+  if(
+    !confirm(
+      "Do you want to delete this activity? " +
+      "Previous results will not be deleted."
+    )
+  ){
     return;
   }
 
   try{
-    await db.collection(ACTIVITIES_COLLECTION)
+
+    await db
+      .collection(ACTIVITIES_COLLECTION)
       .doc(id)
       .delete();
+
+    /*
+      Reset the editor if the deleted activity is currently open.
+    */
+    if(EDIT_ACTIVITY_ID === id){
+      resetEditor();
+    }
 
     toast("Activity deleted");
 
     await loadActivities();
 
   }catch(error){
+
     console.error(error);
-    alert("Unable to delete the activity.");
+
+    alert(
+      "Unable to delete the activity. " +
+      "Check Firestore permissions if the problem continues."
+    );
+
   }
 }
 
