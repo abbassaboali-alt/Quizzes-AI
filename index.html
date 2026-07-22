@@ -2264,26 +2264,39 @@ function canEditCurrentQuestions(){
 function requireAdminForQuestions(){
 
   /*
-    مهم: لا نستدعي updateCurrentUserRole() من هنا،
-    لأن updateCurrentUserRole() قد يستدعي addQuestion()،
-    وهذا كان يسبب حلقة متكررة تمنع زر إضافة السؤال والاستيراد من العمل.
-  */
-  const latestRole = String(
-    localStorage.getItem("role") || CURRENT_USER_ROLE || ""
-  )
-    .trim()
-    .toLowerCase();
+    السماح بالتعديل في حالتين:
+    1) المستخدم Admin.
+    2) الأسئلة مفتوحة وغير مقفلة.
 
-  if(latestRole){
-    CURRENT_USER_ROLE = latestRole;
-    IS_ADMIN_USER = latestRole === "admin";
+    هذه الدالة لا تستدعي updateCurrentUserRole ولا تعيد رسم الصفحة،
+    حتى لا تمنع زر Add Question أو زر Import Questions.
+  */
+
+  const storedRole =
+    String(
+      localStorage.getItem("role") ||
+      CURRENT_USER_ROLE ||
+      ""
+    )
+      .trim()
+      .toLowerCase();
+
+  if(storedRole){
+    CURRENT_USER_ROLE = storedRole;
+    IS_ADMIN_USER = storedRole === "admin";
   }
 
-  if(canEditCurrentQuestions()){
+  if(
+    IS_ADMIN_USER ||
+    CURRENT_ACTIVITY_QUESTIONS_LOCKED !== true
+  ){
     return true;
   }
 
-  alert("Questions are locked. Only the admin can unlock question editing.");
+  alert(
+    "Questions are locked. Only the admin can unlock question editing."
+  );
+
   return false;
 }
 
@@ -3163,7 +3176,17 @@ function fillSelectedCourseInfo(){
 ================================ */
 
 function addQuestion(data = null){
-  if(!data && !requireAdminForQuestions()) return;
+
+  /*
+    الأسئلة المحملة أو المستوردة تمر من خلال data.
+    الإضافة اليدوية فقط تحتاج التحقق من حالة القفل.
+  */
+  if(
+    !data &&
+    !requireAdminForQuestions()
+  ){
+    return;
+  }
 
   QUESTION_COUNTER++;
 
@@ -3276,7 +3299,17 @@ function addQuestion(data = null){
   updateQuestionType(box);
   updateQuestionMediaPreview(box);
   refreshQuestionNumbers();
-  applyGlobalQuestionPermissions();
+
+  /*
+    نطبق القراءة فقط عند كون الأسئلة مقفلة لغير الأدمن.
+    أما عند فتح التعديل فلا نعيد تعطيل الحقول.
+  */
+  if(
+    CURRENT_ACTIVITY_QUESTIONS_LOCKED === true &&
+    !IS_ADMIN_USER
+  ){
+    applyQuestionPermissions(box);
+  }
 }
 function applyQuestionPermissions(questionBox){
   if(!questionBox || canEditCurrentQuestions()){
@@ -3326,15 +3359,41 @@ function applyGlobalQuestionPermissions(){
     document.getElementById("questionImportPanel");
 
   if(importPanel){
-    importPanel.style.display = editable ? "" : "none";
+    importPanel.style.display =
+      editable ? "" : "none";
+
+    importPanel.style.pointerEvents =
+      editable ? "" : "none";
+
+    importPanel.style.opacity =
+      editable ? "" : ".65";
   }
 
   const addQuestionButton =
     document.getElementById("addQuestionBtn");
 
   if(addQuestionButton){
-    addQuestionButton.style.display = editable ? "" : "none";
-    addQuestionButton.disabled = !editable;
+    addQuestionButton.style.display =
+      editable ? "" : "none";
+
+    addQuestionButton.disabled =
+      !editable;
+
+    addQuestionButton.style.pointerEvents =
+      editable ? "" : "none";
+  }
+
+  const importQuestionsButton =
+    document.getElementById(
+      "importQuestionsBtn"
+    );
+
+  if(importQuestionsButton){
+    importQuestionsButton.disabled =
+      !editable;
+
+    importQuestionsButton.style.pointerEvents =
+      editable ? "" : "none";
   }
 
   renderQuestionLockControls();
@@ -3345,16 +3404,27 @@ function applyGlobalQuestionPermissions(){
 
       if(editable){
 
-        questionBox.classList.remove("questions-readonly");
+        questionBox.classList.remove(
+          "questions-readonly"
+        );
+
+        questionBox.style.pointerEvents = "";
+        questionBox.style.opacity = "";
 
         questionBox
-          .querySelectorAll("input, textarea, select, button")
+          .querySelectorAll(
+            "input, textarea, select, button"
+          )
           .forEach(element=>{
             element.disabled = false;
+            element.readOnly = false;
+            element.style.pointerEvents = "";
           });
 
         questionBox
-          .querySelectorAll(".btn-danger, .answers-admin + .btn")
+          .querySelectorAll(
+            ".btn-danger, .answers-admin + .btn"
+          )
           .forEach(element=>{
             element.style.display = "";
           });
@@ -5164,7 +5234,40 @@ async function importSelectedSourceFileDirectly(sourceFile){
   document.getElementById("questionsContainer").innerHTML = "";
   QUESTION_COUNTER = 0;
 
-  importedQuestions.forEach(question => addQuestion(question));
+  importedQuestions.forEach(question=>{
+    addQuestion(question);
+  });
+
+  /*
+    بعد الاستيراد نعيد تفعيل الحقول عندما يكون التعديل مفتوحًا.
+  */
+  if(
+    IS_ADMIN_USER ||
+    CURRENT_ACTIVITY_QUESTIONS_LOCKED !== true
+  ){
+    document
+      .querySelectorAll(
+        "#questionsContainer input, " +
+        "#questionsContainer textarea, " +
+        "#questionsContainer select, " +
+        "#questionsContainer button"
+      )
+      .forEach(element=>{
+        element.disabled = false;
+        element.style.pointerEvents = "";
+      });
+
+    document
+      .querySelectorAll(
+        "#questionsContainer .btn-danger, " +
+        "#questionsContainer .answers-admin + .btn"
+      )
+      .forEach(element=>{
+        element.style.display = "";
+      });
+  }
+
+  refreshQuestionNumbers();
 
   if(!readText("activityTitle")){
     const cleanName = String(sourceFile.name || "Imported Activity")
@@ -5184,7 +5287,12 @@ async function importSelectedSourceFileDirectly(sourceFile){
 }
 
 async function importQuestionsFromSelectedFile(){
-  if(!requireAdminForQuestions()) return;
+
+  if(
+    !requireAdminForQuestions()
+  ){
+    return;
+  }
 
   const input = document.getElementById("importSourceFile");
   const file = input?.files?.[0] || null;
