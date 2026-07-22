@@ -2264,12 +2264,20 @@ function canEditCurrentQuestions(){
 function requireAdminForQuestions(){
 
   /*
-    الأدمن يستطيع التعديل دائمًا.
-    غير الأدمن يستطيع التعديل فقط عندما يكون القفل مفتوحًا.
+    مهم: لا نستدعي updateCurrentUserRole() من هنا،
+    لأن updateCurrentUserRole() قد يستدعي addQuestion()،
+    وهذا كان يسبب حلقة متكررة تمنع زر إضافة السؤال والاستيراد من العمل.
   */
-  updateCurrentUserRole(
-    localStorage.getItem("role") || CURRENT_USER_ROLE
-  );
+  const latestRole = String(
+    localStorage.getItem("role") || CURRENT_USER_ROLE || ""
+  )
+    .trim()
+    .toLowerCase();
+
+  if(latestRole){
+    CURRENT_USER_ROLE = latestRole;
+    IS_ADMIN_USER = latestRole === "admin";
+  }
 
   if(canEditCurrentQuestions()){
     return true;
@@ -3268,6 +3276,7 @@ function addQuestion(data = null){
   updateQuestionType(box);
   updateQuestionMediaPreview(box);
   refreshQuestionNumbers();
+  applyGlobalQuestionPermissions();
 }
 function applyQuestionPermissions(questionBox){
   if(!questionBox || canEditCurrentQuestions()){
