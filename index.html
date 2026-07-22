@@ -2074,47 +2074,6 @@ Create:
       </button>
     </div>
 
-    <!-- =====================================
-         DIRECT WORD / PDF QUESTION IMPORT
-    ====================================== -->
-    <div style="
-      margin-bottom:18px;
-      padding:16px;
-      border:1px solid var(--border);
-      border-radius:16px;
-      background:#f8fbfe;
-    ">
-      <div style="font-weight:900;color:var(--blue);margin-bottom:12px">
-        <i class="fa-solid fa-file-import"></i>
-        Import Questions from Word or PDF
-      </div>
-
-      <div class="grid grid-2">
-        <div class="field">
-          <label>Word / TXT File</label>
-          <input id="directWordFile" type="file" accept=".docx,.txt">
-          <button class="btn btn-success" type="button" style="margin-top:10px" onclick="importActivityWordQuestions()">
-            <i class="fa-solid fa-file-word"></i>
-            Import Word
-          </button>
-        </div>
-
-        <div class="field">
-          <label>PDF File</label>
-          <input id="directPdfFile" type="file" accept=".pdf">
-          <button class="btn btn-danger" type="button" style="margin-top:10px" onclick="importActivityPdfQuestions()">
-            <i class="fa-solid fa-file-pdf"></i>
-            Import PDF
-          </button>
-        </div>
-      </div>
-
-      <div class="help" style="margin-top:12px;line-height:1.8">
-        Put an asterisk <b>*</b> beside the correct answer.<br>
-        Example: 1. She ___ a student. a) am b) is* c) are d) be
-      </div>
-    </div>
-
     <div id="questionsContainer"></div>
 
     <div class="actions">
@@ -3227,198 +3186,6 @@ function fillSelectedCourseInfo(){
 /* ===============================
    Questions
 ================================ */
-
-/* =========================================
-   DIRECT WORD / PDF IMPORT
-   Correct answer is detected from *
-========================================= */
-
-async function importActivityWordQuestions(){
-
-  const input = document.getElementById("directWordFile");
-  const file = input?.files?.[0];
-
-  if(!file){
-    alert("⚠️ Choose a DOCX or TXT file first.");
-    return;
-  }
-
-  try{
-
-    let text = "";
-    const name = String(file.name || "").toLowerCase();
-
-    if(name.endsWith(".txt")){
-      text = await readAiTxtFile(file);
-    }else if(name.endsWith(".docx")){
-      text = await readAiWordFile(file);
-    }else{
-      alert("⚠️ Only DOCX and TXT files are supported.");
-      return;
-    }
-
-    processImportedActivityQuestions(text);
-
-  }catch(error){
-    console.error("WORD IMPORT ERROR:", error);
-    alert("❌ Word import failed:\n" + (error?.message || String(error)));
-  }
-}
-
-async function importActivityPdfQuestions(){
-
-  const input = document.getElementById("directPdfFile");
-  const file = input?.files?.[0];
-
-  if(!file){
-    alert("⚠️ Choose a PDF file first.");
-    return;
-  }
-
-  try{
-    const text = await readAiPdfFile(file);
-    processImportedActivityQuestions(text);
-  }catch(error){
-    console.error("PDF IMPORT ERROR:", error);
-    alert("❌ PDF import failed:\n" + (error?.message || String(error)));
-  }
-}
-
-function processImportedActivityQuestions(sourceText){
-
-  let cleanedText = String(sourceText || "")
-    .replace(/\r\n?/g, "\n")
-    .replace(/\u00A0/g, " ")
-    .replace(/[\u200B-\u200F\u202A-\u202E\u2060\uFEFF]/g, "")
-    .replace(/\t/g, " ")
-    .replace(/[●•▪■]/g, "")
-    .replace(/[（]/g, "(")
-    .replace(/[）]/g, ")")
-    .replace(/[“”]/g, '"')
-    .replace(/[‘’]/g, "'")
-    .trim();
-
-  if(!cleanedText){
-    alert("⚠️ No readable text was found in the file.");
-    return;
-  }
-
-  // Protect decimal values such as 11.30.
-  cleanedText = cleanedText.replace(/(\d+)\.(\d+)/g, "$1__DECIMAL_DOT__$2");
-
-  // Add a separator before each numbered question.
-  cleanedText = cleanedText.replace(
-    /(^|[^0-9])(\d{1,3})\s*[\.\)\-:]\s*/g,
-    function(fullMatch,before,questionNumber){
-      return before + "\n__QUESTION_START__" + questionNumber + "__";
-    }
-  );
-
-  const blocks = cleanedText
-    .split("__QUESTION_START__")
-    .map(item => String(item || "").trim())
-    .filter(Boolean);
-
-  const parsed = [];
-
-  blocks.forEach(rawBlock => {
-
-    const block = String(rawBlock || "")
-      .replace(/__DECIMAL_DOT__/g, ".")
-      .trim();
-
-    const numberMatch = block.match(/^(\d{1,3})__(.*)$/s);
-    if(!numberMatch) return;
-
-    const content = String(numberMatch[2] || "").trim();
-    if(!content) return;
-
-    // Supports a) answer, a.answer, a-answer, a:answer.
-    const optionRegex = /([a-fA-F])\s*[\)\.\-:]\s*/g;
-    const matches = Array.from(content.matchAll(optionRegex));
-
-    if(matches.length < 2) return;
-
-    const questionText = content
-      .substring(0, matches[0].index)
-      .replace(/\s+/g, " ")
-      .trim();
-
-    if(!questionText) return;
-
-    const answers = [];
-    let correctIndex = -1;
-
-    for(let index = 0; index < matches.length; index++){
-
-      const start = matches[index].index + matches[index][0].length;
-      const end = matches[index + 1] ? matches[index + 1].index : content.length;
-
-      let answerText = content
-        .substring(start,end)
-        .replace(/\s+/g," ")
-        .trim();
-
-      if(!answerText) continue;
-
-      const lower = answerText.toLowerCase();
-      const isCorrect =
-        answerText.includes("*") ||
-        lower.includes("(correct)") ||
-        lower.includes("[correct]") ||
-        lower.includes("{correct}");
-
-      if(isCorrect){
-        correctIndex = answers.length;
-      }
-
-      answerText = answerText
-        .replace(/\*/g, "")
-        .replace(/\(correct\)/gi, "")
-        .replace(/\[correct\]/gi, "")
-        .replace(/\{correct\}/gi, "")
-        .replace(/\s+/g, " ")
-        .trim();
-
-      answers.push({
-        text:answerText,
-        right:"",
-        image:"",
-        correct:isCorrect
-      });
-    }
-
-    if(answers.length < 2 || correctIndex < 0) return;
-
-    answers.forEach((answer,index) => {
-      answer.correct = index === correctIndex;
-    });
-
-    parsed.push({
-      type:"mcq",
-      text:questionText,
-      mediaType:"none",
-      mediaUrl:"",
-      image:"",
-      answers
-    });
-  });
-
-  if(!parsed.length){
-    alert(
-      "⚠️ No questions were imported.\n\n" +
-      "Use this format:\n" +
-      "1. Question text a) answer b) correct answer* c) answer d) answer"
-    );
-    return;
-  }
-
-  parsed.forEach(question => addQuestion(question));
-
-  alert(`✅ Imported ${parsed.length} questions successfully.\nThe correct answer was detected from *.`);
-
-  console.log("DIRECT IMPORTED QUESTIONS:", parsed);
-}
 
 function addQuestion(data = null){
   QUESTION_COUNTER++;
@@ -5543,6 +5310,183 @@ function prepareAiSourceText(text){
   return output;
 
 }
+
+/* =========================================
+   DIRECT WORD / PDF / TXT QUESTION IMPORT
+   No AI is used when the instructions box is empty.
+   The correct answer is detected from * or (correct).
+========================================= */
+function parseDirectImportedQuestions(sourceText){
+
+  let cleanedText = String(sourceText || "")
+    .replace(/\r\n?/g, "\n")
+    .replace(/\u00A0/g, " ")
+    .replace(/[\u200B-\u200F\u202A-\u202E\u2060\uFEFF]/g, "")
+    .replace(/\t/g, " ")
+    .replace(/[●•▪■]/g, "")
+    .replace(/[（]/g, "(")
+    .replace(/[）]/g, ")")
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .trim();
+
+  if(!cleanedText){
+    throw new Error("No readable text was found in the selected file.");
+  }
+
+  // Protect decimal values and times such as 11.30.
+  cleanedText = cleanedText.replace(
+    /(\d+)\.(\d+)/g,
+    "$1__DECIMAL_DOT__$2"
+  );
+
+  // Mark question numbers: 1.  1)  1-  1:
+  cleanedText = cleanedText.replace(
+    /(^|[^0-9])(\d{1,3})\s*[\.\)\-:]\s*/g,
+    function(fullMatch, before, questionNumber){
+      return before + "\n__QUESTION_START__" + questionNumber + "__";
+    }
+  );
+
+  const blocks = cleanedText
+    .split("__QUESTION_START__")
+    .map(block => String(block || "").trim())
+    .filter(Boolean);
+
+  const questions = [];
+
+  for(const rawBlock of blocks){
+
+    const block = String(rawBlock || "")
+      .replace(/__DECIMAL_DOT__/g, ".")
+      .trim();
+
+    const numberMatch = block.match(/^(\d{1,3})__(.*)$/s);
+    if(!numberMatch) continue;
+
+    const content = String(numberMatch[2] || "").trim();
+    if(!content) continue;
+
+    // Supports a) answer, a.answer, a-answer, A: answer.
+    const optionRegex = /(?:^|\s)([a-hA-H])\s*[\)\.\-:]\s*/g;
+    const optionMatches = Array.from(content.matchAll(optionRegex));
+
+    if(optionMatches.length < 2) continue;
+
+    const firstOptionPosition = optionMatches[0].index;
+    const questionText = content
+      .substring(0, firstOptionPosition)
+      .replace(/\s+/g, " ")
+      .trim();
+
+    if(!questionText) continue;
+
+    const answers = [];
+    let correctCount = 0;
+
+    for(let i = 0; i < optionMatches.length; i++){
+
+      const current = optionMatches[i];
+      const optionStart = current.index + current[0].length;
+      const optionEnd = optionMatches[i + 1]
+        ? optionMatches[i + 1].index
+        : content.length;
+
+      let optionText = content
+        .substring(optionStart, optionEnd)
+        .replace(/\s+/g, " ")
+        .trim();
+
+      if(!optionText) continue;
+
+      const isCorrect =
+        optionText.includes("*") ||
+        /\(correct\)|\[correct\]|\{correct\}/i.test(optionText);
+
+      optionText = optionText
+        .replace(/\*/g, "")
+        .replace(/\(correct\)|\[correct\]|\{correct\}/gi, "")
+        .replace(/\s+/g, " ")
+        .trim();
+
+      if(!optionText) continue;
+
+      if(isCorrect) correctCount++;
+
+      answers.push({
+        text: optionText,
+        right: "",
+        image: "",
+        correct: isCorrect
+      });
+    }
+
+    if(answers.length < 2) continue;
+
+    // Exactly one starred answer is required.
+    if(correctCount !== 1) continue;
+
+    questions.push({
+      type: "mcq",
+      text: questionText,
+      mediaType: "none",
+      mediaUrl: "",
+      image: "",
+      answers
+    });
+  }
+
+  return questions;
+}
+
+async function importSelectedSourceFileDirectly(sourceFile){
+
+  const button = document.getElementById("generateAiBtn");
+
+  button.disabled = true;
+  button.innerHTML = `
+    <span class="ai-loading">
+      <i class="fa-solid fa-spinner fa-spin"></i>
+      Importing questions...
+    </span>
+  `;
+
+  setAiProgress(`Reading ${sourceFile.name} without AI...`, 15);
+
+  const sourceText = await readAiSourceFile(sourceFile);
+
+  setAiProgress("Detecting questions and starred answers...", 55);
+
+  const importedQuestions = parseDirectImportedQuestions(sourceText);
+
+  if(!importedQuestions.length){
+    throw new Error(
+      "No questions were imported. Use numbered questions, lettered choices, and put * beside exactly one correct answer."
+    );
+  }
+
+  document.getElementById("questionsContainer").innerHTML = "";
+  QUESTION_COUNTER = 0;
+
+  importedQuestions.forEach(question => addQuestion(question));
+
+  if(!readText("activityTitle")){
+    const cleanName = String(sourceFile.name || "Imported Activity")
+      .replace(/\.(docx|pdf|txt)$/i, "")
+      .trim();
+
+    document.getElementById("activityTitle").value = cleanName || "Imported Activity";
+  }
+
+  setAiProgress("Questions imported successfully without AI.", 100);
+  toast(`Imported ${importedQuestions.length} questions without AI ✅`);
+
+  document.getElementById("questionsContainer").scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
+}
+
 async function generateQuestionsWithAI(){
 
   const button =
@@ -5550,26 +5494,41 @@ async function generateQuestionsWithAI(){
 
   try{
 
-    if(
-      !AI_WORKER_URL ||
-      AI_WORKER_URL.includes("PUT_YOUR")
-    ){
-
-      throw new Error(
-        "Set the Cloudflare Worker URL in AI_WORKER_URL first."
-      );
-
-    }
-
-    /* =====================================
-       بيانات إنشاء الأسئلة
-    ===================================== */
-
     const topic =
       readText("aiTopic");
 
     const instructions =
       readText("aiInstructions");
+
+    const directSourceInput =
+      document.getElementById("aiSourceFile");
+
+    const directSourceFile =
+      directSourceInput?.files?.[0] || null;
+
+    /*
+      File selected + empty instructions:
+      import directly and do not call the AI Worker.
+    */
+    if(directSourceFile && !instructions){
+      await importSelectedSourceFileDirectly(directSourceFile);
+      return;
+    }
+
+    /* AI is used only when instructions are entered,
+       or when generating from a topic without a source file. */
+    if(
+      !AI_WORKER_URL ||
+      AI_WORKER_URL.includes("PUT_YOUR")
+    ){
+      throw new Error(
+        "Set the Cloudflare Worker URL in AI_WORKER_URL first."
+      );
+    }
+
+    /* =====================================
+       بيانات إنشاء الأسئلة
+    ===================================== */
 
     const count =
       Math.max(
