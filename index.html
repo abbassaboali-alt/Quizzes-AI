@@ -133,6 +133,154 @@ button{cursor:pointer}
   grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
   gap:15px
 }
+
+.activity-search-bar{
+  display:flex;
+  align-items:center;
+  gap:11px;
+  padding:11px 14px;
+  margin-bottom:16px;
+  border:1px solid var(--border);
+  border-radius:15px;
+  background:#f8fbfd;
+}
+
+.activity-search-bar i{
+  color:var(--blue);
+  font-size:18px;
+}
+
+.activity-search-input{
+  width:100%;
+  border:none;
+  outline:none;
+  background:transparent;
+  color:var(--text);
+  font-size:15px;
+  font-weight:700;
+}
+
+.activity-search-input::placeholder{
+  color:#8a9aaa;
+  font-weight:600;
+}
+
+.activity-search-count{
+  margin:-7px 0 14px;
+  color:var(--muted);
+  font-size:12px;
+  font-weight:800;
+}
+
+.activity-card-header,
+.open-activity-card-header{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.activity-card-title-wrap{
+  min-width:0;
+  flex:1;
+}
+
+.activity-type-logo{
+  width:58px;
+  height:58px;
+  flex:0 0 58px;
+  border-radius:17px;
+  display:grid;
+  place-items:center;
+  font-size:27px;
+  color:#fff;
+  box-shadow:0 8px 18px rgba(22,68,120,.16);
+}
+
+.activity-type-logo.type-mixed{
+  background:linear-gradient(135deg,#164478,#8e44ad);
+}
+
+.activity-type-logo.type-wheel{
+  background:linear-gradient(135deg,#f4b942,#e67e22);
+}
+
+.activity-type-logo.type-random{
+  background:linear-gradient(135deg,#8e44ad,#d252b4);
+}
+
+.activity-type-logo.type-balloon{
+  background:linear-gradient(135deg,#ff6f91,#e84378);
+}
+
+.activity-type-logo.type-mystery{
+  background:linear-gradient(135deg,#7d4bc6,#513191);
+}
+
+.activity-type-logo.type-match{
+  background:linear-gradient(135deg,#2e86c1,#164478);
+}
+
+.activity-type-logo.type-order{
+  background:linear-gradient(135deg,#f39c12,#d35400);
+}
+
+.activity-type-logo.type-mcq{
+  background:linear-gradient(135deg,#17a673,#0b7953);
+}
+
+.activity-type-logo.type-text{
+  background:linear-gradient(135deg,#8d5524,#c47d3e);
+}
+
+.activity-type-logo.type-voice{
+  background:linear-gradient(135deg,#d6336c,#9b2445);
+}
+
+.activity-type-logo.type-media{
+  background:linear-gradient(135deg,#607d8b,#34495e);
+}
+
+.activity-type-logo.type-default{
+  background:linear-gradient(135deg,var(--blue),var(--blue2));
+}
+
+.activity-type-badges{
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+  margin:11px 0 5px;
+}
+
+.activity-type-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:6px 9px;
+  border-radius:999px;
+  background:#edf4fa;
+  color:var(--blue);
+  border:1px solid #d2e2ef;
+  font-size:11px;
+  font-weight:900;
+}
+
+.activity-search-no-results{
+  grid-column:1/-1;
+  text-align:center;
+  color:var(--muted);
+  padding:35px 10px;
+  font-weight:800;
+}
+
+@media(max-width:520px){
+  .activity-type-logo{
+    width:50px;
+    height:50px;
+    flex-basis:50px;
+    font-size:23px;
+  }
+}
 .activity-card,
 .open-activity-card{
   border:1px solid var(--border);
@@ -1989,6 +2137,23 @@ button{cursor:pointer}
       </button>
     </div>
 
+    <div class="activity-search-bar">
+      <i class="fa-solid fa-magnifying-glass"></i>
+
+      <input
+        id="adminActivitySearch"
+        class="activity-search-input"
+        type="search"
+        placeholder="Search by activity name..."
+        autocomplete="off"
+        oninput="renderAdminActivities()">
+    </div>
+
+    <div
+      id="adminActivitySearchCount"
+      class="activity-search-count">
+    </div>
+
     <div id="adminActivities" class="activity-list"></div>
   </div>
 
@@ -2009,6 +2174,24 @@ button{cursor:pointer}
     </div>
 
     <div class="panel">
+
+      <div class="activity-search-bar">
+        <i class="fa-solid fa-magnifying-glass"></i>
+
+        <input
+          id="studentActivitySearch"
+          class="activity-search-input"
+          type="search"
+          placeholder="Search by activity name..."
+          autocomplete="off"
+          oninput="renderStudentActivities()">
+      </div>
+
+      <div
+        id="studentActivitySearchCount"
+        class="activity-search-count">
+      </div>
+
       <div id="openActivitiesBox" class="empty">
         Loading activities and open courses...
       </div>
@@ -3078,6 +3261,218 @@ function clean(value){
     .trim()
     .toLowerCase()
     .replace(/\s+/g," ");
+}
+
+function normalizeActivityQuestionType(value){
+
+  const type =
+    String(value || "mcq")
+      .trim()
+      .toLowerCase();
+
+  const aliases = {
+    multiplechoice:"mcq",
+    "multiple-choice":"mcq",
+    choice:"mcq",
+    matching:"match",
+    ordering:"order",
+    speaking:"voice",
+    image:"media",
+    video:"media",
+    audio:"media"
+  };
+
+  return aliases[type] || type;
+
+}
+
+function getActivityQuestionTypes(activity){
+
+  const questions =
+    Array.isArray(activity?.questions)
+      ? activity.questions
+      : [];
+
+  const types = [];
+
+  questions.forEach(question=>{
+
+    const type =
+      normalizeActivityQuestionType(
+        question?.type ||
+        question?.questionType ||
+        question?.qType ||
+        "mcq"
+      );
+
+    if(
+      type &&
+      !types.includes(type)
+    ){
+      types.push(type);
+    }
+
+  });
+
+  return types.length
+    ? types
+    : ["mcq"];
+
+}
+
+function getActivityTypeInfo(type){
+
+  const normalized =
+    normalizeActivityQuestionType(type);
+
+  const map = {
+    wheel:{
+      label:"Wheel",
+      icon:"fa-dharmachakra",
+      emoji:"🎡",
+      className:"type-wheel"
+    },
+    random:{
+      label:"Random Image",
+      icon:"fa-images",
+      emoji:"🖼️",
+      className:"type-random"
+    },
+    balloon:{
+      label:"Balloon Pop",
+      icon:"fa-circle",
+      emoji:"🎈",
+      className:"type-balloon"
+    },
+    mystery:{
+      label:"Mystery Box",
+      icon:"fa-gift",
+      emoji:"🎁",
+      className:"type-mystery"
+    },
+    match:{
+      label:"Matching",
+      icon:"fa-link",
+      emoji:"🔗",
+      className:"type-match"
+    },
+    order:{
+      label:"Ordering",
+      icon:"fa-arrow-down-1-9",
+      emoji:"🔀",
+      className:"type-order"
+    },
+    mcq:{
+      label:"Multiple Choice",
+      icon:"fa-list-check",
+      emoji:"✅",
+      className:"type-mcq"
+    },
+    text:{
+      label:"Written Answer",
+      icon:"fa-pen",
+      emoji:"✍️",
+      className:"type-text"
+    },
+    voice:{
+      label:"Speaking",
+      icon:"fa-microphone",
+      emoji:"🎤",
+      className:"type-voice"
+    },
+    media:{
+      label:"Media",
+      icon:"fa-photo-film",
+      emoji:"🎬",
+      className:"type-media"
+    }
+  };
+
+  return map[normalized] || {
+    label:"Activity",
+    icon:"fa-gamepad",
+    emoji:"🎮",
+    className:"type-default"
+  };
+
+}
+
+function getActivityPrimaryType(activity){
+
+  const types =
+    getActivityQuestionTypes(activity);
+
+  if(types.length > 1){
+    return {
+      label:"Mixed Questions",
+      icon:"fa-shapes",
+      emoji:"🎮",
+      className:"type-mixed"
+    };
+  }
+
+  return getActivityTypeInfo(
+    types[0]
+  );
+
+}
+
+function buildActivityTypeLogo(activity){
+
+  const info =
+    getActivityPrimaryType(activity);
+
+  return `
+    <div
+      class="activity-type-logo ${esc(info.className)}"
+      title="${esc(info.label)}"
+      aria-label="${esc(info.label)}">
+
+      <i class="fa-solid ${esc(info.icon)}"></i>
+    </div>
+  `;
+
+}
+
+function buildActivityTypeBadges(activity){
+
+  return getActivityQuestionTypes(activity)
+    .map(type=>{
+
+      const info =
+        getActivityTypeInfo(type);
+
+      return `
+        <span class="activity-type-badge">
+          <span>${esc(info.emoji)}</span>
+          ${esc(info.label)}
+        </span>
+      `;
+
+    })
+    .join("");
+
+}
+
+function activityMatchesNameSearch(
+  activity,
+  query
+){
+
+  const normalizedQuery =
+    clean(query);
+
+  if(!normalizedQuery){
+    return true;
+  }
+
+  return clean(
+    activity?.title ||
+    activity?.activityTitle ||
+    activity?.name ||
+    ""
+  ).includes(normalizedQuery);
+
 }
 
 function first(object,fields,fallback=""){
@@ -5694,64 +6089,232 @@ async function loadActivities(){
 }
 
 function renderAdminActivities(){
-  const box = document.getElementById("adminActivities");
+
+  const box =
+    document.getElementById(
+      "adminActivities"
+    );
+
+  const searchInput =
+    document.getElementById(
+      "adminActivitySearch"
+    );
+
+  const countBox =
+    document.getElementById(
+      "adminActivitySearchCount"
+    );
+
+  const query =
+    String(
+      searchInput?.value ||
+      ""
+    ).trim();
+
+  const filteredActivities =
+    ACTIVITIES_CACHE.filter(
+      activity=>
+        activityMatchesNameSearch(
+          activity,
+          query
+        )
+    );
+
+  if(countBox){
+    countBox.textContent =
+      query
+        ? `${filteredActivities.length} of ${ACTIVITIES_CACHE.length} activities`
+        : `${ACTIVITIES_CACHE.length} saved activities`;
+  }
 
   if(!ACTIVITIES_CACHE.length){
-    box.innerHTML = `<div class="empty">No saved activities yet.</div>`;
+
+    box.innerHTML = `
+      <div class="empty">
+        No saved activities yet.
+      </div>
+    `;
+
     return;
   }
 
-  box.innerHTML = ACTIVITIES_CACHE.map(activity=>`
-    <article class="activity-card">
-      <h3>${esc(activity.title)}</h3>
+  if(!filteredActivities.length){
 
-      <div style="color:var(--muted);min-height:42px">
-        ${esc(activity.description || "Interactive Activity")}
+    box.innerHTML = `
+      <div class="activity-search-no-results">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        No activity name matches your search.
       </div>
+    `;
 
-      <div class="activity-meta">
-        <span class="mini">📘 ${esc(activity.courseName || "Not Specified")}</span>
-        <span class="mini">❓ ${Number(activity.questionCount || activity.questions?.length || 0)} Questions</span>
-        <span class="mini">🏫 ${esc(activity.branch || "Not Specified")}</span>
-        <span class="mini">👥 ${esc(activity.group || "General")}</span>
-        <span class="mini">
-          ${(activity.gameMode || "normal") === "race"
-            ? "🏁 Race Game"
-            : "🎮 Normal"}
-        </span>
-        <span class="mini">
-          ${activity.status === "open" ? "🟢 Open" : "🔴 Closed"}
-        </span>
-        <span class="mini">
-          ${activity.questionsLocked
-            ? "🔒 Questions Locked"
-            : "🔓 Questions Editable"}
-        </span>
-      </div>
+    return;
+  }
 
-      <div class="actions">
-        <button class="btn btn-primary" onclick="editActivity('${activity.id}')">
-          <i class="fa-solid ${IS_ADMIN_USER ? "fa-pen" : "fa-eye"}"></i>
-          ${IS_ADMIN_USER ? "Edit" : "View Details"}
-        </button>
+  box.innerHTML =
+    filteredActivities
+      .map(activity=>`
 
-        <button class="btn btn-success" onclick="previewActivity('${activity.id}')">
-          <i class="fa-solid fa-eye"></i> Preview
-        </button>
+        <article class="activity-card">
 
-        ${IS_ADMIN_USER ? `
-        <button class="btn btn-gold" onclick="toggleActivityQuestionsLock('${activity.id}')">
-          <i class="fa-solid ${activity.questionsLocked ? "fa-lock-open" : "fa-lock"}"></i>
-          ${activity.questionsLocked ? "Unlock Questions" : "Lock Questions"}
-        </button>` : ""}
+          <div class="activity-card-header">
 
-        ${(IS_ADMIN_USER || !activity.questionsLocked) ? `
-        <button class="btn btn-danger" onclick="deleteActivity('${activity.id}')">
-          <i class="fa-solid fa-trash"></i> Delete
-        </button>` : ""}
-      </div>
-    </article>
-  `).join("");
+            <div class="activity-card-title-wrap">
+              <h3>${esc(activity.title)}</h3>
+
+              <div style="
+                color:var(--muted);
+                min-height:42px;
+                line-height:1.65;
+              ">
+                ${esc(
+                  activity.description ||
+                  "Interactive Activity"
+                )}
+              </div>
+            </div>
+
+            ${buildActivityTypeLogo(activity)}
+
+          </div>
+
+          <div class="activity-type-badges">
+            ${buildActivityTypeBadges(activity)}
+          </div>
+
+          <div class="activity-meta">
+
+            <span class="mini">
+              📘 ${esc(
+                activity.courseName ||
+                "Not Specified"
+              )}
+            </span>
+
+            <span class="mini">
+              ❓ ${Number(
+                activity.questionCount ||
+                activity.questions?.length ||
+                0
+              )} Questions
+            </span>
+
+            <span class="mini">
+              🏫 ${esc(
+                activity.branch ||
+                "Not Specified"
+              )}
+            </span>
+
+            <span class="mini">
+              👥 ${esc(
+                activity.group ||
+                "General"
+              )}
+            </span>
+
+            <span class="mini">
+              ${
+                (
+                  activity.gameMode ||
+                  "normal"
+                ) === "race"
+                  ? "🏁 Race Game"
+                  : "🎮 Normal"
+              }
+            </span>
+
+            <span class="mini">
+              ${
+                activity.status === "open"
+                  ? "🟢 Open"
+                  : "🔴 Closed"
+              }
+            </span>
+
+            <span class="mini">
+              ${
+                activity.questionsLocked
+                  ? "🔒 Questions Locked"
+                  : "🔓 Questions Editable"
+              }
+            </span>
+
+          </div>
+
+          <div class="actions">
+
+            <button
+              class="btn btn-primary"
+              onclick="editActivity('${activity.id}')">
+
+              <i class="fa-solid ${
+                IS_ADMIN_USER
+                  ? "fa-pen"
+                  : "fa-eye"
+              }"></i>
+
+              ${
+                IS_ADMIN_USER
+                  ? "Edit"
+                  : "View Details"
+              }
+            </button>
+
+            <button
+              class="btn btn-success"
+              onclick="previewActivity('${activity.id}')">
+
+              <i class="fa-solid fa-eye"></i>
+              Preview
+            </button>
+
+            ${
+              IS_ADMIN_USER
+                ? `
+                  <button
+                    class="btn btn-gold"
+                    onclick="toggleActivityQuestionsLock('${activity.id}')">
+
+                    <i class="fa-solid ${
+                      activity.questionsLocked
+                        ? "fa-lock-open"
+                        : "fa-lock"
+                    }"></i>
+
+                    ${
+                      activity.questionsLocked
+                        ? "Unlock Questions"
+                        : "Lock Questions"
+                    }
+                  </button>
+                `
+                : ""
+            }
+
+            ${
+              (
+                IS_ADMIN_USER ||
+                !activity.questionsLocked
+              )
+                ? `
+                  <button
+                    class="btn btn-danger"
+                    onclick="deleteActivity('${activity.id}')">
+
+                    <i class="fa-solid fa-trash"></i>
+                    Delete
+                  </button>
+                `
+                : ""
+            }
+
+          </div>
+
+        </article>
+
+      `)
+      .join("");
+
 }
 
 /* ===============================
@@ -6565,100 +7128,253 @@ async function loadStudentActivities(){
 }
 
 function renderStudentActivities(){
-  const box = document.getElementById("openActivitiesBox");
 
-  const linkedItems = ACTIVITIES_CACHE
-    .map(activity=>({
-      activity,
-      course:findCourseForActivity(activity)
-    }))
-    .filter(item=>item.course);
+  const box =
+    document.getElementById(
+      "openActivitiesBox"
+    );
 
-  if(!linkedItems.length){
+  const searchInput =
+    document.getElementById(
+      "studentActivitySearch"
+    );
+
+  const countBox =
+    document.getElementById(
+      "studentActivitySearchCount"
+    );
+
+  const query =
+    String(
+      searchInput?.value ||
+      ""
+    ).trim();
+
+  const allLinkedItems =
+    ACTIVITIES_CACHE
+      .map(activity=>({
+        activity,
+        course:findCourseForActivity(activity)
+      }))
+      .filter(item=>item.course);
+
+  const linkedItems =
+    allLinkedItems.filter(
+      ({activity})=>
+        activityMatchesNameSearch(
+          activity,
+          query
+        )
+    );
+
+  if(countBox){
+    countBox.textContent =
+      query
+        ? `${linkedItems.length} of ${allLinkedItems.length} activities`
+        : `${allLinkedItems.length} available activities`;
+  }
+
+  if(!allLinkedItems.length){
+
     box.className = "empty";
+
     box.innerHTML = `
       There are currently no activities linked to open courses.
     `;
+
     return;
   }
 
-  box.className = "open-activity-list";
+  if(!linkedItems.length){
 
-  box.innerHTML = linkedItems.map(({activity,course})=>`
-    <article class="open-activity-card">
+    box.className =
+      "open-activity-list";
 
-      <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
-        <div>
-          <h3>${esc(getCourseName(course))}</h3>
+    box.innerHTML = `
+      <div class="activity-search-no-results">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        No activity name matches your search.
+      </div>
+    `;
 
-          <div style="color:var(--blue2);font-weight:900">
-            ${esc(activity.title || "Interactive Activity")}
+    return;
+  }
+
+  box.className =
+    "open-activity-list";
+
+  box.innerHTML =
+    linkedItems
+      .map(({activity,course})=>`
+
+        <article class="open-activity-card">
+
+          <div class="open-activity-card-header">
+
+            <div class="activity-card-title-wrap">
+
+              <h3>
+                ${esc(
+                  getCourseName(course)
+                )}
+              </h3>
+
+              <div style="
+                color:var(--blue2);
+                font-weight:900;
+                font-size:16px;
+              ">
+                ${esc(
+                  activity.title ||
+                  "Interactive Activity"
+                )}
+              </div>
+
+            </div>
+
+            ${buildActivityTypeLogo(activity)}
+
           </div>
-        </div>
 
-        <span class="open-badge">
-          <i class="fa-solid fa-circle-check"></i>
-          Open
-        </span>
-      </div>
+          <div style="
+            display:flex;
+            justify-content:flex-end;
+            margin-top:8px;
+          ">
+            <span class="open-badge">
+              <i class="fa-solid fa-circle-check"></i>
+              Open
+            </span>
+          </div>
 
-      <div style="color:var(--muted);margin-top:12px;line-height:1.7">
-        ${esc(activity.description || "Interactive educational and recreational activity.")}
-      </div>
+          <div class="activity-type-badges">
+            ${buildActivityTypeBadges(activity)}
+          </div>
 
-      <div class="course-info-grid">
-        <div class="info-item">
-          <span>Trainer</span>
-          <strong>${esc(getTrainer(course,activity))}</strong>
-        </div>
+          <div style="
+            color:var(--muted);
+            margin-top:12px;
+            line-height:1.7;
+          ">
+            ${esc(
+              activity.description ||
+              "Interactive educational and recreational activity."
+            )}
+          </div>
 
-        <div class="info-item">
-          <span>Branch</span>
-          <strong>${esc(getBranch(course,activity))}</strong>
-        </div>
+          <div class="course-info-grid">
 
-        <div class="info-item">
-          <span>Department</span>
-          <strong>${esc(getSection(course,activity))}</strong>
-        </div>
+            <div class="info-item">
+              <span>Trainer</span>
+              <strong>
+                ${esc(
+                  getTrainer(
+                    course,
+                    activity
+                  )
+                )}
+              </strong>
+            </div>
 
-        <div class="info-item">
-          <span>Period</span>
-          <strong>${esc(getPeriod(course,activity))}</strong>
-        </div>
+            <div class="info-item">
+              <span>Branch</span>
+              <strong>
+                ${esc(
+                  getBranch(
+                    course,
+                    activity
+                  )
+                )}
+              </strong>
+            </div>
 
-        <div class="info-item">
-          <span>Course Type</span>
-          <strong>${esc(getCourseType(course,activity))}</strong>
-        </div>
+            <div class="info-item">
+              <span>Department</span>
+              <strong>
+                ${esc(
+                  getSection(
+                    course,
+                    activity
+                  )
+                )}
+              </strong>
+            </div>
 
-        <div class="info-item">
-          <span>Group</span>
-          <strong>${esc(activity.group || "General")}</strong>
-        </div>
-      </div>
+            <div class="info-item">
+              <span>Period</span>
+              <strong>
+                ${esc(
+                  getPeriod(
+                    course,
+                    activity
+                  )
+                )}
+              </strong>
+            </div>
 
-      <div class="actions" style="justify-content:space-between;align-items:center">
-        <strong>
-          ❓ ${Number(activity.questionCount || activity.questions?.length || 0)} Questions
-          ${
-            (activity.gameMode || "normal") === "race"
-              ? " • 🏁 Race Game"
-              : ""
-          }
-        </strong>
+            <div class="info-item">
+              <span>Course Type</span>
+              <strong>
+                ${esc(
+                  getCourseType(
+                    course,
+                    activity
+                  )
+                )}
+              </strong>
+            </div>
 
-        <button
-          class="btn btn-gold"
-          onclick="startActivity('${activity.id}','${course.id}')">
+            <div class="info-item">
+              <span>Group</span>
+              <strong>
+                ${esc(
+                  activity.group ||
+                  "General"
+                )}
+              </strong>
+            </div>
 
-          <i class="fa-solid fa-play"></i>
-          Start Activity
-        </button>
-      </div>
+          </div>
 
-    </article>
-  `).join("");
+          <div
+            class="actions"
+            style="
+              justify-content:space-between;
+              align-items:center;
+            ">
+
+            <strong>
+              ❓ ${Number(
+                activity.questionCount ||
+                activity.questions?.length ||
+                0
+              )} Questions
+
+              ${
+                (
+                  activity.gameMode ||
+                  "normal"
+                ) === "race"
+                  ? " • 🏁 Race Game"
+                  : ""
+              }
+            </strong>
+
+            <button
+              class="btn btn-gold"
+              onclick="startActivity('${activity.id}','${course.id}')">
+
+              <i class="fa-solid fa-play"></i>
+              Start Activity
+            </button>
+
+          </div>
+
+        </article>
+
+      `)
+      .join("");
+
 }
 
 function startActivity(activityId,courseId){
