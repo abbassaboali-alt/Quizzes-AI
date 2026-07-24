@@ -1844,6 +1844,41 @@ button{cursor:pointer}
   cursor:not-allowed;
 }
 
+
+/* =====================================
+   GAME MODE LABELS — DICE / BATTLE
+===================================== */
+.game-mode-label{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:6px 9px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:900;
+  border:1px solid transparent;
+}
+.game-mode-normal{
+  color:var(--blue);
+  background:#edf4fa;
+  border-color:#c7d9e8;
+}
+.game-mode-race{
+  color:#765500;
+  background:#fff6d8;
+  border-color:#f1d172;
+}
+.game-mode-dice{
+  color:#6c3483;
+  background:#f5eafa;
+  border-color:#d9b7e8;
+}
+.game-mode-battle{
+  color:#9a4d00;
+  background:#fff0df;
+  border-color:#efbd84;
+}
+
 </style>
 </head>
 
@@ -1963,10 +1998,14 @@ button{cursor:pointer}
         <select id="activityGameMode">
           <option value="normal">🎮 Normal Mode</option>
           <option value="race">🏁 Race Game</option>
+          <option value="dice">🎲 Dice Adventure — Team Race</option>
+          <option value="battle">⚔️ Sword Battle — Team vs Team</option>
         </select>
 
         <div class="help">
-          In Race Game, every correct answer moves the player toward the finish line.
+          Race Game moves the player after each correct answer.
+          Dice Adventure places all teams on one shared board.
+          Sword Battle makes teams attack each other until one team remains.
         </div>
       </div>
     </div>
@@ -2560,15 +2599,94 @@ let RACE_SCORE_OBSERVER = null;
    RACE GAME
 ===================================== */
 
+
+/* =====================================
+   GAME MODE DISPLAY HELPERS
+===================================== */
+function normalizeActivityGameMode(value){
+
+  const mode =
+    String(value || "normal")
+      .trim()
+      .toLowerCase();
+
+  return [
+    "normal",
+    "race",
+    "dice",
+    "battle"
+  ].includes(mode)
+    ? mode
+    : "normal";
+}
+
+function getActivityGameModeInfo(value){
+
+  const mode =
+    normalizeActivityGameMode(value);
+
+  const modes = {
+    normal:{
+      value:"normal",
+      icon:"🎮",
+      label:"Normal Mode",
+      shortLabel:"Normal",
+      className:"game-mode-normal"
+    },
+    race:{
+      value:"race",
+      icon:"🏁",
+      label:"Race Game",
+      shortLabel:"Race Game",
+      className:"game-mode-race"
+    },
+    dice:{
+      value:"dice",
+      icon:"🎲",
+      label:"Dice Adventure — Team Race",
+      shortLabel:"Dice Adventure",
+      className:"game-mode-dice"
+    },
+    battle:{
+      value:"battle",
+      icon:"⚔️",
+      label:"Sword Battle — Team vs Team",
+      shortLabel:"Sword Battle",
+      className:"game-mode-battle"
+    }
+  };
+
+  return modes[mode];
+}
+
+function getActivityGameModeLabel(value){
+
+  const info =
+    getActivityGameModeInfo(value);
+
+  return `${info.icon} ${info.shortLabel}`;
+}
+
+function getActivityGameModeBadge(value){
+
+  const info =
+    getActivityGameModeInfo(value);
+
+  return `
+    <span class="game-mode-label ${info.className}">
+      ${info.icon}
+      ${esc(info.shortLabel)}
+    </span>
+  `;
+}
+
 function getActivityGameMode(){
 
-  return String(
+  return normalizeActivityGameMode(
     CURRENT_ACTIVITY?.gameMode ||
     CURRENT_ACTIVITY?.activityGameMode ||
     "normal"
-  )
-  .trim()
-  .toLowerCase();
+  );
 
 }
 
@@ -6006,9 +6124,18 @@ timerTotalSeconds,
       description:readText("activityDescription"),
 
       gameMode:
-        document
-          .getElementById("activityGameMode")
-          .value || "normal",
+        normalizeActivityGameMode(
+          document
+            .getElementById("activityGameMode")
+            .value || "normal"
+        ),
+
+      activityGameMode:
+        normalizeActivityGameMode(
+          document
+            .getElementById("activityGameMode")
+            .value || "normal"
+        ),
 
       group:document.getElementById("activityGroup").value,
       status:document.getElementById("activityStatus").value,
@@ -6212,16 +6339,7 @@ function renderAdminActivities(){
               )}
             </span>
 
-            <span class="mini">
-              ${
-                (
-                  activity.gameMode ||
-                  "normal"
-                ) === "race"
-                  ? "🏁 Race Game"
-                  : "🎮 Normal"
-              }
-            </span>
+            ${getActivityGameModeBadge(activity.gameMode)}
 
             <span class="mini">
               ${
@@ -6350,7 +6468,11 @@ function editActivity(id){
     activity.status || "open";
 
   document.getElementById("activityGameMode").value =
-    activity.gameMode || "normal";
+    normalizeActivityGameMode(
+      activity.gameMode ||
+      activity.activityGameMode ||
+      "normal"
+    );
     document.getElementById("activityTimerType").value =
   activity.timerType || "open";
 
@@ -6513,9 +6635,7 @@ function previewActivity(id){
           ${previewInfo("Questions",questions.length)}
           ${previewInfo(
             "Game Mode",
-            (activity.gameMode || "normal") === "race"
-              ? "Race Game"
-              : "Normal Mode"
+            getActivityGameModeInfo(activity.gameMode).label
           )}
         </div>
       </div>
@@ -7350,14 +7470,7 @@ function renderStudentActivities(){
                 0
               )} Questions
 
-              ${
-                (
-                  activity.gameMode ||
-                  "normal"
-                ) === "race"
-                  ? " • 🏁 Race Game"
-                  : ""
-              }
+              ${normalizeActivityGameMode(activity.gameMode) === "normal" ? "" : ` • ${getActivityGameModeLabel(activity.gameMode)}`}
             </strong>
 
             <button
