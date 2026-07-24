@@ -1846,37 +1846,135 @@ button{cursor:pointer}
 
 
 /* =====================================
-   GAME MODE LABELS — DICE / BATTLE
+   BOMB DEFUSE GAME
 ===================================== */
-.game-mode-label{
-  display:inline-flex;
+.bomb-game{
+  display:grid;
+  gap:16px;
+  width:100%;
+}
+.bomb-stage{
+  position:relative;
+  overflow:hidden;
+  padding:20px;
+  border:2px solid #263238;
+  border-radius:22px;
+  background:
+    radial-gradient(circle at 50% 10%,rgba(255,255,255,.12),transparent 35%),
+    linear-gradient(145deg,#263238,#111820);
+  color:#fff;
+  text-align:center;
+}
+.bomb-stage.bomb-danger{
+  animation:bombDangerPulse .55s infinite alternate;
+}
+.bomb-stage.bomb-success{
+  border-color:var(--green);
+  background:linear-gradient(145deg,#173d33,#0c241d);
+}
+.bomb-stage.bomb-exploded{
+  border-color:var(--red);
+  animation:bombExplosion .55s ease;
+  background:
+    radial-gradient(circle,#ffdc73 0 8%,#ff7a00 20%,#d32f2f 48%,#211 72%);
+}
+.bomb-device{
+  width:min(430px,100%);
+  margin:0 auto;
+  padding:18px;
+  border:5px solid #48545c;
+  border-radius:24px;
+  background:linear-gradient(145deg,#404b52,#20292e);
+  box-shadow:inset 0 0 0 3px #111,0 15px 28px rgba(0,0,0,.28);
+}
+.bomb-screen{
+  display:flex;
   align-items:center;
-  gap:6px;
-  padding:6px 9px;
-  border-radius:999px;
-  font-size:11px;
+  justify-content:center;
+  gap:10px;
+  min-height:62px;
+  margin-bottom:14px;
+  padding:9px 14px;
+  border:4px solid #111;
+  border-radius:12px;
+  background:#260606;
+  color:#ff5252;
+  font-family:monospace;
+  font-size:clamp(25px,6vw,42px);
   font-weight:900;
-  border:1px solid transparent;
+  letter-spacing:3px;
+  text-shadow:0 0 12px rgba(255,82,82,.8);
 }
-.game-mode-normal{
-  color:var(--blue);
-  background:#edf4fa;
-  border-color:#c7d9e8;
+.bomb-icon{
+  font-size:74px;
+  line-height:1;
+  filter:drop-shadow(0 7px 8px rgba(0,0,0,.35));
 }
-.game-mode-race{
-  color:#765500;
-  background:#fff6d8;
-  border-color:#f1d172;
+.bomb-title{
+  margin:8px 0 3px;
+  font-size:20px;
+  font-weight:900;
 }
-.game-mode-dice{
-  color:#6c3483;
-  background:#f5eafa;
-  border-color:#d9b7e8;
+.bomb-team-name{
+  color:#ffd66b;
 }
-.game-mode-battle{
-  color:#9a4d00;
-  background:#fff0df;
-  border-color:#efbd84;
+.bomb-wires{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(42px,1fr));
+  gap:9px;
+  margin-top:17px;
+}
+.bomb-wire{
+  position:relative;
+  height:18px;
+  border:2px solid rgba(255,255,255,.55);
+  border-radius:999px;
+  background:var(--wire-color,#ef5350);
+  box-shadow:0 3px 0 rgba(0,0,0,.35),inset 0 2px 3px rgba(255,255,255,.3);
+  transition:.35s;
+}
+.bomb-wire.cut{
+  opacity:.28;
+  transform:scaleX(.72);
+  filter:grayscale(1);
+}
+.bomb-wire.cut:after{
+  content:"✂";
+  position:absolute;
+  inset:50% auto auto 50%;
+  transform:translate(-50%,-50%);
+  font-size:19px;
+}
+.bomb-status{
+  margin-top:14px;
+  font-weight:900;
+  color:#fff;
+}
+.bomb-penalty{
+  color:#ff8a80;
+}
+.bomb-answer-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+@keyframes bombDangerPulse{
+  from{box-shadow:0 0 0 rgba(231,76,60,0)}
+  to{box-shadow:0 0 28px rgba(231,76,60,.75)}
+}
+@keyframes bombExplosion{
+  0%{transform:translate(0) scale(1)}
+  20%{transform:translate(-8px,4px) scale(1.02)}
+  40%{transform:translate(8px,-4px) scale(.99)}
+  60%{transform:translate(-6px,-3px) scale(1.03)}
+  80%{transform:translate(6px,3px) scale(1)}
+  100%{transform:translate(0) scale(1)}
+}
+@media(max-width:650px){
+  .bomb-stage{padding:12px}
+  .bomb-device{padding:13px}
+  .bomb-answer-grid{grid-template-columns:1fr}
+  .bomb-icon{font-size:60px}
 }
 
 </style>
@@ -1998,14 +2096,10 @@ button{cursor:pointer}
         <select id="activityGameMode">
           <option value="normal">🎮 Normal Mode</option>
           <option value="race">🏁 Race Game</option>
-          <option value="dice">🎲 Dice Adventure — Team Race</option>
-          <option value="battle">⚔️ Sword Battle — Team vs Team</option>
         </select>
 
         <div class="help">
-          Race Game moves the player after each correct answer.
-          Dice Adventure places all teams on one shared board.
-          Sword Battle makes teams attack each other until one team remains.
+          In Race Game, every correct answer moves the player toward the finish line.
         </div>
       </div>
     </div>
@@ -2599,94 +2693,15 @@ let RACE_SCORE_OBSERVER = null;
    RACE GAME
 ===================================== */
 
-
-/* =====================================
-   GAME MODE DISPLAY HELPERS
-===================================== */
-function normalizeActivityGameMode(value){
-
-  const mode =
-    String(value || "normal")
-      .trim()
-      .toLowerCase();
-
-  return [
-    "normal",
-    "race",
-    "dice",
-    "battle"
-  ].includes(mode)
-    ? mode
-    : "normal";
-}
-
-function getActivityGameModeInfo(value){
-
-  const mode =
-    normalizeActivityGameMode(value);
-
-  const modes = {
-    normal:{
-      value:"normal",
-      icon:"🎮",
-      label:"Normal Mode",
-      shortLabel:"Normal",
-      className:"game-mode-normal"
-    },
-    race:{
-      value:"race",
-      icon:"🏁",
-      label:"Race Game",
-      shortLabel:"Race Game",
-      className:"game-mode-race"
-    },
-    dice:{
-      value:"dice",
-      icon:"🎲",
-      label:"Dice Adventure — Team Race",
-      shortLabel:"Dice Adventure",
-      className:"game-mode-dice"
-    },
-    battle:{
-      value:"battle",
-      icon:"⚔️",
-      label:"Sword Battle — Team vs Team",
-      shortLabel:"Sword Battle",
-      className:"game-mode-battle"
-    }
-  };
-
-  return modes[mode];
-}
-
-function getActivityGameModeLabel(value){
-
-  const info =
-    getActivityGameModeInfo(value);
-
-  return `${info.icon} ${info.shortLabel}`;
-}
-
-function getActivityGameModeBadge(value){
-
-  const info =
-    getActivityGameModeInfo(value);
-
-  return `
-    <span class="game-mode-label ${info.className}">
-      ${info.icon}
-      ${esc(info.shortLabel)}
-    </span>
-  `;
-}
-
 function getActivityGameMode(){
 
-  return normalizeActivityGameMode(
+  return String(
     CURRENT_ACTIVITY?.gameMode ||
     CURRENT_ACTIVITY?.activityGameMode ||
     "normal"
-  );
+  )
+  .trim()
+  .toLowerCase();
 
 }
 
@@ -3462,6 +3477,12 @@ function getActivityTypeInfo(type){
       emoji:"🎈",
       className:"type-balloon"
     },
+    bomb:{
+      label:"Bomb Defuse",
+      icon:"fa-solid fa-bomb",
+      className:"game-bomb"
+    },
+
     mystery:{
       label:"Mystery Box",
       icon:"fa-gift",
@@ -3916,6 +3937,7 @@ function addQuestion(data = null){
           <option value="wheel" ${q.type === "wheel" ? "selected" : ""}>🎡 Wheel of Fortune</option>
           <option value="balloon" ${q.type === "balloon" ? "selected" : ""}>🎈 Balloon Pop</option>
           <option value="mystery" ${q.type === "mystery" ? "selected" : ""}>🎁 Mystery Box</option>
+          <option value="bomb" ${q.type === "bomb" ? "selected" : ""}>💣 Bomb Defuse</option>
         </select>
         <div class="question-type-note q-type-note"></div>
       </div>
@@ -4345,6 +4367,8 @@ else if(type === "order"){
 
     }
 
+  }else if(type === "bomb"){
+    note.textContent = "Bomb Defuse: add answer choices and select one correct answer. A correct answer cuts a wire; a wrong answer removes 5 seconds.";
   }else if(type === "balloon"){
 
     note.textContent =
@@ -4534,7 +4558,7 @@ function collectQuestions(){
       throw new Error(`Question ${index + 1} requires at least two items.`);
     }
 
-    if(type === "mcq" || type === "balloon" || type === "mystery"){
+    if(type === "mcq" || type === "balloon" || type === "mystery" || type === "bomb"){
       if(!answers.some(answer=>answer.correct)){
         throw new Error(`Select the correct answer for question ${index + 1}.`);
       }
@@ -4654,7 +4678,9 @@ function collectQuestions(){
               ? "Pop the balloon to reveal the question."
               : (type === "mystery" && !text
                   ? "Open the mystery box to reveal the question."
-                  : text))),
+                  : (type === "bomb" && !text
+                      ? "Answer correctly to cut the wire and defuse the bomb."
+                      : text)))),
       mediaType,
       mediaUrl,
       image:mediaType === "image" ? mediaUrl : "",
@@ -6124,18 +6150,9 @@ timerTotalSeconds,
       description:readText("activityDescription"),
 
       gameMode:
-        normalizeActivityGameMode(
-          document
-            .getElementById("activityGameMode")
-            .value || "normal"
-        ),
-
-      activityGameMode:
-        normalizeActivityGameMode(
-          document
-            .getElementById("activityGameMode")
-            .value || "normal"
-        ),
+        document
+          .getElementById("activityGameMode")
+          .value || "normal",
 
       group:document.getElementById("activityGroup").value,
       status:document.getElementById("activityStatus").value,
@@ -6339,7 +6356,16 @@ function renderAdminActivities(){
               )}
             </span>
 
-            ${getActivityGameModeBadge(activity.gameMode)}
+            <span class="mini">
+              ${
+                (
+                  activity.gameMode ||
+                  "normal"
+                ) === "race"
+                  ? "🏁 Race Game"
+                  : "🎮 Normal"
+              }
+            </span>
 
             <span class="mini">
               ${
@@ -6468,11 +6494,7 @@ function editActivity(id){
     activity.status || "open";
 
   document.getElementById("activityGameMode").value =
-    normalizeActivityGameMode(
-      activity.gameMode ||
-      activity.activityGameMode ||
-      "normal"
-    );
+    activity.gameMode || "normal";
     document.getElementById("activityTimerType").value =
   activity.timerType || "open";
 
@@ -6635,7 +6657,9 @@ function previewActivity(id){
           ${previewInfo("Questions",questions.length)}
           ${previewInfo(
             "Game Mode",
-            getActivityGameModeInfo(activity.gameMode).label
+            (activity.gameMode || "normal") === "race"
+              ? "Race Game"
+              : "Normal Mode"
           )}
         </div>
       </div>
@@ -7470,7 +7494,14 @@ function renderStudentActivities(){
                 0
               )} Questions
 
-              ${normalizeActivityGameMode(activity.gameMode) === "normal" ? "" : ` • ${getActivityGameModeLabel(activity.gameMode)}`}
+              ${
+                (
+                  activity.gameMode ||
+                  "normal"
+                ) === "race"
+                  ? " • 🏁 Race Game"
+                  : ""
+              }
             </strong>
 
             <button
@@ -7544,6 +7575,207 @@ setupRaceGame();
 /* ===============================
    Game
 ================================ */
+
+
+/* =====================================
+   BOMB DEFUSE QUESTION PLAYER
+===================================== */
+const BOMB_WIRE_COLORS = [
+  "#ef5350","#42a5f5","#66bb6a","#ffca28",
+  "#ab47bc","#26c6da","#ff7043","#ec407a"
+];
+
+function getBombQuestions(){
+  return (CURRENT_ACTIVITY?.questions || [])
+    .filter(question =>
+      String(question?.type || "")
+        .trim()
+        .toLowerCase() === "bomb"
+    );
+}
+
+function getBombProgress(){
+  const bombQuestions = getBombQuestions();
+  const currentQuestion =
+    CURRENT_ACTIVITY?.questions?.[CURRENT_QUESTION_INDEX];
+
+  const currentBombPosition =
+    Math.max(
+      0,
+      bombQuestions.indexOf(currentQuestion)
+    );
+
+  let correctCuts = 0;
+
+  /*
+    In Teams mode, each team's number of correct answers
+    becomes its own number of cut wires.
+    In Individual mode, use the activity score.
+  */
+  if(typeof getCurrentTeam === "function"){
+    const team = getCurrentTeam();
+    correctCuts = Number(team?.correct || 0);
+  }else{
+    correctCuts = Number(CURRENT_SCORE || 0);
+  }
+
+  return {
+    total:Math.max(1,bombQuestions.length),
+    currentBombPosition,
+    correctCuts:Math.max(0,correctCuts)
+  };
+}
+
+function renderBombDevice(question,answersBox){
+  answersBox.className = "bomb-game";
+
+  const progress = getBombProgress();
+  const team =
+    typeof getCurrentTeam === "function"
+      ? getCurrentTeam()
+      : null;
+
+  const configuredSeconds =
+    Number(
+      CURRENT_ACTIVITY?.timerTotalSeconds ||
+      10
+    );
+
+  const seconds =
+    ACTIVITY_TIME_LEFT > 0
+      ? ACTIVITY_TIME_LEFT
+      : Math.max(10,configuredSeconds);
+
+  const wires = Array.from(
+    {length:progress.total},
+    (_,index)=>{
+      const cut = index < progress.correctCuts;
+      return `
+        <div
+          class="bomb-wire ${cut ? "cut" : ""}"
+          style="--wire-color:${BOMB_WIRE_COLORS[index % BOMB_WIRE_COLORS.length]}"
+          aria-label="Wire ${index + 1} ${cut ? "cut" : "active"}">
+        </div>
+      `;
+    }
+  ).join("");
+
+  const stage = document.createElement("div");
+  stage.className = "bomb-stage";
+  stage.id = "bombStage";
+  stage.innerHTML = `
+    <div class="bomb-device">
+      <div class="bomb-screen" id="bombLocalDisplay">
+        ${String(Math.floor(seconds / 60)).padStart(2,"0")}:
+        ${String(seconds % 60).padStart(2,"0")}
+      </div>
+
+      <div class="bomb-icon" id="bombMainIcon">💣</div>
+
+      <div class="bomb-title">
+        ${team ? `<span class="bomb-team-name">${esc(team.name)}</span> — ` : ""}
+        Defuse the Bomb
+      </div>
+
+      <div class="bomb-wires" id="bombWires">
+        ${wires}
+      </div>
+
+      <div class="bomb-status" id="bombStatus">
+        ✂️ ${Math.min(progress.correctCuts,progress.total)} /
+        ${progress.total} wires cut
+      </div>
+    </div>
+  `;
+
+  const answerGrid = document.createElement("div");
+  answerGrid.className = "bomb-answer-grid";
+
+  (question.answers || []).forEach((answer,index)=>{
+    const button = document.createElement("button");
+    button.className = "student-answer";
+    button.type = "button";
+    button.innerHTML = `
+      ${answer.image ? `<img src="${esc(answer.image)}" alt="">` : ""}
+      ${answer.text ? `<div>${esc(answer.text)}</div>` : ""}
+    `;
+    button.addEventListener("click",()=>{
+      chooseAnswer(index,button);
+    });
+    answerGrid.appendChild(button);
+  });
+
+  answersBox.appendChild(stage);
+  answersBox.appendChild(answerGrid);
+}
+
+function updateBombAfterAnswer(isCorrect){
+  const stage = document.getElementById("bombStage");
+  const status = document.getElementById("bombStatus");
+  const icon = document.getElementById("bombMainIcon");
+
+  if(!stage || !status){
+    return;
+  }
+
+  const progress = getBombProgress();
+
+  if(isCorrect){
+    const wires = [
+      ...stage.querySelectorAll(".bomb-wire")
+    ];
+
+    const nextWire =
+      wires.find(wire =>
+        !wire.classList.contains("cut")
+      );
+
+    if(nextWire){
+      nextWire.classList.add("cut");
+    }
+
+    stage.classList.add("bomb-success");
+    status.className = "bomb-status";
+    status.textContent =
+      progress.correctCuts >= progress.total
+        ? "🎉 Bomb Defused!"
+        : `✂️ Wire cut! ${Math.min(progress.correctCuts,progress.total)} / ${progress.total}`;
+
+    if(progress.correctCuts >= progress.total && icon){
+      icon.textContent = "🎉";
+    }
+
+    setTimeout(()=>{
+      stage.classList.remove("bomb-success");
+    },900);
+
+  }else{
+    stage.classList.add("bomb-exploded","bomb-danger");
+    status.className = "bomb-status bomb-penalty";
+    status.textContent = "💥 Wrong wire! 5 seconds lost.";
+
+    /*
+      Deduct five seconds only when a limited timer
+      is actively running.
+    */
+    if(
+      CURRENT_ACTIVITY?.timerType === "limited" &&
+      Number(ACTIVITY_TIME_LEFT || 0) > 0
+    ){
+      ACTIVITY_TIME_LEFT =
+        Math.max(0,ACTIVITY_TIME_LEFT - 5);
+
+      if(typeof updateActivityTimerDisplay === "function"){
+        updateActivityTimerDisplay();
+      }
+    }
+
+    setTimeout(()=>{
+      stage.classList.remove("bomb-exploded");
+    },650);
+  }
+}
+
 
 function renderStudentQuestion(){
   clearRandomQuestionTimers();
@@ -9135,6 +9367,10 @@ function chooseAnswer(answerIndex,clickedButton){
   playWrongSound();
 
 }
+
+  if(String(question?.type || "").toLowerCase() === "bomb"){
+    updateBombAfterAnswer(Boolean(selected.correct));
+  }
 
   document.getElementById("scorePill").textContent =
     `⭐ ${CURRENT_SCORE}`;
