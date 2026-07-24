@@ -217,6 +217,11 @@ button{cursor:pointer}
   background:linear-gradient(135deg,#7d4bc6,#513191);
 }
 
+.activity-type-logo.type-bomb{
+  background:
+    linear-gradient(135deg,#2c3e50,#b71c1c);
+}
+
 .activity-type-logo.type-match{
   background:linear-gradient(135deg,#2e86c1,#164478);
 }
@@ -2242,6 +2247,15 @@ button{cursor:pointer}
           Lock Questions
         </button>
 
+        <button
+          class="btn btn-light"
+          id="copyAllQuestionsBtn"
+          type="button"
+          onclick="copyAllQuestionsText()">
+          <i class="fa-solid fa-copy"></i>
+          Copy All Questions
+        </button>
+
         <button class="btn btn-light" id="addQuestionBtn" onclick="addQuestion()">
           <i class="fa-solid fa-plus"></i> Add Question
         </button>
@@ -3479,8 +3493,9 @@ function getActivityTypeInfo(type){
     },
     bomb:{
       label:"Bomb Defuse",
-      icon:"fa-solid fa-bomb",
-      className:"game-bomb"
+      icon:"fa-bomb",
+      emoji:"💣",
+      className:"type-bomb"
     },
 
     mystery:{
@@ -3921,9 +3936,25 @@ function addQuestion(data = null){
     <div class="question-head">
       <h3>Question <span class="question-order"></span></h3>
 
-      <button class="btn btn-danger" type="button" onclick="removeQuestion(this)">
-        <i class="fa-solid fa-trash"></i> Delete
-      </button>
+      <div class="actions" style="margin-top:0">
+
+        <button
+          class="btn btn-light question-copy-btn"
+          type="button"
+          onclick="duplicateQuestion(this)">
+          <i class="fa-solid fa-clone"></i>
+          Duplicate
+        </button>
+
+        <button
+          class="btn btn-danger"
+          type="button"
+          onclick="removeQuestion(this)">
+          <i class="fa-solid fa-trash"></i>
+          Delete
+        </button>
+
+      </div>
     </div>
 
     <div class="grid grid-3" style="margin-top:13px">
@@ -4010,7 +4041,7 @@ function applyQuestionPermissions(questionBox){
     element.disabled = true;
   });
 
-  questionBox.querySelectorAll(".btn-danger, .answers-admin + .btn").forEach(element=>{
+  questionBox.querySelectorAll(".btn-danger, .question-copy-btn, .answers-admin + .btn").forEach(element=>{
     element.style.display = "none";
   });
 }
@@ -4055,6 +4086,19 @@ function applyGlobalQuestionPermissions(){
 
     importPanel.style.opacity =
       editable ? "" : ".65";
+  }
+
+  const copyAllQuestionsButton =
+    document.getElementById(
+      "copyAllQuestionsBtn"
+    );
+
+  if(copyAllQuestionsButton){
+    copyAllQuestionsButton.style.display =
+      editable ? "" : "none";
+
+    copyAllQuestionsButton.disabled =
+      !editable;
   }
 
   const addQuestionButton =
@@ -4465,6 +4509,373 @@ function removeAnswer(button){
     if(firstRadio){
       firstRadio.checked = true;
     }
+  }
+}
+
+
+function readQuestionBoxData(box){
+
+  if(!box){
+    return null;
+  }
+
+  const mediaType =
+    box.querySelector(
+      ".q-media-type"
+    )?.value ||
+    "none";
+
+  const mediaUrl =
+    box.querySelector(
+      ".q-media-url"
+    )?.value
+      ?.trim() ||
+    "";
+
+  const answers = [
+    ...box.querySelectorAll(
+      ".answer-admin"
+    )
+  ].map(answerBox=>({
+    text:
+      answerBox.querySelector(
+        ".a-text"
+      )?.value
+        ?.trim() ||
+      "",
+
+    right:
+      answerBox.querySelector(
+        ".a-right"
+      )?.value
+        ?.trim() ||
+      "",
+
+    image:
+      answerBox.querySelector(
+        ".a-image"
+      )?.value
+        ?.trim() ||
+      "",
+
+    mediaPrompt:
+      answerBox.querySelector(
+        ".a-text"
+      )?.value
+        ?.trim() ||
+      "",
+
+    correct:
+      Boolean(
+        answerBox.querySelector(
+          ".a-correct"
+        )?.checked
+      )
+  }));
+
+  return {
+    type:
+      box.querySelector(
+        ".q-type"
+      )?.value ||
+      "mcq",
+
+    text:
+      box.querySelector(
+        ".q-text"
+      )?.value
+        ?.trim() ||
+      "",
+
+    mediaType,
+    mediaUrl,
+
+    image:
+      mediaType === "image"
+        ? mediaUrl
+        : "",
+
+    video:
+      mediaType === "video"
+        ? mediaUrl
+        : "",
+
+    audio:
+      mediaType === "audio"
+        ? mediaUrl
+        : "",
+
+    answers
+  };
+}
+
+function duplicateQuestion(button){
+
+  if(
+    !requireAdminForQuestions()
+  ){
+    return;
+  }
+
+  const sourceBox =
+    button?.closest(
+      ".question-box"
+    );
+
+  const question =
+    readQuestionBoxData(
+      sourceBox
+    );
+
+  if(!question){
+    return;
+  }
+
+  const copiedQuestion =
+    JSON.parse(
+      JSON.stringify(
+        question
+      )
+    );
+
+  addQuestion(
+    copiedQuestion
+  );
+
+  const container =
+    document.getElementById(
+      "questionsContainer"
+    );
+
+  const newBox =
+    container?.lastElementChild;
+
+  if(
+    sourceBox &&
+    newBox &&
+    sourceBox !== newBox
+  ){
+    sourceBox.insertAdjacentElement(
+      "afterend",
+      newBox
+    );
+  }
+
+  refreshQuestionNumbers();
+  toast("Question duplicated");
+}
+
+function buildQuestionsCopyText(){
+
+  const boxes = [
+    ...document.querySelectorAll(
+      ".question-box"
+    )
+  ];
+
+  if(!boxes.length){
+    return "";
+  }
+
+  return boxes
+    .map((box,index)=>{
+
+      const question =
+        readQuestionBoxData(
+          box
+        );
+
+      const type =
+        String(
+          question?.type ||
+          "mcq"
+        )
+        .trim()
+        .toUpperCase();
+
+      const lines = [
+        `${index + 1}. ${question?.text || "Question"}`,
+        `Type: ${type}`
+      ];
+
+      if(question?.mediaUrl){
+        lines.push(
+          `Media: ${question.mediaUrl}`
+        );
+      }
+
+      (
+        question?.answers ||
+        []
+      ).forEach(
+        (answer,answerIndex)=>{
+
+          const letter =
+            String.fromCharCode(
+              65 + answerIndex
+            );
+
+          if(
+            question.type ===
+            "match"
+          ){
+
+            lines.push(
+              `${letter}. ${answer.text || ""} = ${
+                answer.right ||
+                answer.image ||
+                ""
+              }`
+            );
+
+          }else if(
+            question.type ===
+            "order"
+          ){
+
+            lines.push(
+              `${answerIndex + 1}) ${
+                answer.text ||
+                ""
+              }`
+            );
+
+          }else if(
+            question.type ===
+            "wheel"
+          ){
+
+            lines.push(
+              `${letter}. ${
+                answer.text ||
+                ""
+              } — ${
+                answer.right ||
+                ""
+              }`
+            );
+
+          }else{
+
+            lines.push(
+              `${letter}. ${
+                answer.text ||
+                answer.image ||
+                ""
+              }${
+                answer.correct
+                  ? " *"
+                  : ""
+              }`
+            );
+          }
+        }
+      );
+
+      return lines.join("\n");
+    })
+    .join("\n\n");
+}
+
+async function copyTextSafely(value){
+
+  const textValue =
+    String(value || "");
+
+  if(!textValue){
+    return false;
+  }
+
+  try{
+
+    if(
+      navigator.clipboard &&
+      window.isSecureContext
+    ){
+
+      await navigator
+        .clipboard
+        .writeText(
+          textValue
+        );
+
+      return true;
+    }
+
+  }catch(error){
+    console.warn(
+      "Clipboard API unavailable:",
+      error
+    );
+  }
+
+  const textarea =
+    document.createElement(
+      "textarea"
+    );
+
+  textarea.value =
+    textValue;
+
+  textarea.style.position =
+    "fixed";
+
+  textarea.style.opacity =
+    "0";
+
+  document.body.appendChild(
+    textarea
+  );
+
+  textarea.focus();
+  textarea.select();
+
+  let copied = false;
+
+  try{
+    copied =
+      document.execCommand(
+        "copy"
+      );
+  }catch(error){
+    copied = false;
+  }
+
+  textarea.remove();
+
+  return copied;
+}
+
+async function copyAllQuestionsText(){
+
+  const value =
+    buildQuestionsCopyText();
+
+  if(!value){
+
+    alert(
+      "There are no questions to copy."
+    );
+
+    return;
+  }
+
+  const copied =
+    await copyTextSafely(
+      value
+    );
+
+  if(copied){
+
+    toast(
+      "All questions copied"
+    );
+
+  }else{
+
+    alert(
+      "The browser blocked copying. Please use the Preview window and copy manually."
+    );
   }
 }
 
@@ -6587,6 +6998,8 @@ async function deleteActivity(id){
 }
 
 function resetEditor(){
+  stopBombTimer();
+
   EDIT_ACTIVITY_ID = "";
   LOCKED_QUESTIONS_SNAPSHOT = [];
   CURRENT_ACTIVITY_QUESTIONS_LOCKED = false;
@@ -6838,7 +7251,15 @@ function buildReadOnlyQuestion(question,index){
   return `
     <section class="preview-question">
       <div class="preview-question-title">
-        ${index + 1}. ${type === "balloon" ? "🎈 " : type === "mystery" ? "🎁 " : ""}${esc(question?.text || "Question")}
+        ${index + 1}. ${
+          type === "balloon"
+            ? "🎈 "
+            : type === "mystery"
+              ? "🎁 "
+              : type === "bomb"
+                ? "💣 "
+                : ""
+        }${esc(question?.text || "Question")}
       </div>
       ${mediaHtml}
       ${answersHtml}
@@ -7522,6 +7943,8 @@ function renderStudentActivities(){
 }
 
 function startActivity(activityId,courseId){
+  stopBombTimer();
+
   CURRENT_ACTIVITY = ACTIVITIES_CACHE.find(item=>item.id === activityId);
   CURRENT_COURSE = OPEN_COURSES_CACHE.find(item=>item.id === courseId);
 
@@ -7585,45 +8008,237 @@ const BOMB_WIRE_COLORS = [
   "#ab47bc","#26c6da","#ff7043","#ec407a"
 ];
 
-function getBombQuestions(){
-  return (CURRENT_ACTIVITY?.questions || [])
-    .filter(question =>
-      String(question?.type || "")
-        .trim()
-        .toLowerCase() === "bomb"
-    );
-}
+let BOMB_TIMER_HANDLE = null;
+let BOMB_TIME_LEFT = 0;
+let BOMB_SPEED = 1;
+let BOMB_ACTIVE = false;
 
-function getBombProgress(){
-  const bombQuestions = getBombQuestions();
-  const currentQuestion =
-    CURRENT_ACTIVITY?.questions?.[CURRENT_QUESTION_INDEX];
+const BOMB_SPEED_STEP = .45;
+const BOMB_MAX_SPEED = 4;
 
-  const currentBombPosition =
-    Math.max(
-      0,
-      bombQuestions.indexOf(currentQuestion)
+function stopBombTimer(){
+
+  if(BOMB_TIMER_HANDLE){
+
+    clearTimeout(
+      BOMB_TIMER_HANDLE
     );
 
-  let correctCuts = 0;
-
-  /*
-    In Teams mode, each team's number of correct answers
-    becomes its own number of cut wires.
-    In Individual mode, use the activity score.
-  */
-  if(typeof getCurrentTeam === "function"){
-    const team = getCurrentTeam();
-    correctCuts = Number(team?.correct || 0);
-  }else{
-    correctCuts = Number(CURRENT_SCORE || 0);
+    BOMB_TIMER_HANDLE = null;
   }
 
-  return {
-    total:Math.max(1,bombQuestions.length),
-    currentBombPosition,
-    correctCuts:Math.max(0,correctCuts)
-  };
+  BOMB_ACTIVE = false;
+}
+
+function getBombQuestionSeconds(){
+
+  const question =
+    CURRENT_ACTIVITY
+      ?.questions
+      ?.[CURRENT_QUESTION_INDEX] ||
+    {};
+
+  return Math.max(
+    10,
+    Number(
+      question.bombSeconds ||
+      question.timerSeconds ||
+      CURRENT_ACTIVITY
+        ?.timerTotalSeconds ||
+      30
+    ) ||
+    30
+  );
+}
+
+function formatBombTime(value){
+
+  const seconds =
+    Math.max(
+      0,
+      Math.ceil(
+        Number(value) ||
+        0
+      )
+    );
+
+  return (
+    String(
+      Math.floor(
+        seconds / 60
+      )
+    ).padStart(2,"0") +
+    ":" +
+    String(
+      seconds % 60
+    ).padStart(2,"0")
+  );
+}
+
+function updateBombTimerVisual(){
+
+  const display =
+    document.getElementById(
+      "bombLocalDisplay"
+    );
+
+  const speed =
+    document.getElementById(
+      "bombSpeedValue"
+    );
+
+  const stage =
+    document.getElementById(
+      "bombStage"
+    );
+
+  if(display){
+
+    display.textContent =
+      formatBombTime(
+        BOMB_TIME_LEFT
+      );
+  }
+
+  if(speed){
+
+    speed.textContent =
+      BOMB_SPEED.toFixed(2) +
+      "×";
+  }
+
+  if(stage){
+
+    stage.classList.toggle(
+      "bomb-danger",
+      BOMB_TIME_LEFT <= 10 ||
+      BOMB_SPEED > 1
+    );
+  }
+}
+
+function startBombTimer(){
+
+  stopBombTimer();
+
+  BOMB_TIME_LEFT =
+    getBombQuestionSeconds();
+
+  BOMB_SPEED = 1;
+  BOMB_ACTIVE = true;
+
+  updateBombTimerVisual();
+
+  function scheduleNextTick(){
+
+    if(
+      !BOMB_ACTIVE ||
+      ANSWER_LOCKED ||
+      ACTIVITY_FINISHED
+    ){
+      return;
+    }
+
+    const delay =
+      Math.max(
+        180,
+        Math.round(
+          1000 /
+          BOMB_SPEED
+        )
+      );
+
+    BOMB_TIMER_HANDLE =
+      setTimeout(()=>{
+
+        if(
+          !BOMB_ACTIVE ||
+          ANSWER_LOCKED ||
+          ACTIVITY_FINISHED
+        ){
+          return;
+        }
+
+        /*
+          Always count one number at a time.
+          Acceleration is created by reducing the
+          delay between numbers, never by skipping.
+        */
+        BOMB_TIME_LEFT =
+          Math.max(
+            0,
+            BOMB_TIME_LEFT - 1
+          );
+
+        updateBombTimerVisual();
+
+        if(
+          BOMB_TIME_LEFT <= 0
+        ){
+
+          explodeCurrentBomb();
+          return;
+        }
+
+        scheduleNextTick();
+
+      },delay);
+  }
+
+  scheduleNextTick();
+}
+
+function explodeCurrentBomb(){
+
+  if(!BOMB_ACTIVE){
+    return;
+  }
+
+  stopBombTimer();
+  ANSWER_LOCKED = true;
+
+  const stage =
+    document.getElementById(
+      "bombStage"
+    );
+
+  const status =
+    document.getElementById(
+      "bombStatus"
+    );
+
+  if(stage){
+    stage.classList.add(
+      "bomb-exploded"
+    );
+  }
+
+  if(status){
+
+    status.textContent =
+      "💥 The bomb exploded!";
+
+    status.className =
+      "bomb-status bomb-penalty";
+  }
+
+  const feedback =
+    document.getElementById(
+      "feedback"
+    );
+
+  if(feedback){
+
+    feedback.textContent =
+      "💥 Time is over.";
+
+    feedback.className =
+      "feedback bad";
+  }
+
+  setTimeout(()=>{
+    finishActivity(true);
+  },1200);
 }
 
 function renderBombDevice(question,answersBox){
@@ -7666,8 +8281,18 @@ function renderBombDevice(question,answersBox){
   stage.innerHTML = `
     <div class="bomb-device">
       <div class="bomb-screen" id="bombLocalDisplay">
-        ${String(Math.floor(seconds / 60)).padStart(2,"0")}:
-        ${String(seconds % 60).padStart(2,"0")}
+        ${formatBombTime(seconds)}
+      </div>
+
+      <div
+        style="
+          margin:-5px 0 10px;
+          font-size:12px;
+          font-weight:900;
+          color:#ffd66b;
+        ">
+        Countdown speed:
+        <span id="bombSpeedValue">1.00×</span>
       </div>
 
       <div class="bomb-icon" id="bombMainIcon">💣</div>
@@ -7707,9 +8332,18 @@ function renderBombDevice(question,answersBox){
 
   answersBox.appendChild(stage);
   answersBox.appendChild(answerGrid);
+
+  /*
+    Bomb questions use their own accelerated timer.
+  */
+  stopActivityTimer();
+  startBombTimer();
 }
 
 function updateBombAfterAnswer(isCorrect){
+
+  stopBombTimer();
+
   const stage = document.getElementById("bombStage");
   const status = document.getElementById("bombStatus");
   const icon = document.getElementById("bombMainIcon");
@@ -7750,28 +8384,30 @@ function updateBombAfterAnswer(isCorrect){
     },900);
 
   }else{
-    stage.classList.add("bomb-exploded","bomb-danger");
-    status.className = "bomb-status bomb-penalty";
-    status.textContent = "💥 Wrong wire! 5 seconds lost.";
 
-    /*
-      Deduct five seconds only when a limited timer
-      is actively running.
-    */
-    if(
-      CURRENT_ACTIVITY?.timerType === "limited" &&
-      Number(ACTIVITY_TIME_LEFT || 0) > 0
-    ){
-      ACTIVITY_TIME_LEFT =
-        Math.max(0,ACTIVITY_TIME_LEFT - 5);
+    BOMB_SPEED =
+      Math.min(
+        BOMB_MAX_SPEED,
+        BOMB_SPEED +
+        BOMB_SPEED_STEP
+      );
 
-      if(typeof updateActivityTimerDisplay === "function"){
-        updateActivityTimerDisplay();
-      }
-    }
+    stage.classList.add(
+      "bomb-danger"
+    );
+
+    status.className =
+      "bomb-status bomb-penalty";
+
+    status.textContent =
+      `⚠️ Wrong answer! Countdown speed increased to ${BOMB_SPEED.toFixed(2)}×.`;
+
+    updateBombTimerVisual();
 
     setTimeout(()=>{
-      stage.classList.remove("bomb-exploded");
+      stage.classList.remove(
+        "bomb-exploded"
+      );
     },650);
   }
 }
@@ -7909,6 +8545,24 @@ document
 
   const answersBox = document.getElementById("studentAnswers");
   answersBox.innerHTML = "";
+
+  if(type === "bomb"){
+
+    document
+      .getElementById(
+        "gameQuestion"
+      )
+      .textContent =
+        question.text ||
+        "Answer correctly to cut a wire and defuse the bomb!";
+
+    renderBombDevice(
+      question,
+      answersBox
+    );
+
+    return;
+  }
 
   if(type === "match"){
     renderMatchQuestion(question,answersBox);
@@ -8067,6 +8721,8 @@ function moveNextGroupedQuestionToCurrent(
 }
 
 function nextQuestionManually(){
+  stopBombTimer();
+
 
   if(
     !ANSWER_LOCKED ||
@@ -9888,6 +10544,8 @@ if(allCorrect){
 ================================ */
 
 async function finishActivity(){
+  stopBombTimer();
+
 
   clearRandomQuestionTimers();
 
