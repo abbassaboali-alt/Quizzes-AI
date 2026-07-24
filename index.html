@@ -3256,101 +3256,6 @@ function normalizeVideoUrl(value){
   );
 }
 
-/* =====================================
-   AUDIO URL AUTO DETECTION
-===================================== */
-function normalizeAudioUrl(value){
-
-  const raw =
-    String(value || "").trim();
-
-  if(!raw){
-    return "";
-  }
-
-  // Direct audio URL
-  if(/\.(mp3|m4a|wav|ogg|oga|aac)(?:[?#].*)?$/i.test(raw)){
-    return raw;
-  }
-
-  try{
-    const parsed = new URL(raw);
-    const host = parsed.hostname.toLowerCase();
-
-    // ESL-Lab lesson page: convert the page slug to its CDN MP3 file.
-    if(host === "esl-lab.com" || host.endsWith(".esl-lab.com")){
-      const parts = parsed.pathname.split("/").filter(Boolean);
-      const slug = String(parts[parts.length - 1] || "").trim();
-
-      if(slug){
-        const audioName = slug.replace(/[^a-z0-9]/gi, "").toLowerCase();
-
-        if(audioName){
-          return `https://esllab.b-cdn.net/audio/mp3/${audioName}.mp3`;
-        }
-      }
-    }
-  }catch(error){
-    console.warn("Invalid audio URL:",error);
-  }
-
-  return raw;
-}
-
-function detectMediaTypeFromUrl(value){
-
-  const raw = String(value || "").trim();
-
-  if(!raw){
-    return "none";
-  }
-
-  if(isYouTubeUrl(raw) || /\.(mp4|webm|mov)(?:[?#].*)?$/i.test(raw)){
-    return "video";
-  }
-
-  if(/\.(jpg|jpeg|png|gif|webp|svg)(?:[?#].*)?$/i.test(raw)){
-    return "image";
-  }
-
-  if(
-    /\.(mp3|m4a|wav|ogg|oga|aac)(?:[?#].*)?$/i.test(raw) ||
-    /(^|\.)esl-lab\.com$/i.test((()=>{
-      try{return new URL(raw).hostname;}catch{return "";}
-    })())
-  ){
-    return "audio";
-  }
-
-  return "";
-}
-
-function handleQuestionMediaUrlInput(questionBox){
-
-  if(!questionBox) return;
-
-  const typeSelect = questionBox.querySelector(".q-media-type");
-  const urlInput = questionBox.querySelector(".q-media-url");
-
-  if(!typeSelect || !urlInput) return;
-
-  const detectedType = detectMediaTypeFromUrl(urlInput.value);
-
-  if(detectedType){
-    typeSelect.value = detectedType;
-  }
-
-  if(detectedType === "audio"){
-    const normalized = normalizeAudioUrl(urlInput.value);
-
-    if(normalized){
-      urlInput.value = normalized;
-    }
-  }
-
-  updateQuestionMediaPreview(questionBox);
-}
-
 function clean(value){
   return String(value ?? "")
     .trim()
@@ -3919,7 +3824,7 @@ function addQuestion(data = null){
             class="q-media-url"
             value="${esc(savedMediaUrl)}"
             placeholder="https://..."
-            oninput="handleQuestionMediaUrlInput(this.closest('.question-box'))">
+            oninput="updateQuestionMediaPreview(this.closest('.question-box'))">
         </div>
       </div>
     </div>
@@ -4478,9 +4383,8 @@ function updateQuestionMediaPreview(questionBox){
     }
 
   }else if(type === "audio"){
-    const audioUrl = normalizeAudioUrl(url);
     preview.innerHTML =
-      `<audio src="${esc(audioUrl)}" controls preload="metadata"></audio>`;
+      `<audio src="${esc(url)}" controls></audio>`;
   }
 }
 
@@ -4491,10 +4395,7 @@ function collectQuestions(){
     const type = box.querySelector(".q-type")?.value || "mcq";
     const text = box.querySelector(".q-text").value.trim();
     const mediaType = box.querySelector(".q-media-type")?.value || "none";
-    const rawMediaUrl = box.querySelector(".q-media-url")?.value.trim() || "";
-    const mediaUrl = mediaType === "audio"
-      ? normalizeAudioUrl(rawMediaUrl)
-      : rawMediaUrl;
+    const mediaUrl = box.querySelector(".q-media-url")?.value.trim() || "";
     const answers = [];
 
     box.querySelectorAll(".answer-admin").forEach(answerBox=>{
@@ -7648,7 +7549,7 @@ document
   ){
 
     questionAudio.src =
-      normalizeAudioUrl(mediaUrl);
+      mediaUrl;
 
     questionAudio
       .classList
