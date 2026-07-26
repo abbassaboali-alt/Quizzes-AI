@@ -6552,7 +6552,20 @@ timerTotalSeconds,
       courseId:course.id,
       courseName:getCourseName(course),
 
-      trainerName:getTrainer(course),
+      trainerName:
+        EDIT_ACTIVITY_ID
+          ? (
+              readText("trainerName") ||
+              getTrainer(course)
+            )
+          : getTrainer(course),
+
+      lastEditedBy:
+        String(
+          localStorage.getItem("username") ||
+          ""
+        ).trim(),
+
       branch:getBranch(course),
       section:getSection(course),
       period:getPeriod(course),
@@ -6585,6 +6598,13 @@ timerTotalSeconds,
     }else{
       data.createdAt =
         firebase.firestore.FieldValue.serverTimestamp();
+
+      data.createdBy =
+        String(
+          localStorage.getItem("username") ||
+          data.trainerName ||
+          ""
+        ).trim();
 
       await db.collection(ACTIVITIES_COLLECTION)
         .add(data);
@@ -6802,17 +6822,8 @@ function renderAdminActivities(){
               class="btn btn-primary"
               onclick="editActivity('${activity.id}')">
 
-              <i class="fa-solid ${
-                IS_ADMIN_USER
-                  ? "fa-pen"
-                  : "fa-eye"
-              }"></i>
-
-              ${
-                IS_ADMIN_USER
-                  ? "Edit"
-                  : "View Details"
-              }
+              <i class="fa-solid fa-pen"></i>
+              Edit
             </button>
 
             <button
@@ -6821,6 +6832,15 @@ function renderAdminActivities(){
 
               <i class="fa-solid fa-eye"></i>
               Preview
+            </button>
+
+
+            <button
+              class="btn btn-light"
+              onclick="copyActivity('${activity.id}')">
+
+              <i class="fa-solid fa-copy"></i>
+              Copy
             </button>
 
             ${
@@ -6873,6 +6893,107 @@ function renderAdminActivities(){
 }
 
 /* ===============================
+   Copy Activity
+================================ */
+
+async function copyActivity(id){
+
+  const activity =
+    ACTIVITIES_CACHE.find(
+      item=>item.id === id
+    );
+
+  if(!activity){
+    alert("Activity not found.");
+    return;
+  }
+
+  const currentTrainerName =
+    String(
+      localStorage.getItem("username") ||
+      ""
+    ).trim() ||
+    String(
+      activity.trainerName ||
+      activity.trainer ||
+      "Trainer"
+    ).trim();
+
+  if(
+    !confirm(
+      `Create a copy of "${activity.title || "this activity"}" under ${currentTrainerName}?`
+    )
+  ){
+    return;
+  }
+
+  try{
+
+    const copiedData = {
+      ...activity,
+
+      title:
+        `Copy of ${activity.title || "Activity"}`,
+
+      trainerName:
+        currentTrainerName,
+
+      createdBy:
+        currentTrainerName,
+
+      copiedBy:
+        currentTrainerName,
+
+      copiedFromActivityId:
+        id,
+
+      copiedFromTrainer:
+        activity.trainerName ||
+        activity.trainer ||
+        "",
+
+      questions:
+        cloneQuestions(
+          activity.questions || []
+        ),
+
+      questionCount:
+        Array.isArray(activity.questions)
+          ? activity.questions.length
+          : Number(activity.questionCount || 0),
+
+      createdAt:
+        firebase.firestore.FieldValue.serverTimestamp(),
+
+      updatedAt:
+        firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    delete copiedData.id;
+
+    const newDoc =
+      await db
+        .collection(ACTIVITIES_COLLECTION)
+        .add(copiedData);
+
+    toast("Activity copied successfully ✅");
+
+    await loadActivities();
+
+    editActivity(newDoc.id);
+
+  }catch(error){
+
+    console.error(error);
+
+    alert(
+      error.message ||
+      "Unable to copy the activity."
+    );
+  }
+}
+
+/* ===============================
    Edit Activity
 ================================ */
 
@@ -6906,16 +7027,43 @@ function editActivity(id){
 
   document.getElementById("activityGameMode").value =
     activity.gameMode || "normal";
-    document.getElementById("activityTimerType").value =
-  activity.timerType || "open";
 
-document.getElementById("activityTimerMinutes").value =
-  Number(activity.timerMinutes || 5);
+  const savedTimerType =
+    activity.timerType ||
+    (
+      Number(activity.timerTotalSeconds || 0) > 0
+        ? "limited"
+        : "open"
+    );
 
-document.getElementById("activityTimerSeconds").value =
-  Number(activity.timerSeconds || 0);
+  const savedTimerTotalSeconds =
+    Math.max(
+      0,
+      Number(activity.timerTotalSeconds ?? 0)
+    );
 
-toggleActivityTimerFields();
+  const savedTimerMinutes =
+    activity.timerMinutes !== undefined &&
+    activity.timerMinutes !== null
+      ? Number(activity.timerMinutes)
+      : Math.floor(savedTimerTotalSeconds / 60);
+
+  const savedTimerSeconds =
+    activity.timerSeconds !== undefined &&
+    activity.timerSeconds !== null
+      ? Number(activity.timerSeconds)
+      : savedTimerTotalSeconds % 60;
+
+  document.getElementById("activityTimerType").value =
+    savedTimerType;
+
+  document.getElementById("activityTimerMinutes").value =
+    Math.max(0,savedTimerMinutes);
+
+  document.getElementById("activityTimerSeconds").value =
+    Math.max(0,Math.min(59,savedTimerSeconds));
+
+  toggleActivityTimerFields();
 
   document.getElementById("questionsContainer").innerHTML = "";
 
@@ -7014,6 +7162,10 @@ function resetEditor(){
   document.getElementById("activityGroup").value = "General";
   document.getElementById("activityStatus").value = "open";
   document.getElementById("activityGameMode").value = "normal";
+  document.getElementById("activityTimerType").value = "open";
+  document.getElementById("activityTimerMinutes").value = 5;
+  document.getElementById("activityTimerSeconds").value = 0;
+  toggleActivityTimerFields();
   document.getElementById("questionsContainer").innerHTML = "";
 
   QUESTION_COUNTER = 0;
