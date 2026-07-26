@@ -9080,6 +9080,25 @@ function startRandomImageSelection(){
   },spinDuration);
 }
 
+
+/* =====================================
+   UNIFIED TEAM / PARTICIPANT ANSWER SYNC
+===================================== */
+function syncCurrentAnswerResult(isCorrect, raceSteps = 1){
+  /*
+    This page can also be used with versions that provide
+    recordCurrentTeamAnswer(). Calling it conditionally keeps
+    Individual Mode working and synchronizes Team Mode when present.
+  */
+  if(typeof window.recordCurrentTeamAnswer === "function")
+  {
+    window.recordCurrentTeamAnswer(
+      Boolean(isCorrect),
+      raceSteps
+    );
+  }
+}
+
 function gradeRandomAnswer(isCorrect){
   if(
     ANSWER_LOCKED ||
@@ -9110,6 +9129,8 @@ function gradeRandomAnswer(isCorrect){
     const button = document.getElementById(id);
     if(button) button.disabled = true;
   });
+
+  syncCurrentAnswerResult(Boolean(isCorrect));
 
   document.getElementById("scorePill").textContent = `⭐ ${CURRENT_SCORE}`;
   showNextQuestionButton();
@@ -9207,6 +9228,8 @@ function gradeWheelAnswer(isCorrect){
     feedback.classList.add("bad");
     playWrongSound();
   }
+  syncCurrentAnswerResult(Boolean(isCorrect));
+
   WHEEL_POINTS_MULTIPLIER=1;
   ["wheelSpinBtn","wheelCorrectBtn","wheelWrongBtn"].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=true;});
   document.getElementById("scorePill").textContent=`⭐ ${CURRENT_SCORE}`;
@@ -9681,6 +9704,8 @@ function chooseBalloonAnswer(
 
   }
 
+  syncCurrentAnswerResult(Boolean(selected?.correct));
+
   document
     .getElementById(
       "scorePill"
@@ -10117,6 +10142,8 @@ function chooseMysteryAnswer(
 
   }
 
+  syncCurrentAnswerResult(Boolean(selected?.correct));
+
   document
     .getElementById(
       "scorePill"
@@ -10175,6 +10202,8 @@ function chooseAnswer(answerIndex,clickedButton){
   playWrongSound();
 
 }
+
+  syncCurrentAnswerResult(Boolean(selected?.correct));
 
   if(String(question?.type || "").toLowerCase() === "bomb"){
     updateBombAfterAnswer(Boolean(selected.correct));
@@ -10542,6 +10571,8 @@ function checkMatchAnswer(){
 
   }
 
+  syncCurrentAnswerResult(allCorrect);
+
   document
     .getElementById(
       "scorePill"
@@ -10684,6 +10715,8 @@ if(allCorrect){
   playWrongSound();
 
 }
+
+  syncCurrentAnswerResult(allCorrect);
 
   document.getElementById("scorePill").textContent =
     `⭐ ${CURRENT_SCORE}`;
