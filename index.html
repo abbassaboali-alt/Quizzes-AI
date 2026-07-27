@@ -6952,6 +6952,20 @@ async function copyActivity(id){
         activity.trainer ||
         "",
 
+      /*
+        The copied activity belongs to the trainer who copied it.
+        Therefore, question editing must start unlocked even when
+        the original activity was locked.
+      */
+      questionsLocked:
+        false,
+
+      questionsLockedAt:
+        null,
+
+      questionsLockedBy:
+        "",
+
       questions:
         cloneQuestions(
           activity.questions || []
