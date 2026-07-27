@@ -6953,9 +6953,8 @@ async function copyActivity(id){
         "",
 
       /*
-        The copied activity belongs to the trainer who copied it.
-        Therefore, question editing must start unlocked even when
-        the original activity was locked.
+        The copied activity is a new activity owned by the trainer
+        who created the copy. It must not inherit the original lock.
       */
       questionsLocked:
         false,
@@ -6965,6 +6964,26 @@ async function copyActivity(id){
 
       questionsLockedBy:
         "",
+
+      ownerName:
+        currentTrainerName,
+
+      ownerRole:
+        String(
+          localStorage.getItem("role") ||
+          "trainer"
+        )
+          .trim()
+          .toLowerCase(),
+
+      copyOwnerCanEdit:
+        true,
+
+      copyOwnerCanDeleteQuestions:
+        true,
+
+      copyOwnerCanDeleteActivity:
+        true,
 
       questions:
         cloneQuestions(
