@@ -6584,9 +6584,11 @@ async function saveActivity(){
       ? collectQuestions()
       : cloneQuestions(LOCKED_QUESTIONS_SNAPSHOT);
 
-    if(!IS_ADMIN_USER && !EDIT_ACTIVITY_ID){
-      throw new Error("Only the admin user can create a new activity.");
-    }
+    /*
+      إنشاء النشاطات والأسئلة متاح لجميع المستخدمين المسجلين
+      مثل admin و trainer وأي دور آخر يصل إلى هذه الصفحة.
+      تبقى صلاحية قفل/فتح الأسئلة للأدمن فقط.
+    */
 const timerType =
   document
     .getElementById("activityTimerType")
@@ -6696,6 +6698,13 @@ timerTotalSeconds,
           data.trainerName ||
           ""
         ).trim();
+
+      data.ownerName = data.createdBy;
+      data.ownerRole = String(
+        localStorage.getItem("role") ||
+        CURRENT_USER_ROLE ||
+        "user"
+      ).trim().toLowerCase();
 
       await db.collection(ACTIVITIES_COLLECTION)
         .add(data);
