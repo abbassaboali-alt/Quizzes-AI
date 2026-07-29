@@ -1982,6 +1982,49 @@ button{cursor:pointer}
   .bomb-icon{font-size:60px}
 }
 
+
+/* =====================================
+   CLOUDINARY QUESTION MEDIA UPLOAD
+===================================== */
+.cloudinary-upload-box{
+  margin-top:10px;
+  padding:12px;
+  border:1px dashed #9fb7cc;
+  border-radius:13px;
+  background:#f8fbfd;
+}
+.cloudinary-upload-row{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  flex-wrap:wrap;
+}
+.cloudinary-file-input{
+  flex:1;
+  min-width:210px;
+}
+.cloudinary-upload-status{
+  margin-top:8px;
+  min-height:20px;
+  color:var(--muted);
+  font-size:12px;
+  font-weight:800;
+  overflow-wrap:anywhere;
+}
+.cloudinary-upload-status.uploading{color:var(--blue)}
+.cloudinary-upload-status.success{color:var(--green)}
+.cloudinary-upload-status.error{color:var(--red)}
+@media(max-width:650px){
+  .cloudinary-upload-row{
+    align-items:stretch;
+    flex-direction:column;
+  }
+  .cloudinary-file-input,
+  .cloudinary-upload-row .btn{
+    width:100%;
+  }
+}
+
 </style>
 </head>
 
@@ -2517,6 +2560,14 @@ firebase.initializeApp({
 });
 
 const db = firebase.firestore();
+
+/* =====================================
+   CLOUDINARY MEDIA UPLOAD
+   Supports: images, audio, and video
+===================================== */
+const CLOUDINARY_CLOUD_NAME = "dgs6mo4hl";
+const CLOUDINARY_UPLOAD_PRESET = "kcgfhigd";
+const CLOUDINARY_MEDIA_FOLDER = "prudle-fun-activities";
 
 function logout(){
 
@@ -3997,6 +4048,28 @@ function addQuestion(data = null){
             placeholder="https://..."
             oninput="updateQuestionMediaPreview(this.closest('.question-box'))">
         </div>
+
+        <div class="cloudinary-upload-box">
+          <div class="cloudinary-upload-row">
+            <input
+              class="cloudinary-file-input"
+              type="file"
+              accept="image/*,audio/*,video/*"
+              onchange="uploadQuestionMediaToCloudinary(this)">
+
+            <button
+              class="btn btn-light"
+              type="button"
+              onclick="this.parentElement.querySelector('.cloudinary-file-input').click()">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+              Upload File
+            </button>
+          </div>
+
+          <div class="cloudinary-upload-status">
+            Upload an image, audio file, or video file directly to Cloudinary.
+          </div>
+        </div>
       </div>
     </div>
 
@@ -4893,6 +4966,261 @@ function refreshQuestionNumbers(){
   document.querySelectorAll(".question-box").forEach((box,index)=>{
     box.querySelector(".question-order").textContent = index + 1;
   });
+}
+
+
+function getQuestionMediaTypeFromFile(file){
+
+  const mimeType =
+    String(file?.type || "")
+      .toLowerCase();
+
+  if(mimeType.startsWith("image/")){
+    return "image";
+  }
+
+  if(mimeType.startsWith("audio/")){
+    return "audio";
+  }
+
+  if(mimeType.startsWith("video/")){
+    return "video";
+  }
+
+  return "";
+}
+
+function validateQuestionMediaFile(file){
+
+  const mediaType =
+    getQuestionMediaTypeFromFile(file);
+
+  if(!mediaType){
+    throw new Error(
+      "Only image, audio, and video files are supported."
+    );
+  }
+
+  /*
+    100 MB client-side limit.
+    Cloudinary account limits may be lower or higher.
+  */
+  const maximumSize =
+    100 * 1024 * 1024;
+
+  if(file.size > maximumSize){
+    throw new Error(
+      "The selected file is larger than 100 MB."
+    );
+  }
+
+  return mediaType;
+}
+
+async function uploadQuestionMediaToCloudinary(fileInput){
+
+  const questionBox =
+    fileInput?.closest(".question-box");
+
+  if(!questionBox){
+    return;
+  }
+
+  if(!canEditCurrentQuestions()){
+    fileInput.value = "";
+    alert("Question editing is locked.");
+    return;
+  }
+
+  const file =
+    fileInput.files?.[0];
+
+  if(!file){
+    return;
+  }
+
+  const status =
+    questionBox.querySelector(
+      ".cloudinary-upload-status"
+    );
+
+  const mediaTypeSelect =
+    questionBox.querySelector(
+      ".q-media-type"
+    );
+
+  const mediaUrlInput =
+    questionBox.querySelector(
+      ".q-media-url"
+    );
+
+  const uploadButton =
+    fileInput.parentElement?.querySelector(
+      "button"
+    );
+
+  try{
+
+    const mediaType =
+      validateQuestionMediaFile(file);
+
+    if(status){
+      status.className =
+        "cloudinary-upload-status uploading";
+
+      status.innerHTML = `
+        <i class="fa-solid fa-spinner fa-spin"></i>
+        Uploading ${esc(file.name)}...
+      `;
+    }
+
+    fileInput.disabled = true;
+
+    if(uploadButton){
+      uploadButton.disabled = true;
+    }
+
+    const formData =
+      new FormData();
+
+    formData.append(
+      "file",
+      file
+    );
+
+    formData.append(
+      "upload_preset",
+      CLOUDINARY_UPLOAD_PRESET
+    );
+
+    formData.append(
+      "folder",
+      CLOUDINARY_MEDIA_FOLDER
+    );
+
+    /*
+      resource_type=auto lets Cloudinary accept
+      image, audio, and video through one endpoint.
+    */
+    const uploadUrl =
+      "https://api.cloudinary.com/v1_1/" +
+      encodeURIComponent(
+        CLOUDINARY_CLOUD_NAME
+      ) +
+      "/auto/upload";
+
+    const response =
+      await fetch(
+        uploadUrl,
+        {
+          method:"POST",
+          body:formData
+        }
+      );
+
+    let data = {};
+
+    try{
+      data = await response.json();
+    }catch(error){
+      data = {};
+    }
+
+    if(!response.ok){
+      throw new Error(
+        data?.error?.message ||
+        "Cloudinary upload failed."
+      );
+    }
+
+    const secureUrl =
+      String(
+        data?.secure_url ||
+        data?.url ||
+        ""
+      ).trim();
+
+    if(!secureUrl){
+      throw new Error(
+        "Cloudinary did not return a media URL."
+      );
+    }
+
+    /*
+      Automatically select the correct media type,
+      insert the Cloudinary URL, and show the preview.
+    */
+    if(mediaTypeSelect){
+      mediaTypeSelect.value =
+        mediaType;
+    }
+
+    if(mediaUrlInput){
+      mediaUrlInput.value =
+        secureUrl;
+
+      mediaUrlInput.dispatchEvent(
+        new Event(
+          "input",
+          {
+            bubbles:true
+          }
+        )
+      );
+    }
+
+    updateQuestionMediaPreview(
+      questionBox
+    );
+
+    if(status){
+      status.className =
+        "cloudinary-upload-status success";
+
+      status.innerHTML = `
+        <i class="fa-solid fa-circle-check"></i>
+        Upload completed: ${esc(file.name)}
+      `;
+    }
+
+    toast(
+      "Media uploaded successfully"
+    );
+
+  }catch(error){
+
+    console.error(
+      "Cloudinary media upload error:",
+      error
+    );
+
+    if(status){
+      status.className =
+        "cloudinary-upload-status error";
+
+      status.innerHTML = `
+        <i class="fa-solid fa-circle-exclamation"></i>
+        ${esc(
+          error?.message ||
+          "Upload failed."
+        )}
+      `;
+    }
+
+    alert(
+      error?.message ||
+      "Upload failed."
+    );
+
+  }finally{
+
+    fileInput.disabled = false;
+    fileInput.value = "";
+
+    if(uploadButton){
+      uploadButton.disabled = false;
+    }
+  }
 }
 
 function updateQuestionMediaPreview(questionBox){
