@@ -6010,22 +6010,59 @@ function parseDirectImportedQuestions(sourceText){
       .length;
   }
 
-  function looksLikeQuestion(value){
-    const text = cleanLine(value);
+ function looksLikeQuestion(value){
 
-    if(!text){
-      return false;
-    }
+  const text = cleanLine(value);
 
-    return (
-      text.includes("?") ||
-      text.includes("؟") ||
-      text.includes("_____") ||
-      text.includes("____") ||
-      countWords(text) >= 4
-    );
+  if(!text){
+    return false;
   }
 
+  /*
+    منع اعتبار الخيارات أسئلة.
+  */
+  if(
+    /^(\*)?\s*[a-hA-H]\s*(\*)?\s*[\)\.\-:]\s*/.test(text)
+  ){
+    return false;
+  }
+
+  /*
+    منع الرموز النقطية.
+  */
+  if(
+    /^[●•▪■◦]\s*/.test(text)
+  ){
+    return false;
+  }
+
+  /*
+    قبول جميع صيغ الأسئلة، ومنها:
+    - Question?
+    - Complete the sentence.
+    - Choose the correct sentence.
+    - جملة تحتوي فراغ ______
+    - جملة طويلة مرقمة حتى لو انتهت بنقطة.
+  */
+  return (
+    text.includes("?") ||
+    /_{2,}/.test(text) ||
+    /\bchoose\b/i.test(text) ||
+    /\bcomplete\b/i.test(text) ||
+    /\bwhich\b/i.test(text) ||
+    /\bwhat\b/i.test(text) ||
+    /\bwhere\b/i.test(text) ||
+    /\bwho\b/i.test(text) ||
+    /\bwhen\b/i.test(text) ||
+    /\bwhy\b/i.test(text) ||
+    /\bhow\b/i.test(text) ||
+    /\bselect\b/i.test(text) ||
+    /\bfill\b/i.test(text) ||
+    /\bcorrect\b/i.test(text) ||
+    countWords(text) >= 4
+  );
+
+}
   function hasCorrectMarker(value){
     const text = String(value || "");
 
@@ -6082,32 +6119,45 @@ function parseDirectImportedQuestions(sourceText){
 
   function isRealQuestionStart(numberedLine){
 
-    if(!numberedLine){
-      return false;
-    }
-
-    const number = numberedLine.number;
-    const text = numberedLine.rest;
-
-    /*
-      أول سؤال:
-      نقبله إذا كان النص يبدو كسؤال.
-    */
-    if(lastQuestionNumber === null){
-      return looksLikeQuestion(text);
-    }
-
-    /*
-      بعد ذلك يجب أن يكون رقم السؤال متسلسلًا:
-      1 ثم 2 ثم 3...
-      هذا يمنع أرقام خيارات Word مثل 1. و2. و3.
-    */
-    if(number !== lastQuestionNumber + 1){
-      return false;
-    }
-
-    return looksLikeQuestion(text);
+  if(
+    !numberedLine ||
+    !Number.isFinite(numberedLine.number)
+  ){
+    return false;
   }
+
+  const number = numberedLine.number;
+  const text = cleanLine(numberedLine.rest);
+
+  if(!text){
+    return false;
+  }
+
+  /*
+    منع اعتبار الخيارات المكتوبة بالحروف أسئلة.
+  */
+  if(
+    /^(\*)?\s*[a-hA-H]\s*(\*)?\s*[\)\.\-:]\s*/.test(text)
+  ){
+    return false;
+  }
+
+  /*
+    أول سؤال مرقم.
+    لا نشترط أن ينتهي بعلامة استفهام،
+    لأن بعض الأسئلة تكون جملة ناقصة مثل:
+    It is ______.
+  */
+  if(lastQuestionNumber === null){
+    return number > 0;
+  }
+
+  /*
+    بقية الأسئلة يجب أن تكون متسلسلة.
+  */
+  return number === lastQuestionNumber + 1;
+
+}
 
   function removeOptionPrefix(value){
     let text = cleanLine(value);
