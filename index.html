@@ -5619,47 +5619,60 @@ async function readWordAutomaticNumberingText(arrayBuffer){
     }
 
     function paragraphText(paragraph){
-      const parts = [];
 
-      function walk(node){
-        if(node.nodeType === Node.TEXT_NODE){
-          return;
-        }
+  let text = "";
 
-        if(node.nodeType !== Node.ELEMENT_NODE){
-          return;
-        }
+  function readNode(node){
 
-        const name = localName(node);
-
-        if(name === "t"){
-          parts.push(node.textContent || "");
-          return;
-        }
-
-        if(name === "tab"){
-          parts.push(" ");
-          return;
-        }
-
-        if(name === "br" || name === "cr"){
-          parts.push("\n");
-          return;
-        }
-
-        Array.from(node.childNodes || []).forEach(walk);
-      }
-
-      Array.from(paragraph.childNodes || []).forEach(walk);
-
-      return parts.join("")
-        .replace(/\u00A0/g, " ")
-        .replace(/[\u200B-\u200F\u202A-\u202E\u2060\uFEFF]/g, "")
-        .replace(/[ \t]+/g, " ")
-        .replace(/\s*\n\s*/g, " ")
-        .trim();
+    if(!node){
+      return;
     }
 
+    const nodeName =
+      String(node.localName || node.nodeName || "")
+        .toLowerCase()
+        .replace(/^w:/, "");
+
+    /*
+      نص Word
+    */
+    if(nodeName === "t"){
+      text += node.textContent || "";
+      return;
+    }
+
+    /*
+      فاصل سطر يدوي داخل نفس الفقرة
+    */
+    if(
+      nodeName === "br" ||
+      nodeName === "cr"
+    ){
+      text += "\n";
+      return;
+    }
+
+    /*
+      Tab داخل Word
+    */
+    if(nodeName === "tab"){
+      text += " ";
+      return;
+    }
+
+    Array.from(node.childNodes || [])
+      .forEach(readNode);
+  }
+
+  readNode(paragraph);
+
+  return String(text || "")
+    .replace(/\r\n?/g, "\n")
+    .replace(/[ \t]+$/gm, "")
+    .replace(/^[ \t]+/gm, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
     function numberingPrefix(paragraph){
       const pPr = firstDirectChild(paragraph, "pPr");
       const numPr = firstDirectChild(pPr, "numPr");
@@ -5724,17 +5737,45 @@ async function readWordAutomaticNumberingText(arrayBuffer){
 
       const name = localName(node);
 
-      if(name === "p"){
-        const text = paragraphText(node);
+if(name === "p"){
 
-        if(!text){
-          return;
-        }
+  const paragraphValue =
+    paragraphText(node);
 
-        const prefix = numberingPrefix(node);
-        output.push(prefix ? `${prefix} ${text}` : text);
-        return;
+  if(!paragraphValue){
+    return;
+  }
+
+  const prefix =
+    numberingPrefix(node);
+
+  const paragraphLines =
+    paragraphValue
+      .split("\n")
+      .map(line =>
+        String(line || "").trim()
+      )
+      .filter(Boolean);
+
+  paragraphLines.forEach(
+    (line, lineIndex) => {
+
+      if(
+        lineIndex === 0 &&
+        prefix
+      ){
+        output.push(
+          `${prefix} ${line}`
+        );
+      }else{
+        output.push(line);
       }
+
+    }
+  );
+
+  return;
+}
 
       if(name === "tbl"){
         Array.from(node.getElementsByTagNameNS("*", "tr")).forEach(row => {
