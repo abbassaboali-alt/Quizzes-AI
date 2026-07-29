@@ -341,6 +341,48 @@ button{cursor:pointer}
   width:100%;height:120px;object-fit:cover;border-radius:10px;background:#eef3f7;
   display:none;margin-top:8px
 }
+.answer-media-preview{
+  margin-top:9px;
+}
+.answer-media-preview img,
+.answer-media-preview video{
+  width:100%;
+  max-height:190px;
+  object-fit:contain;
+  border-radius:11px;
+  background:#eef3f7;
+}
+.answer-media-preview audio{
+  width:100%;
+}
+.answer-media-file-status{
+  margin-top:6px;
+  min-height:18px;
+  color:var(--muted);
+  font-size:11px;
+  font-weight:800;
+  overflow-wrap:anywhere;
+}
+.student-answer video,
+.balloon-option video,
+.mystery-option video,
+.bomb-answer-grid video,
+.match-image-option video{
+  width:100%;
+  max-height:170px;
+  object-fit:contain;
+  border-radius:12px;
+  margin-bottom:8px;
+  background:#eef3f7;
+}
+.student-answer audio,
+.balloon-option audio,
+.mystery-option audio,
+.bomb-answer-grid audio,
+.match-image-option audio{
+  width:100%;
+  margin-bottom:8px;
+}
 
 /* Student */
 .student-start{
@@ -3899,10 +3941,10 @@ function addQuestion(data = null){
     mediaUrl:"",
     image:"",
     answers:[
-      {text:"",right:"",image:"",correct:true},
-      {text:"",right:"",image:"",correct:false},
-      {text:"",right:"",image:"",correct:false},
-      {text:"",right:"",image:"",correct:false}
+      {text:"",right:"",image:"",mediaType:"none",mediaUrl:"",correct:true},
+      {text:"",right:"",image:"",mediaType:"none",mediaUrl:"",correct:false},
+      {text:"",right:"",image:"",mediaType:"none",mediaUrl:"",correct:false},
+      {text:"",right:"",image:"",mediaType:"none",mediaUrl:"",correct:false}
     ]
   };
 
@@ -3928,8 +3970,8 @@ function addQuestion(data = null){
     Array.isArray(q.answers) && q.answers.length
       ? q.answers
       : [
-          {text:"",right:"",image:"",correct:true},
-          {text:"",right:"",image:"",correct:false}
+          {text:"",right:"",image:"",mediaType:"none",mediaUrl:"",correct:true},
+          {text:"",right:"",image:"",mediaType:"none",mediaUrl:"",correct:false}
         ];
 
   box.innerHTML = `
@@ -4266,64 +4308,215 @@ async function toggleActivityQuestionsLock(id){
   }
 }
 
-function appendAnswer(questionBox,answer){
-  const answersBox = questionBox.querySelector(".answers-admin");
-  const item = document.createElement("div");
-  const radioName = "correct_" + questionBox.dataset.key;
+function getSavedAnswerMediaType(answer){
 
-  item.className = "answer-admin";
+  const explicitType =
+    String(
+      answer?.mediaType ||
+      ""
+    )
+    .trim()
+    .toLowerCase();
+
+  if(
+    ["image","video","audio"].includes(
+      explicitType
+    )
+  ){
+    return explicitType;
+  }
+
+  const mediaUrl =
+    String(
+      answer?.mediaUrl ||
+      answer?.image ||
+      answer?.video ||
+      answer?.audio ||
+      ""
+    )
+    .trim()
+    .toLowerCase();
+
+  if(!mediaUrl){
+    return "none";
+  }
+
+  if(
+    /\.(mp3|wav|ogg|m4a|aac)(\?|#|$)/i.test(
+      mediaUrl
+    )
+  ){
+    return "audio";
+  }
+
+  if(
+    /\.(mp4|webm|mov|m4v|avi)(\?|#|$)/i.test(
+      mediaUrl
+    )
+  ){
+    return "video";
+  }
+
+  return "image";
+}
+
+function getSavedAnswerMediaUrl(answer){
+
+  return String(
+    answer?.mediaUrl ||
+    answer?.image ||
+    answer?.video ||
+    answer?.audio ||
+    ""
+  ).trim();
+}
+
+function appendAnswer(questionBox,answer){
+
+  answer =
+    answer &&
+    typeof answer === "object"
+      ? answer
+      : {};
+
+  const answersBox =
+    questionBox.querySelector(
+      ".answers-admin"
+    );
+
+  const item =
+    document.createElement("div");
+
+  const radioName =
+    "correct_" +
+    questionBox.dataset.key;
+
+  const savedMediaType =
+    getSavedAnswerMediaType(
+      answer
+    );
+
+  const savedMediaUrl =
+    getSavedAnswerMediaUrl(
+      answer
+    );
+
+  item.className =
+    "answer-admin";
 
   item.innerHTML = `
     <div class="field">
       <label class="a-text-label">Answer / Item</label>
-      <input class="a-text" value="${esc(answer.text || "")}" placeholder="Enter text">
+      <input
+        class="a-text"
+        value="${esc(answer.text || "")}"
+        placeholder="Enter text">
     </div>
 
- <div class="field match-right-field" style="margin-top:9px">
-  <label>Matching Pair — Optional if Image Exists</label>
+    <div
+      class="field match-right-field"
+      style="margin-top:9px">
 
-  <input
-    class="a-right"
-    value="${esc(answer.right || answer.match || "")}"
-    placeholder="Optional text match">
-</div>
+      <label>
+        Matching Pair — Optional if Media Exists
+      </label>
 
-    <div class="field answer-image-field" style="margin-top:9px">
-      <label>Matching Image URL</label>
-      <input class="a-image" value="${esc(answer.image || "")}" placeholder="https://...">
-      <img class="preview-img" alt="">
+      <input
+        class="a-right"
+        value="${esc(answer.right || answer.match || "")}"
+        placeholder="Optional text match">
+    </div>
+
+    <div
+      class="field answer-image-field"
+      style="margin-top:9px">
+
+      <label>Answer Media Type</label>
+
+      <select
+        class="a-media-type"
+        onchange="updateAnswerMediaPreview(this.closest('.answer-admin'))">
+
+        <option
+          value="none"
+          ${savedMediaType === "none" ? "selected" : ""}>
+          No Media
+        </option>
+
+        <option
+          value="image"
+          ${savedMediaType === "image" ? "selected" : ""}>
+          Image
+        </option>
+
+        <option
+          value="video"
+          ${savedMediaType === "video" ? "selected" : ""}>
+          Video
+        </option>
+
+        <option
+          value="audio"
+          ${savedMediaType === "audio" ? "selected" : ""}>
+          Audio
+        </option>
+      </select>
+
+      <label style="margin-top:9px">
+        Answer Media URL
+      </label>
+
+      <input
+        class="a-image a-media-url"
+        value="${esc(savedMediaUrl)}"
+        placeholder="Paste a URL or upload a file"
+        oninput="updateAnswerMediaPreview(this.closest('.answer-admin'))">
+
+      <label style="margin-top:9px">
+        Upload Answer Media
+      </label>
+
+      <input
+        type="file"
+        class="a-media-file"
+        accept="image/*,video/*,audio/*"
+        onchange="prepareAnswerMediaFile(this)">
+
+      <div class="answer-media-file-status">
+        Choose an image, video, or audio file. It will upload to Cloudinary when the activity is saved.
+      </div>
+
+      <div class="answer-media-preview hidden"></div>
     </div>
 
     <label class="correct-row">
-      <input type="radio" class="a-correct" name="${radioName}" ${answer.correct ? "checked" : ""}>
+      <input
+        type="radio"
+        class="a-correct"
+        name="${radioName}"
+        ${answer.correct ? "checked" : ""}>
       This is the Correct Answer
     </label>
 
-    <button class="btn btn-danger" type="button" style="margin-top:9px;padding:7px 11px" onclick="removeAnswer(this)">
-      <i class="fa-solid fa-xmark"></i> Delete Item
+    <button
+      class="btn btn-danger"
+      type="button"
+      style="margin-top:9px;padding:7px 11px"
+      onclick="removeAnswer(this)">
+      <i class="fa-solid fa-xmark"></i>
+      Delete Item
     </button>
   `;
 
-  const imageInput = item.querySelector(".a-image");
-  const preview = item.querySelector(".preview-img");
+  answersBox.appendChild(
+    item
+  );
 
-  function updatePreview(){
-    const url = imageInput.value.trim();
-
-    if(url){
-      preview.src = url;
-      preview.style.display = "block";
-    }else{
-      preview.removeAttribute("src");
-      preview.style.display = "none";
-    }
-  }
-
-  imageInput.addEventListener("input",updatePreview);
-  updatePreview();
-
-  answersBox.appendChild(item);
+  updateAnswerMediaPreview(
+    item
+  );
 }
+
 function updateQuestionType(questionBox){
 
   if(!questionBox){
@@ -4735,7 +4928,7 @@ function buildQuestionsCopyText(){
             lines.push(
               `${letter}. ${answer.text || ""} = ${
                 answer.right ||
-                answer.image ||
+                getSavedAnswerMediaUrl(answer) ||
                 ""
               }`
             );
@@ -4772,7 +4965,7 @@ function buildQuestionsCopyText(){
             lines.push(
               `${letter}. ${
                 answer.text ||
-                answer.image ||
+                getSavedAnswerMediaUrl(answer) ||
                 ""
               }${
                 answer.correct
@@ -4942,6 +5135,277 @@ async function uploadFileToCloudinary(fileObj){
   return data.secure_url;
 }
 
+
+function detectUploadedMediaType(fileObj){
+
+  const mime =
+    String(
+      fileObj?.type ||
+      ""
+    )
+    .trim()
+    .toLowerCase();
+
+  if(mime.startsWith("image/")){
+    return "image";
+  }
+
+  if(mime.startsWith("video/")){
+    return "video";
+  }
+
+  if(mime.startsWith("audio/")){
+    return "audio";
+  }
+
+  return "";
+}
+
+function prepareAnswerMediaFile(fileInput){
+
+  const answerBox =
+    fileInput?.closest(
+      ".answer-admin"
+    );
+
+  const fileObj =
+    fileInput?.files?.[0];
+
+  if(
+    !answerBox ||
+    !fileObj
+  ){
+    return;
+  }
+
+  const mediaType =
+    detectUploadedMediaType(
+      fileObj
+    );
+
+  const mediaTypeSelect =
+    answerBox.querySelector(
+      ".a-media-type"
+    );
+
+  const status =
+    answerBox.querySelector(
+      ".answer-media-file-status"
+    );
+
+  if(!mediaType){
+
+    fileInput.value = "";
+
+    if(status){
+      status.textContent =
+        "Unsupported file type.";
+    }
+
+    alert(
+      "Only image, video, and audio files are supported."
+    );
+
+    return;
+  }
+
+  if(mediaTypeSelect){
+    mediaTypeSelect.value =
+      mediaType;
+  }
+
+  if(status){
+    status.textContent =
+      `Selected: ${fileObj.name}`;
+  }
+}
+
+function updateAnswerMediaPreview(answerBox){
+
+  if(!answerBox){
+    return;
+  }
+
+  const mediaType =
+    answerBox.querySelector(
+      ".a-media-type"
+    )?.value ||
+    "none";
+
+  const mediaUrl =
+    answerBox.querySelector(
+      ".a-media-url"
+    )?.value
+      ?.trim() ||
+    "";
+
+  const preview =
+    answerBox.querySelector(
+      ".answer-media-preview"
+    );
+
+  if(!preview){
+    return;
+  }
+
+  if(
+    mediaType === "none" ||
+    !mediaUrl
+  ){
+
+    preview.innerHTML = "";
+    preview.classList.add(
+      "hidden"
+    );
+
+    return;
+  }
+
+  preview.classList.remove(
+    "hidden"
+  );
+
+  if(mediaType === "image"){
+
+    preview.innerHTML = `
+      <img
+        src="${esc(mediaUrl)}"
+        alt="Answer image">
+    `;
+
+    return;
+  }
+
+  if(mediaType === "video"){
+
+    const youtubeEmbedUrl =
+      toYouTubeEmbedUrl(
+        mediaUrl
+      );
+
+    if(youtubeEmbedUrl){
+
+      preview.innerHTML = `
+        <iframe
+          src="${esc(youtubeEmbedUrl)}"
+          title="Answer video preview"
+          style="
+            width:100%;
+            aspect-ratio:16/9;
+            border:0;
+            border-radius:11px;
+            background:#000;
+          "
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen>
+        </iframe>
+      `;
+
+    }else{
+
+      preview.innerHTML = `
+        <video
+          src="${esc(mediaUrl)}"
+          controls
+          playsinline>
+        </video>
+      `;
+    }
+
+    return;
+  }
+
+  if(mediaType === "audio"){
+
+    preview.innerHTML = `
+      <audio
+        src="${esc(mediaUrl)}"
+        controls>
+      </audio>
+    `;
+  }
+}
+
+function renderAnswerMedia(answer){
+
+  const mediaType =
+    getSavedAnswerMediaType(
+      answer
+    );
+
+  const mediaUrl =
+    getSavedAnswerMediaUrl(
+      answer
+    );
+
+  if(
+    mediaType === "none" ||
+    !mediaUrl
+  ){
+    return "";
+  }
+
+  if(mediaType === "image"){
+
+    return `
+      <img
+        src="${esc(mediaUrl)}"
+        alt="Answer media">
+    `;
+  }
+
+  if(mediaType === "video"){
+
+    const youtubeEmbedUrl =
+      toYouTubeEmbedUrl(
+        mediaUrl
+      );
+
+    if(youtubeEmbedUrl){
+
+      return `
+        <iframe
+          src="${esc(youtubeEmbedUrl)}"
+          title="Answer video"
+          style="
+            width:100%;
+            aspect-ratio:16/9;
+            border:0;
+            border-radius:12px;
+            margin-bottom:8px;
+            background:#000;
+          "
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen
+          onclick="event.stopPropagation()">
+        </iframe>
+      `;
+    }
+
+    return `
+      <video
+        src="${esc(mediaUrl)}"
+        controls
+        playsinline
+        onclick="event.stopPropagation()">
+      </video>
+    `;
+  }
+
+  if(mediaType === "audio"){
+
+    return `
+      <audio
+        src="${esc(mediaUrl)}"
+        controls
+        onclick="event.stopPropagation()">
+      </audio>
+    `;
+  }
+
+  return "";
+}
+
 function prepareQuestionMediaFile(fileInput){
   const box = fileInput?.closest(".question-box");
   const fileObj = fileInput?.files?.[0];
@@ -5029,6 +5493,123 @@ async function uploadPendingQuestionMedia(){
       fileInput.disabled = false;
     }
   }
+
+  /*
+    Upload media selected inside every answer/item.
+  */
+  for(let questionIndex = 0; questionIndex < boxes.length; questionIndex++){
+
+    const answerBoxes = [
+      ...boxes[questionIndex]
+        .querySelectorAll(
+          ".answer-admin"
+        )
+    ];
+
+    for(let answerIndex = 0; answerIndex < answerBoxes.length; answerIndex++){
+
+      const answerBox =
+        answerBoxes[answerIndex];
+
+      const fileInput =
+        answerBox.querySelector(
+          ".a-media-file"
+        );
+
+      const fileObj =
+        fileInput?.files?.[0];
+
+      if(!fileObj){
+        continue;
+      }
+
+      const status =
+        answerBox.querySelector(
+          ".answer-media-file-status"
+        );
+
+      const mediaTypeSelect =
+        answerBox.querySelector(
+          ".a-media-type"
+        );
+
+      const mediaUrlInput =
+        answerBox.querySelector(
+          ".a-media-url"
+        );
+
+      try{
+
+        const detectedType =
+          detectUploadedMediaType(
+            fileObj
+          );
+
+        if(!detectedType){
+          throw new Error(
+            "Unsupported file type."
+          );
+        }
+
+        if(status){
+          status.innerHTML = `
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            Uploading answer ${answerIndex + 1}...
+          `;
+        }
+
+        fileInput.disabled = true;
+
+        const mediaUrl =
+          await uploadFileToCloudinary(
+            fileObj
+          );
+
+        if(mediaTypeSelect){
+          mediaTypeSelect.value =
+            detectedType;
+        }
+
+        if(mediaUrlInput){
+          mediaUrlInput.value =
+            mediaUrl;
+        }
+
+        updateAnswerMediaPreview(
+          answerBox
+        );
+
+        if(status){
+          status.innerHTML = `
+            <i class="fa-solid fa-circle-check"></i>
+            Uploaded successfully: ${esc(fileObj.name)}
+          `;
+        }
+
+        fileInput.value = "";
+
+      }catch(error){
+
+        if(status){
+          status.innerHTML = `
+            <i class="fa-solid fa-circle-exclamation"></i>
+            Upload failed: ${esc(error.message || "Unknown error")}
+          `;
+        }
+
+        throw new Error(
+          `Question ${questionIndex + 1}, answer ${answerIndex + 1}: ${
+            error.message ||
+            "Media upload failed."
+          }`
+        );
+
+      }finally{
+
+        fileInput.disabled = false;
+      }
+    }
+  }
 }
 
 function updateQuestionMediaPreview(questionBox){
@@ -5088,10 +5669,45 @@ function collectQuestions(){
     const answers = [];
 
     box.querySelectorAll(".answer-admin").forEach(answerBox=>{
+      const answerMediaType =
+        answerBox.querySelector(".a-media-type")?.value ||
+        "none";
+
+      const answerMediaUrl =
+        answerBox.querySelector(".a-media-url")?.value.trim() ||
+        "";
+
       answers.push({
         text:answerBox.querySelector(".a-text").value.trim(),
         right:answerBox.querySelector(".a-right")?.value.trim() || "",
-        image:answerBox.querySelector(".a-image").value.trim(),
+
+        mediaType:
+          answerMediaUrl
+            ? answerMediaType
+            : "none",
+
+        mediaUrl:
+          answerMediaUrl,
+
+        /*
+          Keep the old image field for compatibility
+          with activities saved by earlier versions.
+        */
+        image:
+          answerMediaType === "image"
+            ? answerMediaUrl
+            : "",
+
+        video:
+          answerMediaType === "video"
+            ? answerMediaUrl
+            : "",
+
+        audio:
+          answerMediaType === "audio"
+            ? answerMediaUrl
+            : "",
+
         mediaPrompt:answerBox.querySelector(".a-text").value.trim(),
         correct:answerBox.querySelector(".a-correct").checked
       });
@@ -5110,7 +5726,7 @@ function collectQuestions(){
         throw new Error(`Select the correct answer for question ${index + 1}.`);
       }
 
-      if(answers.some(answer=>!answer.text && !answer.image)){
+      if(answers.some(answer=>!answer.text && !getSavedAnswerMediaUrl(answer))){
         throw new Error(`There is an empty answer in question ${index + 1}.`);
       }
     }
@@ -5133,10 +5749,9 @@ function collectQuestions(){
         ).trim();
 
       const rightImage =
-        String(
-          answer.image ||
-          ""
-        ).trim();
+        getSavedAnswerMediaUrl(
+          answer
+        );
 
       /*
         يجب وجود الكلمة في اليسار.
@@ -8751,7 +9366,7 @@ function renderBombDevice(question,answersBox){
     button.className = "student-answer";
     button.type = "button";
     button.innerHTML = `
-      ${answer.image ? `<img src="${esc(answer.image)}" alt="">` : ""}
+      ${renderAnswerMedia(answer)}
       ${answer.text ? `<div>${esc(answer.text)}</div>` : ""}
     `;
     button.addEventListener("click",()=>{
@@ -9037,7 +9652,7 @@ document
     button.type = "button";
 
     button.innerHTML = `
-      ${answer.image ? `<img src="${esc(answer.image)}" alt="">` : ""}
+      ${renderAnswerMedia(answer)}
       ${answer.text ? `<div>${esc(answer.text)}</div>` : ""}
     `;
 
