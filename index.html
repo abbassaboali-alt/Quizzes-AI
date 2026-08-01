@@ -2683,6 +2683,138 @@ let CURRENT_COURSE = null;
 let CURRENT_QUESTION_INDEX = 0;
 let CURRENT_SCORE = 0;
 let ANSWER_LOCKED = false;
+let CURRENT_ANSWER_LOG = [];
+
+function createStableQuestionId(){
+  try{
+    if(window.crypto && typeof window.crypto.randomUUID === "function"){
+      return window.crypto.randomUUID();
+    }
+  }catch(error){}
+
+  return "q_" +
+    Date.now().toString(36) + "_" +
+    Math.random().toString(36).slice(2,10);
+}
+
+function getQuestionId(question,index=CURRENT_QUESTION_INDEX){
+  return String(
+    question?.id ||
+    question?.questionId ||
+    `legacy_${index + 1}`
+  );
+}
+
+function formatCorrectAnswerForLog(question){
+  const type = String(question?.type || "mcq").toLowerCase();
+  const answers = Array.isArray(question?.answers) ? question.answers : [];
+
+  if(type === "match"){
+    return answers.map(item=>
+      `${item?.text || ""} → ${item?.right || item?.image || ""}`
+    ).join(" | ");
+  }
+
+  if(type === "order"){
+    return answers.map(item=>item?.text || "").filter(Boolean).join(" → ");
+  }
+
+  if(type === "wheel" || type === "random"){
+    return "Trainer evaluated answer";
+  }
+
+  return answers
+    .filter(item=>item?.correct === true)
+    .map(item=>item?.text || item?.image || "")
+    .filter(Boolean)
+    .join(" | ");
+}
+
+function getCurrentParticipantAnswer(question){
+  const type = String(question?.type || "mcq").toLowerCase();
+
+  if(type === "order"){
+    return CURRENT_ORDER_SELECTION
+      .map(item=>item?.text || "")
+      .filter(Boolean)
+      .join(" → ");
+  }
+
+  if(type === "match"){
+    return [...document.querySelectorAll(".match-row")].map(row=>{
+      const left = row.querySelector(".match-left")?.textContent?.trim() || "";
+      const selected = row.querySelector(
+        ".match-image-option.selected, .match-image-option.correct, .match-image-option.wrong"
+      );
+      const right =
+        selected?.dataset?.text ||
+        selected?.textContent?.trim() ||
+        selected?.querySelector("img")?.alt ||
+        "";
+      return `${left} → ${right}`;
+    }).filter(Boolean).join(" | ");
+  }
+
+  if(type === "random"){
+    const selected = question?.answers?.[RANDOM_SELECTED_INDEX];
+    return selected?.text || selected?.image || "Trainer evaluation";
+  }
+
+  if(type === "wheel"){
+    const selected = question?.answers?.[WHEEL_SELECTED_INDEX];
+    return selected?.right || selected?.text || "Trainer evaluation";
+  }
+
+  const wrongButton = document.querySelector(".student-answer.wrong");
+  if(wrongButton){
+    return wrongButton.textContent?.trim() || "";
+  }
+
+  const correctButtons = [...document.querySelectorAll(".student-answer.correct")];
+  if(correctButtons.length === 1){
+    return correctButtons[0].textContent?.trim() || "";
+  }
+
+  return "";
+}
+
+function recordCurrentAnswerLog(isCorrect,participantAnswer=""){
+  const question =
+    CURRENT_ACTIVITY?.questions?.[CURRENT_QUESTION_INDEX];
+
+  if(!question){
+    return;
+  }
+
+  const questionId = getQuestionId(question);
+  const entry = {
+    questionId,
+    questionNumber:CURRENT_QUESTION_INDEX + 1,
+    type:String(question?.type || "mcq"),
+    question:String(question?.text || ""),
+    questionText:String(question?.text || ""),
+    participantAnswer:
+      participantAnswer ||
+      getCurrentParticipantAnswer(question),
+    studentAnswer:
+      participantAnswer ||
+      getCurrentParticipantAnswer(question),
+    correctAnswer:formatCorrectAnswerForLog(question),
+    correct:Boolean(isCorrect),
+    isCorrect:Boolean(isCorrect)
+  };
+
+  const existingIndex =
+    CURRENT_ANSWER_LOG.findIndex(item=>
+      String(item?.questionId || "") === questionId
+    );
+
+  if(existingIndex >= 0){
+    CURRENT_ANSWER_LOG[existingIndex] = entry;
+  }else{
+    CURRENT_ANSWER_LOG.push(entry);
+  }
+}
 let ACTIVITY_TIMER_INTERVAL = null;
 let ACTIVITY_TIME_LEFT = 0;
 let ACTIVITY_FINISHED = false;
@@ -3912,6 +4044,8 @@ function addQuestion(data = null){
   box.className = "question-box";
   box.dataset.key = key;
   box.dataset.type = q.type || "mcq";
+  box.dataset.questionId =
+    String(q.id || q.questionId || createStableQuestionId());
 
   const savedMediaType =
     q.mediaType ||
@@ -5079,7 +5213,12 @@ function collectQuestions(){
 
 }
 
+    const questionId =
+      String(box.dataset.questionId || createStableQuestionId());
+
     questions.push({
+      id:questionId,
+      questionId,
       type,
       text:(type === "random" && !text)
         ? "Look at the selected image and answer the question."
@@ -9208,7 +9347,16 @@ function startRandomImageSelection(){
 /* =====================================
    UNIFIED TEAM / PARTICIPANT ANSWER SYNC
 ===================================== */
-function syncCurrentAnswerResult(isCorrect, raceSteps = 1){
+function syncCurrentAnswerResult(
+  isCorrect,
+  raceSteps = 1,
+  participantAnswer = ""
+){
+  recordCurrentAnswerLog(
+    Boolean(isCorrect),
+    participantAnswer
+  );
+
   /*
     This page can also be used with versions that provide
     recordCurrentTeamAnswer(). Calling it conditionally keeps
@@ -10327,7 +10475,11 @@ function chooseAnswer(answerIndex,clickedButton){
 
 }
 
-  syncCurrentAnswerResult(Boolean(selected?.correct));
+  syncCurrentAnswerResult(
+    Boolean(selected?.correct),
+    1,
+    selected?.text || selected?.image || ""
+  );
 
   if(String(question?.type || "").toLowerCase() === "bomb"){
     updateBombAfterAnswer(Boolean(selected.correct));
@@ -11062,6 +11214,24 @@ async function finishActivity(){
         percent:
           percent,
 
+        /*
+          answerLog keeps the participant answer and correctness.
+          questionId links every saved answer to the current question
+          in FunActivities, so reports can display later edits automatically.
+        */
+        answerLog:
+          CURRENT_ANSWER_LOG.map(item=>({...item})),
+
+        questionsSnapshot:
+          (CURRENT_ACTIVITY?.questions || []).map((question,index)=>({
+            ...question,
+            id:getQuestionId(question,index),
+            questionId:getQuestionId(question,index)
+          })),
+
+        activityUpdatedAtSnapshot:
+          CURRENT_ACTIVITY?.updatedAt || null,
+
         timerType:
           CURRENT_ACTIVITY
             ?.timerType ||
@@ -11135,6 +11305,8 @@ function restartGame(){
   CURRENT_QUESTION_INDEX = 0;
   CURRENT_SCORE = 0;
   ANSWER_LOCKED = false;
+  CURRENT_ANSWER_LOG = [];
+  CURRENT_ANSWER_LOG = [];
   ACTIVITY_FINISHED = false;
 
   setupRaceGame();
