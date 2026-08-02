@@ -6723,9 +6723,10 @@ async function saveActivity(){
       ? collectQuestions()
       : cloneQuestions(LOCKED_QUESTIONS_SNAPSHOT);
 
-    if(!IS_ADMIN_USER && !EDIT_ACTIVITY_ID){
-      throw new Error("Only the admin user can create a new activity.");
-    }
+    /*
+      جميع المستخدمين المسجلين يمكنهم إنشاء نشاط جديد.
+      تبقى صلاحية قفل وفتح الأسئلة للمشرف فقط.
+    */
 const timerType =
   document
     .getElementById("activityTimerType")
