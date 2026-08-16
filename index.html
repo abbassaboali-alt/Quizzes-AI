@@ -6736,6 +6736,7 @@ function parseDirectImportedQuestions(sourceText){
 async function importSelectedSourceFileDirectly(sourceFile){
 
   const button = document.getElementById("importQuestionsBtn");
+  const questionsContainer = document.getElementById("questionsContainer");
 
   button.disabled = true;
   button.innerHTML = `
@@ -6759,9 +6760,30 @@ async function importSelectedSourceFileDirectly(sourceFile){
     );
   }
 
-  document.getElementById("questionsContainer").innerHTML = "";
-  QUESTION_COUNTER = 0;
+  /*
+    إذا كان هناك نشاط محفوظ مفتوح حاليًا للتعديل:
+    لا نمسح الأسئلة الحالية، بل نضيف الأسئلة المستوردة في النهاية.
 
+    أما عند الاستيراد في نموذج نشاط جديد:
+    نحافظ على السلوك السابق ونبدأ بالأسئلة المستوردة فقط.
+  */
+  const isEditingExistingActivity = Boolean(EDIT_ACTIVITY_ID);
+
+  let previousQuestionCount =
+    questionsContainer
+      ? questionsContainer.querySelectorAll(".question-box").length
+      : 0;
+
+  if(!isEditingExistingActivity){
+    questionsContainer.innerHTML = "";
+    QUESTION_COUNTER = 0;
+    previousQuestionCount = 0;
+  }
+
+  /*
+    addQuestion يضيف كل سؤال إلى نهاية questionsContainer،
+    ولذلك يحافظ الاستيراد على ترتيب الأسئلة الموجود في Word / PDF / TXT.
+  */
   importedQuestions.forEach(question=>{
     addQuestion(question);
   });
@@ -6795,23 +6817,67 @@ async function importSelectedSourceFileDirectly(sourceFile){
       });
   }
 
+  /*
+    إعادة ترقيم جميع الأسئلة بعد الإضافة:
+    الأسئلة القديمة أولًا، ثم المستوردة في النهاية.
+  */
   refreshQuestionNumbers();
 
-  if(!readText("activityTitle")){
+  /*
+    لا نغيّر اسم النشاط المفتوح للتعديل.
+    اسم الملف يُستخدم فقط عند إنشاء نشاط جديد وكان العنوان فارغًا.
+  */
+  if(
+    !isEditingExistingActivity &&
+    !readText("activityTitle")
+  ){
     const cleanName = String(sourceFile.name || "Imported Activity")
       .replace(/\.(docx|pdf|txt)$/i, "")
       .trim();
 
-    document.getElementById("activityTitle").value = cleanName || "Imported Activity";
+    document.getElementById("activityTitle").value =
+      cleanName || "Imported Activity";
   }
 
   setImportProgress("Questions imported successfully .", 100);
-  toast(`Imported ${importedQuestions.length} questions  ✅`);
 
-  document.getElementById("questionsContainer").scrollIntoView({
-    behavior: "smooth",
-    block: "start"
-  });
+  const totalQuestionCount =
+    questionsContainer
+      ? questionsContainer.querySelectorAll(".question-box").length
+      : importedQuestions.length;
+
+  if(isEditingExistingActivity){
+    toast(
+      `Added ${importedQuestions.length} questions to the current activity ✅ ` +
+      `Total: ${totalQuestionCount}`
+    );
+  }else{
+    toast(`Imported ${importedQuestions.length} questions ✅`);
+  }
+
+  /*
+    بعد الإضافة ننتقل إلى أول سؤال مستورد،
+    وليس إلى بداية الأسئلة القديمة.
+  */
+  const allQuestionBoxes =
+    questionsContainer
+      ? questionsContainer.querySelectorAll(".question-box")
+      : [];
+
+  const firstImportedQuestion =
+    allQuestionBoxes[previousQuestionCount] || null;
+
+  if(firstImportedQuestion){
+    firstImportedQuestion.scrollIntoView({
+      behavior: "smooth",
+      block: "center"
+    });
+  }else if(questionsContainer){
+    questionsContainer.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+  }
 }
 
 async function importQuestionsFromSelectedFile(){
