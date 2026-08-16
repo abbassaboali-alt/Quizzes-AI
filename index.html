@@ -941,6 +941,12 @@ button{cursor:pointer}
 .question-box[data-type="wheelmcq"] .match-right-field{display:none}
 .question-box[data-type="wheelmcq"] .answer-image-field{display:block}
 .question-box[data-type="wheelmcq"] .correct-row{display:flex}
+.wheel-mcq-mode-field{display:none}
+.question-box[data-type="wheelmcq"] .wheel-mcq-mode-field{display:block}
+.question-box[data-type="wheelmcq"][data-wheel-mode="correctwrong"] .answers-admin,
+.question-box[data-type="wheelmcq"][data-wheel-mode="correctwrong"] .answers-admin + .btn{
+  display:none!important;
+}
 
 .wheel-mcq-game{text-align:center}
 .wheel-mcq-instruction{
@@ -2913,6 +2919,7 @@ let WHEEL_POINTS_MULTIPLIER = 1;
 let WHEEL_MCQ_IS_SPINNING = false;
 let WHEEL_MCQ_SELECTED_QUESTION_INDEX = -1;
 let WHEEL_MCQ_SELECTED_ANSWER_INDEX = -1;
+let WHEEL_MCQ_GRADED = false;
 let WHEEL_MCQ_ROTATION = 0;
 let WHEEL_MCQ_NUMBER_MAP = new Map();
 let WHEEL_MCQ_TEAMS = [];
@@ -4123,6 +4130,7 @@ function addQuestion(data = null){
 
   const q = data || {
     type:"mcq",
+    wheelAnswerMode:"mcq",
     text:"",
     mediaType:"none",
     mediaUrl:"",
@@ -4141,6 +4149,7 @@ function addQuestion(data = null){
   box.className = "question-box";
   box.dataset.key = key;
   box.dataset.type = q.type || "mcq";
+  box.dataset.wheelMode = String(q.wheelAnswerMode || "mcq").toLowerCase();
   box.dataset.questionId =
     String(q.id || q.questionId || createStableQuestionId());
 
@@ -4203,6 +4212,14 @@ function addQuestion(data = null){
           <option value="bomb" ${q.type === "bomb" ? "selected" : ""}>💣 Bomb Defuse</option>
         </select>
         <div class="question-type-note q-type-note"></div>
+
+        <div class="field wheel-mcq-mode-field" style="margin-top:10px">
+          <label>Wheel Question Answer Mode</label>
+          <select class="q-wheel-answer-mode" onchange="updateWheelMcqAnswerMode(this.closest('.question-box'))">
+            <option value="mcq" ${String(q.wheelAnswerMode || "mcq").toLowerCase() !== "correctwrong" ? "selected" : ""}>Multiple Choice</option>
+            <option value="correctwrong" ${String(q.wheelAnswerMode || "").toLowerCase() === "correctwrong" ? "selected" : ""}>Correct / Wrong</option>
+          </select>
+        </div>
       </div>
 
       <div class="field">
@@ -4629,7 +4646,7 @@ else if(type === "order"){
   }else if(type === "wheelmcq"){
 
     note.textContent =
-      "Wheel + Multiple Choice: each question is one numbered wheel section. Enter the question and its answer choices, then select the correct answer. During play, answered question numbers disappear from the wheel and the trainer awards team points manually.";
+      "Wheel question: choose Multiple Choice or Correct / Wrong for this question. The wheel displays question numbers only; after answering, the trainer awards points manually and the answered number disappears.";
 
     labels.forEach(label=>{
       label.textContent =
@@ -4640,6 +4657,8 @@ else if(type === "order"){
       addButton.innerHTML =
         '<i class="fa-solid fa-plus"></i> Add Answer Choice';
     }
+
+    updateWheelMcqAnswerMode(questionBox);
 
   }else if(type === "wheel"){
 
@@ -4713,6 +4732,41 @@ else if(type === "order"){
 
   }
 
+}
+
+function updateWheelMcqAnswerMode(questionBox){
+  if(!questionBox) return;
+
+  const type = questionBox.querySelector(".q-type")?.value || "mcq";
+  const modeSelect = questionBox.querySelector(".q-wheel-answer-mode");
+  const mode = String(modeSelect?.value || "mcq").toLowerCase();
+
+  questionBox.dataset.wheelMode =
+    (type === "wheelmcq" && mode === "correctwrong")
+      ? "correctwrong"
+      : "mcq";
+
+  const note = questionBox.querySelector(".q-type-note");
+  const labels = questionBox.querySelectorAll(".a-text-label");
+  const addButton = questionBox.querySelector(".answers-admin + .btn");
+
+  if(type !== "wheelmcq") return;
+
+  if(mode === "correctwrong"){
+    if(note){
+      note.textContent =
+        "Wheel + Correct / Wrong: after the wheel stops, the trainer sees the question and chooses Correct or Wrong. No answer choices are required. Points are entered manually afterward.";
+    }
+  }else{
+    if(note){
+      note.textContent =
+        "Wheel + Multiple Choice: after the wheel stops, the question and its answer choices appear. Select the correct answer in the editor. Points are entered manually afterward.";
+    }
+    labels.forEach(label=>{ label.textContent = "Answer Choice"; });
+    if(addButton){
+      addButton.innerHTML = '<i class="fa-solid fa-plus"></i> Add Answer Choice';
+    }
+  }
 }
 
 function addAnswer(button){
@@ -4826,6 +4880,9 @@ function readQuestionBoxData(box){
         ".q-type"
       )?.value ||
       "mcq",
+
+    wheelAnswerMode:
+      box.querySelector(".q-wheel-answer-mode")?.value || "mcq",
 
     text:
       box.querySelector(
@@ -5193,6 +5250,10 @@ function collectQuestions(){
 
   document.querySelectorAll(".question-box").forEach((box,index)=>{
     const type = box.querySelector(".q-type")?.value || "mcq";
+    const wheelAnswerMode =
+      type === "wheelmcq"
+        ? String(box.querySelector(".q-wheel-answer-mode")?.value || "mcq").toLowerCase()
+        : "mcq";
     const text = box.querySelector(".q-text").value.trim();
     const mediaType = box.querySelector(".q-media-type")?.value || "none";
     const mediaUrl = box.querySelector(".q-media-url")?.value.trim() || "";
@@ -5212,11 +5273,11 @@ function collectQuestions(){
       throw new Error(`Enter the text or instructions for question ${index + 1}.`);
     }
 
-    if(answers.length < 2){
+    if(answers.length < 2 && !(type === "wheelmcq" && wheelAnswerMode === "correctwrong")){
       throw new Error(`Question ${index + 1} requires at least two items.`);
     }
 
-    if(type === "mcq" || type === "wheelmcq" || type === "balloon" || type === "mystery" || type === "bomb"){
+    if(type === "mcq" || (type === "wheelmcq" && wheelAnswerMode === "mcq") || type === "balloon" || type === "mystery" || type === "bomb"){
       if(!answers.some(answer=>answer.correct)){
         throw new Error(`Select the correct answer for question ${index + 1}.`);
       }
@@ -5333,6 +5394,7 @@ function collectQuestions(){
       id:questionId,
       questionId,
       type,
+      wheelAnswerMode,
       text:(type === "random" && !text)
         ? "Look at the selected image and answer the question."
         : (type === "wheel" && !text
@@ -5349,7 +5411,7 @@ function collectQuestions(){
       image:mediaType === "image" ? mediaUrl : "",
       video:mediaType === "video" ? mediaUrl : "",
       audio:mediaType === "audio" ? mediaUrl : "",
-      answers
+      answers:(type === "wheelmcq" && wheelAnswerMode === "correctwrong") ? [] : answers
     });
   });
 
@@ -9661,6 +9723,7 @@ function renderWheelMcqQuestion(question,answersBox){
   answersBox.className = "wheel-mcq-game";
   WHEEL_MCQ_SELECTED_QUESTION_INDEX = -1;
   WHEEL_MCQ_SELECTED_ANSWER_INDEX = -1;
+  WHEEL_MCQ_GRADED = false;
   WHEEL_MCQ_IS_SPINNING = false;
 
   if(!remainingIndexes.length){
@@ -9682,8 +9745,8 @@ function renderWheelMcqQuestion(question,answersBox){
 
   answersBox.innerHTML = `
     <div class="wheel-mcq-instruction">
-      The wheel shows question numbers only. After the wheel stops, the selected multiple-choice question will appear.
-      Once points are awarded, that question will not appear on the wheel again.
+      The wheel shows question numbers only. After it stops, the selected question will appear in its saved mode:
+      Multiple Choice or Correct / Wrong. Once points are awarded, that question will not appear on the wheel again.
     </div>
 
     <div class="wheel-mcq-remaining">
@@ -9789,21 +9852,44 @@ function spinWheelMcq(){
     const card =
       document.getElementById("wheelMcqQuestionCard");
 
+    const answerMode =
+      String(selectedQuestion.wheelAnswerMode || "mcq").toLowerCase();
+
+    WHEEL_MCQ_SELECTED_ANSWER_INDEX = -1;
+    WHEEL_MCQ_GRADED = false;
+
     card.innerHTML = `
-      <div class="wheel-mcq-question-number">Question ${number}</div>
+      <div class="wheel-mcq-question-number">
+        Question ${number} · ${answerMode === "correctwrong" ? "Correct / Wrong" : "Multiple Choice"}
+      </div>
       <div class="wheel-mcq-question-text">${esc(selectedQuestion.text || "")}</div>
       ${buildWheelMcqMedia(selectedQuestion)}
-      <div class="wheel-mcq-options">
-        ${(selectedQuestion.answers || []).map((answer,index)=>`
-          <button
-            class="wheel-mcq-option"
-            type="button"
-            onclick="chooseWheelMcqAnswer(${index},this)">
-            ${answer.image ? `<img src="${esc(answer.image)}" alt="">` : ""}
-            ${answer.text ? `<div>${esc(answer.text)}</div>` : ""}
-          </button>
-        `).join("")}
-      </div>
+      ${
+        answerMode === "correctwrong"
+          ? `
+            <div class="wheel-controls">
+              <button class="btn wheel-correct" type="button" onclick="gradeWheelMcqCorrectWrong(true,this)">
+                <i class="fa-solid fa-check"></i> Correct
+              </button>
+              <button class="btn wheel-wrong" type="button" onclick="gradeWheelMcqCorrectWrong(false,this)">
+                <i class="fa-solid fa-xmark"></i> Wrong
+              </button>
+            </div>
+          `
+          : `
+            <div class="wheel-mcq-options">
+              ${(selectedQuestion.answers || []).map((answer,index)=>`
+                <button
+                  class="wheel-mcq-option"
+                  type="button"
+                  onclick="chooseWheelMcqAnswer(${index},this)">
+                  ${answer.image ? `<img src="${esc(answer.image)}" alt="">` : ""}
+                  ${answer.text ? `<div>${esc(answer.text)}</div>` : ""}
+                </button>
+              `).join("")}
+            </div>
+          `
+      }
     `;
 
     card.classList.remove("hidden");
@@ -9832,6 +9918,7 @@ function chooseWheelMcqAnswer(answerIndex,clickedButton){
   if(!question || !selected) return;
 
   WHEEL_MCQ_SELECTED_ANSWER_INDEX = answerIndex;
+  WHEEL_MCQ_GRADED = true;
 
   const buttons =
     [...document.querySelectorAll(".wheel-mcq-option")];
@@ -9874,12 +9961,54 @@ function chooseWheelMcqAnswer(answerIndex,clickedButton){
   renderWheelMcqScoreboard();
 }
 
+function gradeWheelMcqCorrectWrong(isCorrect,clickedButton){
+  if(
+    ANSWER_LOCKED ||
+    WHEEL_MCQ_IS_SPINNING ||
+    WHEEL_MCQ_SELECTED_QUESTION_INDEX < 0 ||
+    WHEEL_MCQ_GRADED
+  ) return;
+
+  const question = CURRENT_ACTIVITY?.questions?.[CURRENT_QUESTION_INDEX];
+  if(!question) return;
+
+  WHEEL_MCQ_GRADED = true;
+  WHEEL_MCQ_SELECTED_ANSWER_INDEX = isCorrect ? 0 : 1;
+
+  document.querySelectorAll("#wheelMcqQuestionCard .wheel-controls .btn")
+    .forEach(button=>{ button.disabled = true; });
+
+  if(clickedButton){
+    clickedButton.classList.add(isCorrect ? "correct" : "wrong");
+  }
+
+  const feedback = document.getElementById("feedback");
+  feedback.className = "feedback " + (isCorrect ? "good" : "bad");
+  feedback.textContent = isCorrect
+    ? "✅ Correct — enter the points for the team."
+    : "❌ Wrong — enter the points you want to award manually.";
+
+  if(isCorrect){
+    playCorrectSound();
+  }else{
+    playWrongSound();
+  }
+
+  recordCurrentAnswerLog(
+    Boolean(isCorrect),
+    isCorrect ? "Correct" : "Wrong"
+  );
+
+  document.getElementById("wheelMcqScorePanel")?.classList.remove("hidden");
+  renderWheelMcqScoreboard();
+}
+
 function awardWheelMcqPoints(){
   if(
-    WHEEL_MCQ_SELECTED_ANSWER_INDEX < 0 ||
+    !WHEEL_MCQ_GRADED ||
     ANSWER_LOCKED
   ){
-    alert("Choose an answer first.");
+    alert("Grade the question first.");
     return;
   }
 
