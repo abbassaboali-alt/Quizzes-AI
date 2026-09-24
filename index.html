@@ -10197,13 +10197,26 @@ function renderAdminActivities(){
                 !activity.questionsLocked
               )
                 ? `
-                  <button
-                    class="btn btn-danger"
-                    onclick="closeSavedActivitiesTypeModal();deleteActivity('${activity.id}')">
-
-                    <i class="fa-solid fa-trash"></i>
-                    Delete
-                  </button>
+                  ${
+  activity.questionsLocked
+    ? `
+      <button
+        class="btn btn-light"
+        type="button"
+        disabled
+        title="Unlock Questions first before deleting this activity">
+        <i class="fa-solid fa-lock"></i>
+        Delete Locked
+      </button>
+    `
+    : `
+      <button class="btn btn-danger"
+        onclick="closeSavedActivitiesTypeModal();deleteActivity('${activity.id}')">
+        <i class="fa-solid fa-trash"></i>
+        Delete
+      </button>
+    `
+}
                 `
                 : ""
             }
@@ -10456,6 +10469,16 @@ function editActivity(id){
 }
 
 async function deleteActivity(id){
+  const activity = ACTIVITIES_CACHE.find(item => item.id === id);
+
+  if(activity && activity.questionsLocked === true){
+    alert(
+      "🔒 This activity is locked.\n\n" +
+      "Unlock Questions first before deleting the activity."
+    );
+    return;
+  }
+
 
   const activity =
     ACTIVITIES_CACHE.find(item=>item.id === id);
