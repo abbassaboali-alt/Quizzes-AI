@@ -10469,17 +10469,6 @@ function editActivity(id){
 }
 
 async function deleteActivity(id){
-  const activity = ACTIVITIES_CACHE.find(item => item.id === id);
-
-  if(activity && activity.questionsLocked === true){
-    alert(
-      "🔒 This activity is locked.\n\n" +
-      "Unlock Questions first before deleting the activity."
-    );
-    return;
-  }
-
-
   const activity =
     ACTIVITIES_CACHE.find(item=>item.id === id);
 
@@ -10488,17 +10477,10 @@ async function deleteActivity(id){
     return;
   }
 
-  /*
-    Admin can always delete.
-    Other users can delete only while questions are unlocked.
-  */
-  if(
-    !IS_ADMIN_USER &&
-    activity.questionsLocked === true
-  ){
+  if(activity.questionsLocked === true){
     alert(
-      "This activity cannot be deleted because its questions are locked. " +
-      "Only the admin can delete a locked activity."
+      "🔒 This activity is locked.\n\n" +
+      "Unlock Questions first before deleting the activity."
     );
     return;
   }
