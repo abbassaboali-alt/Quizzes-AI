@@ -277,6 +277,265 @@ button{cursor:pointer}
   padding:35px 10px;
   font-weight:800;
 }
+/* Saved Activities — interactive question type cards */
+.saved-type-browser{margin:14px 0 18px}
+.saved-type-browser-title{font-size:18px;font-weight:900;color:var(--blue);margin-bottom:3px}
+.saved-type-browser-subtitle{color:var(--muted);font-size:12px;font-weight:700;margin-bottom:12px}
+.saved-type-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.saved-type-card{position:relative;min-height:145px;padding:17px;border:1.5px solid var(--border);border-radius:22px;background:#fff;color:var(--text);text-align:left;overflow:hidden;box-shadow:0 8px 22px rgba(22,68,120,.06);transition:.2s}
+.saved-type-card:after{content:"";position:absolute;width:86px;height:86px;right:-28px;top:-28px;border-radius:50%;background:var(--type-soft,#eef6fd)}
+.saved-type-card:hover{transform:translateY(-3px);border-color:var(--type-color,var(--blue2));box-shadow:0 14px 28px rgba(22,68,120,.12)}
+.saved-type-card.active{border:2px solid var(--type-color,var(--blue2));background:linear-gradient(145deg,#fff,var(--type-soft,#f4f9fd))}
+.saved-type-card-top{position:relative;z-index:1;display:flex;align-items:center;gap:11px;padding-right:20px}
+.saved-type-card-icon{width:50px;height:50px;flex:0 0 50px;display:grid;place-items:center;border-radius:15px;background:var(--type-soft,#eef6fd);color:var(--type-color,var(--blue));font-size:22px}
+.saved-type-card-name{font-size:15px;line-height:1.35;font-weight:900;color:#102f4d}
+.saved-type-card-bottom{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:17px}
+.saved-type-card-count{color:var(--muted);font-size:12px;font-weight:800}
+.saved-type-card-number{min-width:38px;height:38px;padding:0 10px;border-radius:999px;display:grid;place-items:center;background:var(--type-color,var(--blue));color:#fff;font-weight:900}
+.saved-type-card.all-type{--type-color:#164478;--type-soft:#edf4fa}
+@media(max-width:850px){.saved-type-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.saved-type-cards{grid-template-columns:1fr}.saved-type-card{min-height:125px}}
+
+
+/* =========================================================
+   SAVED ACTIVITIES — INTERACTIVE DESIGN CARDS
+   Uses the same visual language as the former design preview.
+========================================================= */
+.saved-type-cards{
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:14px;
+}
+.saved-type-card{
+  --kid-accent:var(--type-color,#2467a5);
+  --kid-soft:var(--type-soft,#eef6fd);
+  width:100%;
+  min-height:235px;
+  padding:17px;
+  border:1px solid #dce6ef;
+  border-radius:22px;
+  background:#fff;
+  color:var(--text);
+  text-align:left;
+  font:inherit;
+  box-shadow:0 9px 24px rgba(22,68,120,.08);
+  transition:transform .2s,box-shadow .2s,border-color .2s;
+  position:relative;
+  overflow:hidden;
+}
+.saved-type-card:hover{
+  transform:translateY(-4px);
+  box-shadow:0 16px 30px rgba(22,68,120,.14);
+  border-color:var(--kid-accent);
+}
+.saved-type-card.active{
+  border:2px solid var(--kid-accent);
+  background:#fff;
+}
+.saved-type-card:after{
+  content:"";
+  position:absolute;
+  right:-28px;
+  top:-28px;
+  width:88px;
+  height:88px;
+  border-radius:50%;
+  background:var(--kid-soft);
+}
+.saved-type-card-top{
+  position:relative;
+  z-index:1;
+  display:flex;
+  align-items:center;
+  gap:11px;
+  padding-right:0;
+}
+.saved-type-card-icon{
+  width:52px;
+  height:52px;
+  flex:0 0 52px;
+  display:grid;
+  place-items:center;
+  border-radius:17px;
+  background:var(--kid-soft);
+  color:var(--kid-accent);
+  font-size:24px;
+}
+.saved-type-card-title-wrap{min-width:0;flex:1}
+.saved-type-card-name{
+  display:block;
+  font-size:16px;
+  line-height:1.35;
+  font-weight:900;
+  color:var(--text);
+}
+.saved-type-card-tag{
+  display:inline-flex;
+  margin-top:5px;
+  padding:4px 8px;
+  border-radius:999px;
+  background:var(--kid-soft);
+  color:var(--kid-accent);
+  font-size:10px;
+  font-weight:900;
+}
+.saved-type-card-desc{
+  position:relative;
+  z-index:1;
+  margin:13px 0 12px;
+  color:var(--muted);
+  font-size:12px;
+  font-weight:700;
+  line-height:1.65;
+}
+.saved-type-mini-stage{
+  min-height:82px;
+  border-radius:16px;
+  padding:10px;
+  background:linear-gradient(145deg,var(--kid-soft),#fff);
+  border:1px dashed color-mix(in srgb,var(--kid-accent) 38%, #dce6ef);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  flex-wrap:wrap;
+  position:relative;
+  z-index:1;
+}
+.saved-type-mini-pill{
+  padding:7px 10px;
+  border-radius:11px;
+  background:#fff;
+  border:1px solid #dce6ef;
+  font-size:11px;
+  font-weight:900;
+  box-shadow:0 3px 8px rgba(22,68,120,.06);
+}
+.saved-type-mini-play{
+  width:39px;height:39px;border-radius:50%;
+  display:grid;place-items:center;
+  background:var(--kid-accent);color:#fff;
+  font-size:15px;box-shadow:0 6px 14px rgba(22,68,120,.18);
+}
+.saved-type-mini-outline{
+  width:39px;height:39px;border-radius:50%;
+  display:grid;place-items:center;background:#fff;color:var(--kid-accent);
+  border:2px solid var(--kid-accent);
+}
+.saved-type-letter{
+  width:32px;height:35px;border-radius:9px;background:#fff;
+  border:2px solid var(--kid-accent);display:grid;place-items:center;
+  color:var(--kid-accent);font-weight:900;font-size:13px;
+}
+.saved-type-word-chip{
+  padding:7px 9px;border-radius:10px;background:#fff;
+  border:1px solid #dce6ef;font-weight:900;font-size:11px;
+}
+.saved-type-catch-dot{
+  position:absolute;width:58px;min-height:30px;border-radius:999px;
+  display:grid;place-items:center;background:#fff;
+  border:2px solid var(--kid-accent);color:var(--kid-accent);
+  font-size:10px;font-weight:900;
+}
+.saved-type-catch-dot.one{left:8px;top:8px;transform:rotate(-4deg)}
+.saved-type-catch-dot.two{right:8px;top:10px;transform:rotate(5deg)}
+.saved-type-catch-dot.three{left:50%;bottom:7px;transform:translateX(-50%)}
+.saved-type-move-count{
+  width:38px;height:38px;border-radius:50%;display:grid;place-items:center;
+  background:var(--kid-accent);color:#fff;font-weight:900;font-size:18px;
+}
+.saved-type-move-go{font-size:23px;font-weight:900;color:var(--kid-accent)}
+.saved-type-count{
+  position:absolute;
+  right:11px;
+  bottom:9px;
+  z-index:3;
+  min-width:31px;
+  height:31px;
+  padding:0 8px;
+  border-radius:999px;
+  display:grid;
+  place-items:center;
+  background:var(--kid-accent);
+  color:#fff;
+  font-size:11px;
+  font-weight:900;
+  box-shadow:0 5px 12px rgba(22,68,120,.14);
+}
+.saved-type-card.all-type{
+  --type-color:#164478;
+  --type-soft:#edf4fa;
+  --kid-accent:#164478;
+  --kid-soft:#edf4fa;
+}
+@media(max-width:950px){
+  .saved-type-cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:620px){
+  .saved-type-cards{grid-template-columns:1fr}
+  .saved-type-card{min-height:auto}
+}
+
+/* Saved Activities — type popup */
+.saved-activities-type-modal{
+  position:fixed;inset:0;z-index:5000;display:none;align-items:center;justify-content:center;
+  padding:22px;background:rgba(12,34,54,.6);backdrop-filter:blur(5px)
+}
+.saved-activities-type-modal.show{display:flex}
+.saved-activities-type-dialog{
+  width:min(1180px,96vw);max-height:92vh;overflow:hidden;background:#fff;
+  border:1px solid var(--border);border-radius:24px;box-shadow:0 30px 80px rgba(0,0,0,.28);
+  display:flex;flex-direction:column
+}
+.saved-activities-type-head{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  padding:17px 20px;border-bottom:1px solid var(--border);background:#f8fbfd
+}
+.saved-activities-type-title{font-size:19px;font-weight:900;color:var(--blue)}
+.saved-activities-type-close{
+  width:44px;height:44px;border:0;border-radius:14px;background:#edf4fa;color:var(--blue);
+  display:grid;place-items:center;font-size:20px
+}
+.saved-activities-popup-search{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin:14px 18px 0;
+  padding:0 12px;
+  min-height:48px;
+  border:1px solid var(--border);
+  border-radius:14px;
+  background:#fff;
+  box-shadow:0 5px 14px rgba(22,68,120,.05);
+}
+.saved-activities-popup-search > i{color:var(--blue);font-size:15px}
+.saved-activities-popup-search input{
+  flex:1;
+  min-width:0;
+  height:46px;
+  border:0;
+  outline:0;
+  background:transparent;
+  color:var(--text);
+  font:inherit;
+  font-size:16px;
+}
+.saved-activities-popup-search-clear{
+  width:36px;height:36px;flex:0 0 36px;
+  border:0;border-radius:10px;
+  background:#edf4fa;color:var(--blue);
+  display:grid;place-items:center;cursor:pointer;
+}
+.saved-activities-type-body{padding:18px;overflow:auto;overscroll-behavior:contain}
+#adminActivities.saved-admin-list-inline-hidden{display:none}
+#savedActivitiesTypeModalBody #adminActivities{display:grid}
+@media(max-width:600px){
+  .saved-activities-type-modal{padding:9px}
+  .saved-activities-type-dialog{width:100%;max-height:95vh;border-radius:18px}
+  .saved-activities-type-head{padding:13px 14px}
+  .saved-activities-popup-search{margin:10px 11px 0}\n  .saved-activities-type-body{padding:11px}
+}
+
+
 
 @media(max-width:520px){
   .activity-type-logo{
@@ -527,6 +786,64 @@ button{cursor:pointer}
   .student-answer img{height:190px}
 }
 
+
+/* =====================================
+   QUESTION TYPE GROUP NAVIGATOR
+===================================== */
+.question-type-groups{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+  gap:12px;
+  margin:16px 0 18px;
+}
+.question-type-group-card{
+  border:1px solid var(--border);
+  border-radius:18px;
+  background:#fff;
+  padding:15px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  text-align:left;
+  color:var(--text);
+  box-shadow:0 7px 18px rgba(22,68,120,.06);
+  transition:.2s;
+}
+.question-type-group-card:hover{
+  transform:translateY(-2px);
+  border-color:#b8d1e6;
+  box-shadow:0 12px 24px rgba(22,68,120,.11);
+}
+.question-type-group-card.active{
+  border-color:var(--blue2);
+  box-shadow:0 0 0 3px rgba(36,103,165,.11),0 12px 24px rgba(22,68,120,.11);
+  background:#f8fbff;
+}
+.question-type-group-icon{
+  width:48px;height:48px;flex:0 0 48px;border-radius:14px;
+  display:grid;place-items:center;font-size:23px;background:#eef6fd;
+}
+.question-type-group-info{min-width:0;flex:1}
+.question-type-group-name{font-weight:900;font-size:14px;line-height:1.35}
+.question-type-group-count{
+  margin-top:4px;color:var(--muted);font-size:12px;font-weight:800
+}
+.question-type-group-badge{
+  min-width:34px;height:34px;padding:0 9px;border-radius:999px;
+  display:grid;place-items:center;background:var(--blue);color:#fff;font-weight:900
+}
+.question-box.type-group-hidden{display:none!important}
+@media(max-width:650px){
+  .question-type-groups{grid-template-columns:1fr 1fr;gap:8px}
+  .question-type-group-card{padding:11px;gap:9px}
+  .question-type-group-icon{width:40px;height:40px;flex-basis:40px;font-size:19px}
+  .question-type-group-name{font-size:12px}
+}
+@media(max-width:420px){
+  .question-type-groups{grid-template-columns:1fr}
+}
+
+
 /* ===============================
    Question File Import
 ================================ */
@@ -572,6 +889,25 @@ button{cursor:pointer}
   font-weight:900;
 }
 
+
+
+/* ===============================
+   PRUDLE AI QUESTION GENERATOR
+================================ */
+.ai-generator{border:1px solid #cfe0ef;background:linear-gradient(135deg,#f4f9ff,#fff8e8)}
+.ai-generator .ai-title{display:flex;align-items:center;gap:9px}
+.ai-generator .ai-spark{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:linear-gradient(135deg,var(--blue),#8e44ad);color:#fff}
+.ai-status{margin-top:12px;padding:11px 13px;border-radius:13px;background:#eef6fd;color:var(--blue);font-size:13px;font-weight:800;line-height:1.7}
+.ai-status.error{background:#fff0ee;color:var(--red)}
+.ai-status.success{background:#eafaf4;color:var(--green)}
+.ai-source-file{margin-top:10px}
+
+.ai-type-checks{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:9px;margin-top:10px}
+.ai-type-check{display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#fff;font-weight:800;font-size:13px}
+.ai-type-check input{width:auto;accent-color:var(--blue)}
+.ai-type-tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}
+.bulk-group-tools{display:grid;grid-template-columns:minmax(220px,1fr) auto;gap:10px;align-items:end;margin-top:14px;padding:14px;border:1px solid #cfe0ef;border-radius:15px;background:#f7fbff}
+@media(max-width:650px){.bulk-group-tools{grid-template-columns:1fr}.ai-type-checks{grid-template-columns:1fr}}
 
 /* Question types: MCQ, Match, Order */
 .question-type-note{
@@ -2098,6 +2434,165 @@ button{cursor:pointer}
   .bomb-icon{font-size:60px}
 }
 
+
+.quiz-groups-list{display:flex;gap:8px;flex-wrap:wrap;min-height:46px;align-items:center;padding:8px;border:1px solid var(--border);border-radius:13px;background:#fff}
+.quiz-group-chip{display:inline-flex;align-items:center;gap:7px;padding:7px 11px;border-radius:999px;background:#eef6fd;color:var(--blue);font-weight:900;font-size:12px}
+.quiz-group-chip button{border:0;background:transparent;color:var(--red);padding:0;margin:0;min-width:0;box-shadow:none}
+.question-group-control{margin-top:12px;padding:10px 12px;border:1px solid #cfe0ef;border-radius:13px;background:#f7fbff}
+.question-group-control label{display:block;font-weight:900;color:var(--blue);margin-bottom:6px}
+.question-group-control select{width:100%}
+.activity-owner-lock{font-weight:900}
+
+
+/* =========================================================
+   PRUDLE KIDS INTERACTIVE ACTIVITIES — DESIGN PHASE 1
+   Visual design only. Existing activity logic is untouched.
+========================================================= */
+.kids-activity-design-panel{
+  position:relative;
+  overflow:hidden;
+  border:1px solid #d7e6f3;
+  background:
+    radial-gradient(circle at 8% 8%,rgba(244,185,66,.18),transparent 20%),
+    radial-gradient(circle at 92% 12%,rgba(36,103,165,.13),transparent 22%),
+    linear-gradient(145deg,#f8fcff,#fffdf6);
+}
+.kids-activity-design-panel:before{
+  content:"";
+  position:absolute;
+  width:180px;height:180px;border-radius:50%;
+  right:-70px;bottom:-85px;
+  background:rgba(23,166,115,.08);
+  pointer-events:none;
+}
+.kids-design-heading{
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+}
+.kids-design-heading .kids-title-icon{
+  width:46px;height:46px;border-radius:15px;
+  display:grid;place-items:center;
+  background:linear-gradient(135deg,#164478,#2467a5);
+  color:#fff;font-size:22px;
+  box-shadow:0 8px 20px rgba(22,68,120,.2);
+}
+.kids-design-subtitle{
+  margin:-7px 0 18px;
+  color:var(--muted);font-size:13px;font-weight:700;line-height:1.7;
+}
+.kids-activity-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:14px;
+  position:relative;z-index:1;
+}
+.kids-activity-card{
+  --kid-accent:#2467a5;
+  --kid-soft:#eef6fd;
+  min-height:235px;
+  padding:17px;
+  border:1px solid #dce6ef;
+  border-radius:22px;
+  background:#fff;
+  box-shadow:0 9px 24px rgba(22,68,120,.08);
+  transition:transform .2s,box-shadow .2s,border-color .2s;
+  position:relative;overflow:hidden;
+}
+.kids-activity-card:hover{
+  transform:translateY(-4px);
+  box-shadow:0 16px 30px rgba(22,68,120,.14);
+  border-color:var(--kid-accent);
+}
+.kids-activity-card:after{
+  content:"";
+  position:absolute;right:-28px;top:-28px;
+  width:88px;height:88px;border-radius:50%;
+  background:var(--kid-soft);
+}
+.kids-card-top{
+  display:flex;align-items:center;gap:11px;position:relative;z-index:1;
+}
+.kids-card-icon{
+  width:52px;height:52px;flex:0 0 52px;border-radius:17px;
+  display:grid;place-items:center;
+  background:var(--kid-soft);
+  font-size:27px;
+}
+.kids-card-title{font-size:16px;font-weight:900;color:var(--text);line-height:1.35}
+.kids-card-tag{
+  display:inline-flex;margin-top:5px;padding:4px 8px;border-radius:999px;
+  background:var(--kid-soft);color:var(--kid-accent);
+  font-size:10px;font-weight:900;
+}
+.kids-card-desc{
+  margin:13px 0 12px;color:var(--muted);
+  font-size:12px;font-weight:700;line-height:1.65;
+}
+.kids-mini-stage{
+  min-height:82px;border-radius:16px;padding:10px;
+  background:linear-gradient(145deg,var(--kid-soft),#fff);
+  border:1px dashed color-mix(in srgb,var(--kid-accent) 38%, #dce6ef);
+  display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;
+  position:relative;
+}
+.kids-mini-pill{
+  padding:7px 10px;border-radius:11px;background:#fff;
+  border:1px solid #dce6ef;font-size:11px;font-weight:900;
+  box-shadow:0 3px 8px rgba(22,68,120,.06);
+}
+.kids-mini-play{
+  width:39px;height:39px;border-radius:50%;border:0;
+  display:grid;place-items:center;background:var(--kid-accent);color:#fff;
+  font-size:15px;box-shadow:0 6px 14px rgba(22,68,120,.18);
+}
+.kids-mini-mic{
+  width:39px;height:39px;border-radius:50%;
+  display:grid;place-items:center;background:#fff;color:var(--kid-accent);
+  border:2px solid var(--kid-accent);
+}
+.kids-letter{
+  width:32px;height:35px;border-radius:9px;background:#fff;
+  border:2px solid var(--kid-accent);display:grid;place-items:center;
+  color:var(--kid-accent);font-weight:900;font-size:13px;
+}
+.kids-word-chip{
+  padding:7px 9px;border-radius:10px;background:#fff;
+  border:1px solid #dce6ef;font-weight:900;font-size:11px;
+}
+.kids-catch-dot{
+  position:absolute;width:58px;min-height:30px;border-radius:999px;
+  display:grid;place-items:center;background:#fff;
+  border:2px solid var(--kid-accent);color:var(--kid-accent);
+  font-size:10px;font-weight:900;
+}
+.kids-catch-dot.one{left:8px;top:8px;transform:rotate(-4deg)}
+.kids-catch-dot.two{right:8px;top:10px;transform:rotate(5deg)}
+.kids-catch-dot.three{left:50%;bottom:7px;transform:translateX(-50%)}
+.kids-move-go{
+  font-size:23px;font-weight:900;color:var(--kid-accent);letter-spacing:.5px;
+}
+.kids-move-count{
+  width:38px;height:38px;border-radius:50%;display:grid;place-items:center;
+  background:var(--kid-accent);color:#fff;font-weight:900;font-size:18px;
+}
+.kids-activity-card.listenchoose{--kid-accent:#2467a5;--kid-soft:#eaf4ff}
+.kids-activity-card.listenrepeat{--kid-accent:#d6336c;--kid-soft:#fff0f5}
+.kids-activity-card.buildword{--kid-accent:#17a673;--kid-soft:#eafaf4}
+.kids-activity-card.buildsentence{--kid-accent:#8e44ad;--kid-soft:#f7edfb}
+.kids-activity-card.catchanswer{--kid-accent:#e67e22;--kid-soft:#fff5e9}
+.kids-activity-card.movechoose{--kid-accent:#e74c3c;--kid-soft:#fff0ee}
+.kids-design-note{
+  margin-top:15px;padding:11px 13px;border-radius:13px;
+  background:#eef6fd;color:var(--blue);font-size:12px;font-weight:800;
+  position:relative;z-index:1;
+}
+@media(max-width:950px){
+  .kids-activity-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:620px){
+  .kids-activity-grid{grid-template-columns:1fr}
+  .kids-activity-card{min-height:auto}
+}
+
 </style>
 </head>
 
@@ -2341,6 +2836,167 @@ button{cursor:pointer}
     </div>
   </div>
 
+
+  <div class="panel ai-generator" id="aiQuestionGeneratorPanel">
+    <div class="panel-title">
+      <h2 class="ai-title"><span class="ai-spark"><i class="fa-solid fa-wand-magic-sparkles"></i></span> Prudle AI Question Generator</h2>
+      <span class="badge">AI</span>
+    </div>
+
+    <div class="grid grid-3">
+      <div class="field">
+        <label>Source</label>
+        <select id="aiSourceType" onchange="updateAISourceUI()">
+          <option value="topic">Topic / Instructions</option>
+          <option value="file">PDF / Word / TXT</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Level</label>
+        <select id="aiLevel">
+          <option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option><option>C2</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Number of Questions</label>
+        <select id="aiQuestionCount">
+          <option>5</option><option selected>10</option><option>15</option><option>20</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid grid-2" style="margin-top:14px">
+      <div class="field">
+        <label>Question / Game Types</label>
+        <div class="help">
+          Select one or more types. AI will generate questions only from the checked types.
+          One checked type = one format. Multiple checked types = a mixed activity using only those types.
+        </div>
+        <div class="ai-type-checks" id="aiAllowedTypes">
+          <label class="ai-type-check"><input type="checkbox" value="mcq" checked> Multiple Choice</label>
+          <label class="ai-type-check"><input type="checkbox" value="match" checked> Match</label>
+          <label class="ai-type-check"><input type="checkbox" value="order" checked> Order / Sequence</label>
+          <label class="ai-type-check"><input type="checkbox" value="random"> Random Image Question</label>
+          <label class="ai-type-check"><input type="checkbox" value="wheelmcq"> 🎡✅ Wheel + Multiple Choice</label>
+          <label class="ai-type-check"><input type="checkbox" value="balloon"> 🎈 Balloon Pop</label>
+          <label class="ai-type-check"><input type="checkbox" value="mystery"> 🎁 Mystery Box</label>
+          <label class="ai-type-check"><input type="checkbox" value="bomb"> 💣 Bomb Defuse</label>
+          <label class="ai-type-check"><input type="checkbox" value="listenchoose"> 👂 Listen &amp; Choose</label>
+          <label class="ai-type-check"><input type="checkbox" value="listenrepeat"> 🔊 Listen &amp; Repeat</label>
+          <label class="ai-type-check"><input type="checkbox" value="buildword"> 🔤 Build the Word</label>
+          <label class="ai-type-check"><input type="checkbox" value="buildsentence"> 🧩 Build the Sentence</label>
+          <label class="ai-type-check"><input type="checkbox" value="catchanswer"> 🎯 Catch the Correct Answer</label>
+          <label class="ai-type-check"><input type="checkbox" value="movechoose"> 🏃 Move &amp; Choose</label>
+        </div>
+        <div class="ai-type-tools">
+          <button class="btn btn-light" type="button" onclick="setAIAllowedTypes(true)">Select All</button>
+          <button class="btn btn-light" type="button" onclick="setAIAllowedTypes(false)">Clear</button>
+        </div>
+          <div class="field">
+            <label>AI Media</label>
+            <select id="aiMediaChoice" onchange="updateAIImagePlacementUI()">
+              <option value="none">No Media</option>
+              <option value="image">🖼️ Images</option>
+              <option value="video">🎬 Videos</option>
+              <option value="audio">🔊 Audio</option>
+            </select>
+            <div class="help">Choose before generating. Media will be created only when selected here.</div>
+          </div>
+          <div class="field hidden" id="aiImagePlacementField">
+            <label>Where should images appear?</label>
+            <select id="aiImagePlacement">
+              <option value="question">Question only</option>
+              <option value="answers">Answers / Options only</option>
+              <option value="both">Question + Answers / Options</option>
+            </select>
+            <div class="help">
+              For Match, answer images are attached to the matching items. For Multiple Choice,
+              images can appear above the question, inside the choices, or in both places.
+            </div>
+          </div>
+        <div class="help">
+          AI follows the checked question types exactly. Unchecked types are not allowed.
+        </div>
+      </div>
+      <div class="field">
+        <label>Output Language</label>
+        <select id="aiLanguage">
+          <option value="English" selected>English</option>
+          <option value="Arabic">Arabic</option>
+          <option value="Bilingual English and Arabic">English + Arabic</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field" id="aiTopicField" style="margin-top:14px">
+      <label>Topic / Instructions</label>
+      <textarea id="aiTopic" placeholder="Example: Daily routines, Level A2. Focus on vocabulary and present simple."></textarea>
+    </div>
+
+    <div class="field ai-source-file hidden" id="aiFileField">
+      <label>Source File</label>
+      <input id="aiSourceFile" type="file" accept=".pdf,.docx,.txt">
+      <div class="help">The file is read in the browser, then its extracted text is sent to the secure AI endpoint.</div>
+    </div>
+
+    <div class="grid grid-3" style="margin-top:14px">
+      <div class="field">
+        <label>Listening Accent</label>
+        <select id="aiListeningAccent">
+          <option value="American" selected>American</option>
+          <option value="British">British</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Listening Duration</label>
+        <select id="aiListeningDuration">
+          <option value="30">30 seconds</option>
+          <option value="60" selected>1 minute</option>
+          <option value="120">2 minutes</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Listening Questions</label>
+        <select id="aiListeningCount">
+          <option>5</option><option selected>10</option><option>15</option><option>20</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="aiGenerateBtn" type="button" onclick="generateQuestionsWithAI()">
+        <i class="fa-solid fa-wand-magic-sparkles"></i> Generate Questions with AI
+      </button>
+      <button class="btn btn-gold" id="aiListeningBtn" type="button" onclick="generateListeningWithAI()">
+        <i class="fa-solid fa-headphones"></i> Generate Listening + Audio + Questions
+      </button>
+      <button class="btn btn-light" type="button" onclick="document.getElementById('aiTopic').value=''">
+        <i class="fa-solid fa-eraser"></i> Clear Instructions
+      </button>
+    </div>
+    <div id="aiGeneratorStatus" class="ai-status hidden"></div>
+  </div>
+
+  <div class="panel" id="quizGroupsPanel">
+    <div class="panel-title">
+      <h2><i class="fa-solid fa-layer-group"></i> Question Groups</h2>
+      <span class="badge">Groups</span>
+    </div>
+    <div class="grid grid-2">
+      <div class="field"><label>Create / Name a Group</label><input id="newQuizGroupName" placeholder="Example: Vocabulary, Grammar, Listening"></div>
+      <div class="field"><label>Current Groups</label><div id="quizGroupsList" class="quiz-groups-list"></div></div>
+    </div>
+    <div class="actions"><button class="btn btn-success" type="button" onclick="createQuizGroup()"><i class="fa-solid fa-folder-plus"></i> Create Group</button></div>
+    <div class="bulk-group-tools">
+      <div class="field">
+        <label><i class="fa-solid fa-layer-group"></i> Assign ALL Questions to Group</label>
+        <select id="bulkQuestionGroupSelect"></select>
+      </div>
+      <button class="btn btn-primary" type="button" onclick="applyGroupToAllQuestions()"><i class="fa-solid fa-check-double"></i> Apply to All Questions</button>
+    </div>
+    <div class="help">You can still change a single question individually, or assign every current question to one group at once.</div>
+  </div>
+
   <div class="panel">
     <div class="panel-title">
       <h2><i class="fa-solid fa-circle-question"></i> Activity Questions</h2>
@@ -2360,7 +3016,7 @@ button{cursor:pointer}
           onclick="toggleCurrentActivityQuestionLock()"
           style="display:none">
           <i class="fa-solid fa-lock"></i>
-          Lock Questions
+          Lock Quiz
         </button>
 
         <button
@@ -2378,11 +3034,17 @@ button{cursor:pointer}
       </div>
     </div>
 
+
+    <div id="questionTypeGroups" class="question-type-groups"></div>
     <div id="questionsContainer"></div>
 
     <div class="actions">
       <button class="btn btn-primary" onclick="saveActivity()">
         <i class="fa-solid fa-floppy-disk"></i> Save Activity
+      </button>
+
+      <button class="btn btn-success" type="button" onclick="testCurrentActivityWithoutSaving()">
+        <i class="fa-solid fa-play"></i> Test Activity — No Save
       </button>
 
       <button class="btn btn-light" onclick="resetEditor()">
@@ -2412,9 +3074,71 @@ button{cursor:pointer}
         oninput="renderAdminActivities()">
     </div>
 
+    <div class="grid grid-3" style="margin-bottom:14px">
+      <div class="field">
+        <label><i class="fa-solid fa-book-open"></i> Course / Level</label>
+        <select id="adminCourseFilter" onchange="refreshAdminDependentFilters();renderAdminActivities()">
+          <option value="">All Courses / Levels</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label><i class="fa-solid fa-layer-group"></i> Question Group</label>
+        <select id="adminQuestionGroupFilter" onchange="renderAdminActivities()">
+          <option value="">All Question Groups</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label><i class="fa-solid fa-tags"></i> Category / Group</label>
+        <select id="adminCategoryGroupFilter" onchange="updateAdminGroupFilter();renderAdminActivities()">
+          <option value="">All Categories / Groups</option>
+        </select>
+      </div>
+    </div>
+
     <div
       id="adminActivitySearchCount"
       class="activity-search-count">
+    </div>
+    <div id="savedActivityTypeBrowser" class="saved-type-browser">
+      <div class="saved-type-browser-title"><i class="fa-solid fa-shapes"></i> Interactive Activities</div>
+      <div class="saved-type-browser-subtitle">Choose an activity type to open its saved groups.</div>
+      <div id="savedActivityTypeCards" class="saved-type-cards"></div>
+    </div>
+
+    <div id="savedActivitiesTypeModal" class="saved-activities-type-modal"
+      onclick="closeSavedActivitiesTypeModal(event)">
+      <div class="saved-activities-type-dialog" onclick="event.stopPropagation()">
+        <div class="saved-activities-type-head">
+          <div id="savedActivitiesTypeModalTitle" class="saved-activities-type-title">
+            Saved Activity Groups
+          </div>
+          <button type="button" class="saved-activities-type-close"
+            onclick="closeSavedActivitiesTypeModal()" aria-label="Close">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <div class="saved-activities-popup-search">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input
+            id="savedActivitiesModalSearch"
+            type="search"
+            placeholder="Search saved activities..."
+            autocomplete="off"
+            oninput="syncSavedActivitiesModalSearch(this.value)">
+          <button
+            type="button"
+            class="saved-activities-popup-search-clear"
+            title="Clear search"
+            onclick="clearSavedActivitiesModalSearch()">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <div id="savedActivitiesTypeModalBody" class="saved-activities-type-body"></div>
+      </div>
     </div>
 
     <div id="adminActivities" class="activity-list"></div>
@@ -2660,6 +3384,133 @@ function logout(){
 const ACTIVITIES_COLLECTION = "FunActivities";
 const COURSES_COLLECTION = "Courses";
 const RESULTS_COLLECTION = "FunActivityResults";
+let QUIZ_GROUPS = ["General"];
+let IS_UNSAVED_TEST_MODE = false;
+function normalizePrudleUsername(value){ return String(value || "").trim().toLowerCase(); }
+function getCurrentPrudleUsername(){ return String(localStorage.getItem("username") || "").trim(); }
+function getActivityLockOwner(activity){ return normalizePrudleUsername(activity?.lockedByUsername || activity?.lockedByNormalized || activity?.lockedBy || ""); }
+function isActivityLockedForCurrentUser(activity){
+  if(!activity || activity.questionsLocked !== true) return false;
+  const owner=getActivityLockOwner(activity);
+  if(!owner) return false;
+  return owner !== normalizePrudleUsername(getCurrentPrudleUsername());
+}
+function getQuizGroups(){
+  const groups=Array.from(document.querySelectorAll(".q-group-select")).map(el=>String(el.value||"").trim()).filter(Boolean);
+  return [...new Set(["General",...QUIZ_GROUPS,...groups])];
+}
+function renderQuizGroups(){
+  QUIZ_GROUPS=[...new Set(["General",...QUIZ_GROUPS.map(x=>String(x||"").trim()).filter(Boolean)])];
+  const list=document.getElementById("quizGroupsList");
+  if(list){ list.innerHTML=QUIZ_GROUPS.map(name=>`<span class="quiz-group-chip"><i class="fa-solid fa-folder"></i> ${esc(name)} ${name!=="General"?`<button type="button" title="Delete group" onclick='deleteQuizGroup(${JSON.stringify(name)})'><i class="fa-solid fa-xmark"></i></button>`:""}</span>`).join(""); }
+  const bulk=document.getElementById("bulkQuestionGroupSelect");
+  if(bulk){
+    const current=String(bulk.value||"General");
+    bulk.innerHTML=QUIZ_GROUPS.map(g=>`<option value="${esc(g)}">${esc(g)}</option>`).join("");
+    bulk.value=QUIZ_GROUPS.includes(current)?current:"General";
+  }
+  refreshQuestionGroupSelects();
+}
+function createQuizGroup(){
+  const input=document.getElementById("newQuizGroupName"); const name=String(input?.value||"").trim();
+  if(!name){alert("Enter a group name.");return;}
+  if(!QUIZ_GROUPS.some(g=>g.toLowerCase()===name.toLowerCase())) QUIZ_GROUPS.push(name);
+  if(input) input.value=""; renderQuizGroups();
+}
+function applyGroupToAllQuestions(){
+  const group=String(document.getElementById("bulkQuestionGroupSelect")?.value||"General").trim()||"General";
+  const selects=Array.from(document.querySelectorAll(".q-group-select"));
+  if(!selects.length){ toast("No questions to update."); return; }
+  selects.forEach(select=>{ select.value=group; select.dataset.savedGroup=""; });
+  toast(`Assigned ${selects.length} questions to ${group}.`);
+}
+
+function deleteQuizGroup(name){
+  if(name==="General")return;
+  if(Array.from(document.querySelectorAll(".q-group-select")).some(el=>el.value===name)){alert("This group contains questions. Move them first.");return;}
+  QUIZ_GROUPS=QUIZ_GROUPS.filter(g=>g!==name); renderQuizGroups();
+}
+function refreshQuestionGroupSelects(){
+  document.querySelectorAll(".q-group-select").forEach(select=>{
+    const current=String(select.value||select.dataset.savedGroup||"General");
+    select.innerHTML=QUIZ_GROUPS.map(g=>`<option value="${esc(g)}">${esc(g)}</option>`).join("");
+    select.value=QUIZ_GROUPS.includes(current)?current:"General"; select.dataset.savedGroup="";
+  });
+}
+function attachQuestionGroupControl(questionBox,groupName){
+  if(!questionBox||questionBox.querySelector(".question-group-control"))return;
+  const wanted=String(groupName||"General").trim()||"General"; if(!QUIZ_GROUPS.includes(wanted))QUIZ_GROUPS.push(wanted);
+  const control=document.createElement("div"); control.className="question-group-control";
+  control.innerHTML=`<label><i class="fa-solid fa-layer-group"></i> Question Group</label><select class="q-group-select" data-saved-group="${esc(wanted)}"></select>`;
+  const head=questionBox.querySelector(".question-head"); if(head)head.insertAdjacentElement("afterend",control);else questionBox.prepend(control);
+  renderQuizGroups(); const select=control.querySelector(".q-group-select"); if(select)select.value=wanted;
+}
+
+
+const PRUDLE_QUESTION_TYPE_META = {
+  all:{label:"All Questions",icon:"📚"},
+  mcq:{label:"Multiple Choice",icon:"✅"},
+  match:{label:"Match",icon:"🔗"},
+  order:{label:"Order / Sequence",icon:"🔢"},
+  random:{label:"Random Image",icon:"🖼️"},
+  wheelmcq:{label:"Wheel + Multiple Choice",icon:"🎡"},
+  balloon:{label:"Balloon Pop",icon:"🎈"},
+  mystery:{label:"Mystery Box",icon:"🎁"},
+  bomb:{label:"Bomb Defuse",icon:"💣"},
+  listenchoose:{label:"Listen & Choose",icon:"👂"},
+  listenrepeat:{label:"Listen & Repeat",icon:"🔊"},
+  buildword:{label:"Build the Word",icon:"🔤"},
+  buildsentence:{label:"Build the Sentence",icon:"🧩"},
+  catchanswer:{label:"Catch the Correct Answer",icon:"🎯"},
+  movechoose:{label:"Move & Choose",icon:"🏃"}
+};
+let ACTIVE_QUESTION_TYPE_GROUP = "all";
+
+function refreshQuestionTypeGroups(){
+  const host=document.getElementById("questionTypeGroups");
+  const boxes=Array.from(document.querySelectorAll("#questionsContainer .question-box"));
+  if(!host) return;
+
+  const counts={};
+  boxes.forEach(box=>{
+    const type=String(box.querySelector(".q-type")?.value || box.dataset.type || "mcq").toLowerCase();
+    counts[type]=(counts[type]||0)+1;
+  });
+
+  if(ACTIVE_QUESTION_TYPE_GROUP!=="all" && !counts[ACTIVE_QUESTION_TYPE_GROUP]){
+    ACTIVE_QUESTION_TYPE_GROUP="all";
+  }
+
+  const types=Object.keys(PRUDLE_QUESTION_TYPE_META).filter(type=>
+    type==="all" || counts[type]
+  );
+
+  host.innerHTML=types.map(type=>{
+    const meta=PRUDLE_QUESTION_TYPE_META[type] || {label:type,icon:"❓"};
+    const count=type==="all" ? boxes.length : (counts[type]||0);
+    return `<button type="button" class="question-type-group-card ${ACTIVE_QUESTION_TYPE_GROUP===type?"active":""}" onclick='selectQuestionTypeGroup(${JSON.stringify(type)})'>
+      <span class="question-type-group-icon">${meta.icon}</span>
+      <span class="question-type-group-info">
+        <span class="question-type-group-name">${esc(meta.label)}</span>
+        <span class="question-type-group-count">${count} ${count===1?"Question":"Questions"}</span>
+      </span>
+      <span class="question-type-group-badge">${count}</span>
+    </button>`;
+  }).join("");
+
+  boxes.forEach(box=>{
+    const type=String(box.querySelector(".q-type")?.value || box.dataset.type || "mcq").toLowerCase();
+    box.classList.toggle("type-group-hidden",ACTIVE_QUESTION_TYPE_GROUP!=="all" && type!==ACTIVE_QUESTION_TYPE_GROUP);
+  });
+}
+
+function selectQuestionTypeGroup(type){
+  ACTIVE_QUESTION_TYPE_GROUP=String(type||"all").toLowerCase();
+  refreshQuestionTypeGroups();
+  const first=document.querySelector("#questionsContainer .question-box:not(.type-group-hidden)");
+  if(first) first.scrollIntoView({behavior:"smooth",block:"start"});
+}
+
 
 let CURRENT_USER_ROLE = String(
   localStorage.getItem("role") || ""
@@ -4264,6 +5115,12 @@ function addQuestion(data = null){
           <option value="balloon" ${q.type === "balloon" ? "selected" : ""}>🎈 Balloon Pop</option>
           <option value="mystery" ${q.type === "mystery" ? "selected" : ""}>🎁 Mystery Box</option>
           <option value="bomb" ${q.type === "bomb" ? "selected" : ""}>💣 Bomb Defuse</option>
+          <option value="listenchoose" ${q.type === "listenchoose" ? "selected" : ""}>👂 Listen &amp; Choose</option>
+          <option value="listenrepeat" ${q.type === "listenrepeat" ? "selected" : ""}>🔊 Listen &amp; Repeat</option>
+          <option value="buildword" ${q.type === "buildword" ? "selected" : ""}>🔤 Build the Word</option>
+          <option value="buildsentence" ${q.type === "buildsentence" ? "selected" : ""}>🧩 Build the Sentence</option>
+          <option value="catchanswer" ${q.type === "catchanswer" ? "selected" : ""}>🎯 Catch the Correct Answer</option>
+          <option value="movechoose" ${q.type === "movechoose" ? "selected" : ""}>🏃 Move &amp; Choose</option>
         </select>
         <div class="question-type-note q-type-note"></div>
 
@@ -4313,6 +5170,8 @@ function addQuestion(data = null){
   `;
 
   document.getElementById("questionsContainer").appendChild(box);
+
+  attachQuestionGroupControl(box, q.group || "General");
 
   answers.forEach(answer=>{
     appendAnswer(box,answer);
@@ -4365,8 +5224,8 @@ function renderQuestionLockControls(){
   }
 
   if(button){
-    button.style.display = IS_ADMIN_USER ? "" : "none";
-    button.disabled = !IS_ADMIN_USER;
+    button.style.display = getCurrentPrudleUsername() ? "" : "none";
+    button.disabled = !getCurrentPrudleUsername();
     button.innerHTML = locked
       ? '<i class="fa-solid fa-lock-open"></i> Unlock Questions'
       : '<i class="fa-solid fa-lock"></i> Lock Questions';
@@ -4472,90 +5331,35 @@ function applyGlobalQuestionPermissions(){
 }
 
 async function toggleCurrentActivityQuestionLock(){
-  if(!IS_ADMIN_USER){
-    alert("Only the admin can lock or unlock question editing.");
-    return;
-  }
-
-  const nextLocked = !CURRENT_ACTIVITY_QUESTIONS_LOCKED;
-
+  const username=getCurrentPrudleUsername();
+  if(!username){alert("Username not found. Please login again.");return;}
+  const nextLocked=!CURRENT_ACTIVITY_QUESTIONS_LOCKED;
   try{
     if(EDIT_ACTIVITY_ID){
-      await db
-        .collection(ACTIVITIES_COLLECTION)
-        .doc(EDIT_ACTIVITY_ID)
-        .update({
-          questionsLocked:nextLocked,
-          questionsLockedAt:
-            firebase.firestore.FieldValue.serverTimestamp(),
-          questionsLockedBy:
-            String(localStorage.getItem("username") || "admin")
-        });
-
-      const cached = ACTIVITIES_CACHE.find(item=>item.id === EDIT_ACTIVITY_ID);
-      if(cached){
-        cached.questionsLocked = nextLocked;
+      const ref=db.collection(ACTIVITIES_COLLECTION).doc(EDIT_ACTIVITY_ID); const snap=await ref.get();
+      if(!snap.exists)throw new Error("Activity not found.");
+      const activity=snap.data()||{}; const owner=getActivityLockOwner(activity);
+      if(activity.questionsLocked===true && owner && owner!==normalizePrudleUsername(username)){
+        alert("❌ Only the same user who locked this quiz can unlock it.\nLocked by: "+(activity.lockedBy||activity.lockedByUsername||"Unknown")); return;
       }
+      await ref.update({questionsLocked:nextLocked,lockedBy:nextLocked?username:(activity.lockedBy||username),lockedByUsername:nextLocked?username:(activity.lockedByUsername||username),lockedByNormalized:nextLocked?normalizePrudleUsername(username):(activity.lockedByNormalized||normalizePrudleUsername(username)),questionsLockedAt:nextLocked?firebase.firestore.FieldValue.serverTimestamp():(activity.questionsLockedAt||null),unlockedBy:nextLocked?"":username,unlockedAt:nextLocked?null:firebase.firestore.FieldValue.serverTimestamp()});
+      const cached=ACTIVITIES_CACHE.find(item=>item.id===EDIT_ACTIVITY_ID); if(cached){cached.questionsLocked=nextLocked;if(nextLocked){cached.lockedBy=username;cached.lockedByUsername=username;cached.lockedByNormalized=normalizePrudleUsername(username);}}
     }
-
-    CURRENT_ACTIVITY_QUESTIONS_LOCKED = nextLocked;
-    applyGlobalQuestionPermissions();
-    renderAdminActivities();
-
-    toast(
-      nextLocked
-        ? "Question editing locked for non-admin users 🔒"
-        : "Question editing enabled for non-admin users 🔓"
-    );
-  }catch(error){
-    console.error(error);
-    alert("Unable to change the question lock status.");
-  }
+    CURRENT_ACTIVITY_QUESTIONS_LOCKED=nextLocked; applyGlobalQuestionPermissions(); renderAdminActivities(); toast(nextLocked?"Quiz locked to your username 🔒":"Quiz unlocked 🔓");
+  }catch(error){console.error(error);alert(error.message||"Unable to change the quiz lock status.");}
 }
-
 async function toggleActivityQuestionsLock(id){
-  if(!IS_ADMIN_USER){
-    alert("Only the admin can lock or unlock question editing.");
-    return;
-  }
-
-  const activity = ACTIVITIES_CACHE.find(item=>item.id === id);
-  if(!activity){
-    return;
-  }
-
-  const nextLocked = !Boolean(activity.questionsLocked);
-
+  const username=getCurrentPrudleUsername(); if(!username){alert("Username not found. Please login again.");return;}
+  const activity=ACTIVITIES_CACHE.find(item=>item.id===id); if(!activity)return;
+  const currentlyLocked=Boolean(activity.questionsLocked); const owner=getActivityLockOwner(activity);
+  if(currentlyLocked && owner && owner!==normalizePrudleUsername(username)){alert("❌ You cannot unlock this quiz.\n\n🔒 Locked by: "+(activity.lockedBy||activity.lockedByUsername||"Unknown")+"\n👤 Current user: "+username);return;}
+  const nextLocked=!currentlyLocked;
   try{
-    await db
-      .collection(ACTIVITIES_COLLECTION)
-      .doc(id)
-      .update({
-        questionsLocked:nextLocked,
-        questionsLockedAt:
-          firebase.firestore.FieldValue.serverTimestamp(),
-        questionsLockedBy:
-          String(localStorage.getItem("username") || "admin")
-      });
-
-    activity.questionsLocked = nextLocked;
-
-    if(EDIT_ACTIVITY_ID === id){
-      CURRENT_ACTIVITY_QUESTIONS_LOCKED = nextLocked;
-      applyGlobalQuestionPermissions();
-    }
-
-    renderAdminActivities();
-
-    toast(
-      nextLocked
-        ? "Question editing locked 🔒"
-        : "Question editing unlocked 🔓"
-    );
-  }catch(error){
-    console.error(error);
-    alert("Unable to change the question lock status.");
-  }
+    await db.collection(ACTIVITIES_COLLECTION).doc(id).update({questionsLocked:nextLocked,lockedBy:nextLocked?username:(activity.lockedBy||username),lockedByUsername:nextLocked?username:(activity.lockedByUsername||username),lockedByNormalized:nextLocked?normalizePrudleUsername(username):(activity.lockedByNormalized||normalizePrudleUsername(username)),questionsLockedAt:nextLocked?firebase.firestore.FieldValue.serverTimestamp():(activity.questionsLockedAt||null),unlockedBy:nextLocked?"":username,unlockedAt:nextLocked?null:firebase.firestore.FieldValue.serverTimestamp()});
+    activity.questionsLocked=nextLocked;if(nextLocked){activity.lockedBy=username;activity.lockedByUsername=username;activity.lockedByNormalized=normalizePrudleUsername(username);}
+    if(EDIT_ACTIVITY_ID===id){CURRENT_ACTIVITY_QUESTIONS_LOCKED=nextLocked;applyGlobalQuestionPermissions();}
+    renderAdminActivities();toast(nextLocked?"Quiz locked to your username 🔒":"Quiz unlocked 🔓");
+  }catch(error){console.error(error);alert(error.message||"Unable to change the quiz lock status.");}
 }
 
 function appendAnswer(questionBox,answer){
@@ -4768,6 +5572,24 @@ else if(type === "order"){
 
     }
 
+  }else if(type === "listenchoose"){
+    note.textContent = "Add an audio URL in Question Media, then add picture/text choices and select one correct answer.";
+    labels.forEach(label=>{ label.textContent="Answer Choice"; });
+  }else if(type === "listenrepeat"){
+    note.textContent = "Add the model audio and the word/sentence to repeat. Items can be used as pronunciation prompts.";
+    labels.forEach(label=>{ label.textContent="Repeat Prompt"; });
+  }else if(type === "buildword"){
+    note.textContent = "Enter the target word as letter/items in the correct order. The activity can shuffle them for the learner.";
+    labels.forEach(label=>{ label.textContent="Letter / Part"; });
+  }else if(type === "buildsentence"){
+    note.textContent = "Enter the sentence words in the correct final order. They can be shuffled for the learner.";
+    labels.forEach(label=>{ label.textContent="Word / Phrase"; });
+  }else if(type === "catchanswer"){
+    note.textContent = "Add fast answer choices and select one correct answer for the Catch the Correct Answer game.";
+    labels.forEach(label=>{ label.textContent="Moving Answer"; });
+  }else if(type === "movechoose"){
+    note.textContent = "Write the physical movement instruction and add optional prompts/items for the classroom challenge.";
+    labels.forEach(label=>{ label.textContent="Movement Prompt / Item"; });
   }else{
 
     note.textContent =
@@ -4787,6 +5609,7 @@ else if(type === "order"){
 
   }
 
+  refreshQuestionTypeGroups();
 }
 
 function updateWheelMcqAnswerMode(questionBox){
@@ -5272,6 +6095,7 @@ function refreshQuestionNumbers(){
       downButton.disabled = index === boxes.length - 1 || !canEditCurrentQuestions();
     }
   });
+  refreshQuestionTypeGroups();
 }
 
 function flashMovedQuestion(box){
@@ -5582,6 +6406,7 @@ function collectQuestions(){
       image:mediaType === "image" ? mediaUrl : "",
       video:mediaType === "video" ? mediaUrl : "",
       audio:mediaType === "audio" ? mediaUrl : "",
+      group:String(box.querySelector(".q-group-select")?.value || "General").trim() || "General",
       answers:(type === "wheelmcq" && wheelAnswerMode === "correctwrong") ? [] : answers
     });
   });
@@ -7108,6 +7933,1279 @@ function toggleActivityTimerFields(){
       limited ? "block" : "none";
 
 }
+
+/* ===============================
+   PRUDLE AI QUESTION GENERATOR
+   SECURITY: Keep the provider API key on the server/worker only.
+================================ */
+
+// Put your secure Firebase Function / Cloudflare Worker URL here.
+// Example: https://your-worker.example.workers.dev/generate
+const PRUDLE_AI_ENDPOINT = "https://muddy-frost-dfd0.abbassaboali.workers.dev";
+const AI_TASK = "generate_activity_questions";
+
+function getAIAllowedTypes(){
+  const selected=Array.from(document.querySelectorAll("#aiAllowedTypes input[type=checkbox]:checked"))
+    .map(el=>String(el.value||"").trim().toLowerCase())
+    .filter(type=>PRUDLE_AI_ACTIVITY_TYPES.includes(type));
+  return [...new Set(selected)];
+}
+
+function setAIAllowedTypes(checked){
+  document.querySelectorAll("#aiAllowedTypes input[type=checkbox]").forEach(el=>el.checked=Boolean(checked));
+}
+
+function updateAISourceUI(){
+  const type = document.getElementById("aiSourceType")?.value || "topic";
+  document.getElementById("aiTopicField")?.classList.toggle("hidden", type !== "topic");
+  document.getElementById("aiFileField")?.classList.toggle("hidden", type !== "file");
+}
+
+
+function updateAIImagePlacementUI(){
+  const media = String(
+    document.getElementById("aiMediaChoice")?.value || "none"
+  ).trim().toLowerCase();
+
+  document.getElementById("aiImagePlacementField")
+    ?.classList.toggle("hidden", media !== "image");
+}
+
+function setAIStatus(message, kind=""){
+  const box = document.getElementById("aiGeneratorStatus");
+  if(!box) return;
+  box.textContent = message || "";
+  box.classList.remove("hidden","error","success");
+  if(kind) box.classList.add(kind);
+  if(!message) box.classList.add("hidden");
+}
+
+function normalizeAIQuestion(q, fallbackType="mcq"){
+  const allowed = new Set(["mcq","match","order","random","wheel","wheelmcq","balloon","mystery","bomb","listenchoose","listenrepeat","buildword","buildsentence","catchanswer","movechoose"]);
+  let type = String(q?.type || q?.activityType || q?.questionType || fallbackType || "mcq")
+    .trim().toLowerCase();
+
+  type = normalizeAiActivityType(type);
+  if(!allowed.has(type)) type = "mcq";
+
+  const rawAnswers =
+    Array.isArray(q?.answers) ? q.answers :
+    Array.isArray(q?.options) ? q.options :
+    Array.isArray(q?.items) ? q.items :
+    Array.isArray(q?.pairs) ? q.pairs : [];
+
+  let answers = rawAnswers.map((a,index)=>{
+    if(typeof a === "string"){
+      return {
+        text:String(a).trim(),
+        right:"",
+        image:"",
+        correct:false
+      };
+    }
+
+    const left = String(
+      a?.text ??
+      a?.left ??
+      a?.item ??
+      a?.option ??
+      a?.word ??
+      a?.term ??
+      a?.question ??
+      ""
+    ).trim();
+
+    const right = String(
+      a?.right ??
+      a?.match ??
+      a?.pair ??
+      a?.matchingPair ??
+      a?.answer ??
+      a?.definition ??
+      a?.meaning ??
+      a?.translation ??
+      a?.value ??
+      a?.target ??
+      a?.challenge ??
+      ""
+    ).trim();
+
+    const image = String(
+      a?.image ??
+      a?.imageUrl ??
+      a?.answerImage ??
+      ""
+    ).trim();
+
+    return {
+      text:left,
+      right:right,
+      image:image,
+      correct:Boolean(a?.correct ?? a?.isCorrect ?? false)
+    };
+  });
+
+  const questionText = String(
+    q?.text ??
+    q?.question ??
+    q?.prompt ??
+    q?.instructions ??
+    ""
+  ).trim();
+
+  /*
+    AI AUTO-FILL:
+    Complete structurally missing fields before placing the question
+    in the editor so Save Activity does not fail on AI-generated data.
+  */
+  if(type === "match"){
+    answers = answers
+      .filter(a => a.text || a.right || a.image)
+      .map((a,index)=>{
+        const item = {...a, correct:false};
+
+        // If AI returned only the right side, use it as the left label too.
+        if(!item.text && item.right){
+          item.text = item.right;
+        }
+
+        // Match requires left + (right text OR image).
+        // Prefer real AI fields; as a final structural fallback, self-match
+        // the left item rather than leaving an invalid blank pair.
+        if(item.text && !item.right && !item.image){
+          item.right = item.text;
+        }
+
+        return item;
+      });
+
+    // Keep the editor valid even if AI returned too few pairs.
+    if(answers.length === 1){
+      answers.push({
+        text:answers[0].text,
+        right:answers[0].right || answers[0].text,
+        image:answers[0].image || "",
+        correct:false
+      });
+    }
+  }
+
+  if(type === "order"){
+    answers = answers
+      .filter(a => a.text || a.right)
+      .map(a=>({
+        ...a,
+        text:a.text || a.right,
+        right:"",
+        correct:false
+      }));
+  }
+
+  if(type === "wheel"){
+    answers = answers
+      .filter(a => a.text || a.right)
+      .map((a,index)=>({
+        ...a,
+        text:a.text || `Section ${index + 1}`,
+        right:a.right || questionText || a.text || `Challenge ${index + 1}`,
+        correct:false
+      }));
+  }
+
+  if(type === "random"){
+    answers = answers
+      .filter(a => a.text || a.image)
+      .map(a=>({...a,correct:false}));
+  }
+
+  if(["mcq","wheelmcq","balloon","mystery","bomb"].includes(type)){
+    answers = answers.filter(a => a.text || a.image);
+
+    // If the AI supplied no usable choices, create editable placeholders.
+    if(!answers.length){
+      answers = [
+        {text:"Option 1",right:"",image:"",correct:true},
+        {text:"Option 2",right:"",image:"",correct:false}
+      ];
+    }
+
+    if(answers.length === 1){
+      answers.push({
+        text:"Option 2",
+        right:"",
+        image:"",
+        correct:false
+      });
+    }
+
+    if(!answers.some(a=>a.correct)){
+      answers[0].correct = true;
+    }
+
+    let found = false;
+    answers.forEach(a=>{
+      if(a.correct && !found){
+        found = true;
+      }else if(a.correct){
+        a.correct = false;
+      }
+    });
+  }
+
+  return {
+    type,
+    wheelAnswerMode:String(q?.wheelAnswerMode || "mcq").toLowerCase() === "correctwrong"
+      ? "correctwrong"
+      : "mcq",
+    text:questionText || "AI generated activity",
+    mediaType:String(q?.mediaType || (q?.image ? "image" : "none")).toLowerCase(),
+    mediaPrompt:String(q?.mediaPrompt || q?.imagePrompt || q?.videoPrompt || ""),
+    mediaUrl:String(q?.mediaUrl || q?.audioUrl || q?.audio || q?.video || q?.image || ""),
+    image:String(q?.image || ""),
+    answers
+  };
+}
+
+
+/* =========================================================
+   PRUDLE AI SMART ACTIVITY TYPE ENGINE
+   AI can choose the best Prudle activity type for each question.
+   The returned question is normalized to the existing editor schema.
+========================================================= */
+
+const PRUDLE_AI_ACTIVITY_TYPES = [
+  "mcq",
+  "match",
+  "order",
+  "random",
+  "wheelmcq",
+  "balloon",
+  "mystery",
+  "bomb",
+  "listenchoose",
+  "listenrepeat",
+  "buildword",
+  "buildsentence",
+  "catchanswer",
+  "movechoose"
+];
+
+function normalizeAiActivityType(rawType){
+  const t = String(rawType || "").trim().toLowerCase().replace(/[\s_-]+/g,"");
+
+  const map = {
+    mcq:"mcq",
+    multiplechoice:"mcq",
+    choice:"mcq",
+
+    match:"match",
+    matching:"match",
+    pairs:"match",
+
+    order:"order",
+    ordering:"order",
+    sequence:"order",
+    rearrange:"order",
+
+    random:"random",
+    randompicker:"random",
+
+    wheel:"wheel",
+    spinner:"wheel",
+
+    wheelmcq:"wheelmcq",
+    wheelchoice:"wheelmcq",
+    wheelmultiplechoice:"wheelmcq",
+
+    balloon:"balloon",
+    balloons:"balloon",
+
+    mystery:"mystery",
+    mysterybox:"mystery",
+
+    bomb:"bomb",
+    bombgame:"bomb",
+
+    listenchoose:"listenchoose",
+    listeningchoose:"listenchoose",
+    listenandchoose:"listenchoose",
+
+    listenrepeat:"listenrepeat",
+    listenandrepeat:"listenrepeat",
+    pronunciation:"listenrepeat",
+
+    buildword:"buildword",
+    spelling:"buildword",
+
+    buildsentence:"buildsentence",
+    sentencebuilder:"buildsentence",
+
+    catchanswer:"catchanswer",
+    catchcorrectanswer:"catchanswer",
+
+    movechoose:"movechoose",
+    moveandchoose:"movechoose",
+    physicalactivity:"movechoose"
+  };
+
+  return map[t] || "mcq";
+}
+
+function normalizeSmartAiQuestion(question){
+  const q = question && typeof question === "object" ? {...question} : {};
+
+  q.type = normalizeAiActivityType(
+    q.type ||
+    q.activityType ||
+    q.questionType ||
+    q.gameType
+  );
+
+  q.text = String(
+    q.text ||
+    q.question ||
+    q.prompt ||
+    q.instructions ||
+    ""
+  ).trim();
+
+  q.mediaType = String(q.mediaType || "none").toLowerCase();
+  q.mediaUrl = String(q.mediaUrl || q.audio || q.video || q.image || "").trim();
+
+  if(!["none","image","video","audio"].includes(q.mediaType)){
+    q.mediaType = q.mediaUrl ? "image" : "none";
+  }
+
+  let answers = Array.isArray(q.answers)
+    ? q.answers
+    : Array.isArray(q.options)
+      ? q.options
+      : Array.isArray(q.items)
+        ? q.items
+        : [];
+
+  q.answers = answers.map((answer,index)=>{
+    if(typeof answer === "string"){
+      return {
+        text:answer,
+        right:"",
+        image:"",
+        correct:index === 0 && q.type === "mcq"
+      };
+    }
+
+    return {
+      text:String(answer?.text ?? answer?.left ?? answer?.item ?? answer?.option ?? "").trim(),
+      right:String(answer?.right ?? answer?.match ?? answer?.pair ?? "").trim(),
+      image:String(answer?.image ?? answer?.imageUrl ?? "").trim(),
+      correct:Boolean(answer?.correct ?? answer?.isCorrect ?? false)
+    };
+  });
+
+  if(q.type === "wheelmcq"){
+    q.wheelAnswerMode =
+      String(q.wheelAnswerMode || "").toLowerCase() === "correctwrong"
+        ? "correctwrong"
+        : "mcq";
+  }
+
+  /* Existing editor requires at least two items for most game types. */
+  if(q.answers.length < 2 && q.type !== "wheelmcq"){
+    q.type = "mcq";
+  }
+
+  /* MCQ-like games need one correct answer. */
+  if(["mcq","wheelmcq","balloon","mystery","bomb"].includes(q.type)){
+    if(q.type !== "wheelmcq" || q.wheelAnswerMode !== "correctwrong"){
+      if(q.answers.length && !q.answers.some(a=>a.correct)){
+        q.answers[0].correct = true;
+      }
+    }
+  }
+
+  return q;
+}
+
+function buildPrudleSmartTypeInstructions(requestedType){
+  if(requestedType !== "smart") return "";
+
+  return `
+IMPORTANT — SMART ACTIVITY TYPE:
+Choose the most educationally suitable Prudle activity type FOR EACH QUESTION independently.
+
+Available Prudle types and when to use them:
+- mcq: normal comprehension, grammar, vocabulary, reading/listening checks with one correct answer.
+- match: vocabulary ↔ meaning, word ↔ definition, term ↔ example, or paired concepts. Return answers as {text:left,right:right}.
+- order: sentence rearrangement, steps, events, dialogue sequence, chronological order. Return answers already in the CORRECT order.
+- wheel: short prompts/items suitable for a spinning wheel, speaking prompts, quick recall, categories.
+- wheelmcq: a wheel-style prompt that also needs multiple-choice answering.
+- balloon: short fast-recognition multiple-choice questions suitable for a balloon game.
+- mystery: discovery/guessing questions where revealing the answer feels appropriate.
+- bomb: short challenge/review multiple-choice questions suitable for a fast game.
+- random: a random-pick activity made of short independent prompts/items.
+
+Do NOT force all generated questions into the same type.
+Analyze the learning objective and content of every question, then assign the best "type".
+
+Return ONLY valid JSON. Each question must contain:
+{
+  "type":"mcq|match|order|random|wheel|wheelmcq|balloon|mystery|bomb",
+  "wheelAnswerMode":"mcq",
+  "text":"question or instruction",
+  "mediaType":"none|image|video|audio",
+  "mediaPrompt":"clear visual prompt when image or video is educationally useful",
+  "mediaUrl":"",
+  "answers":[
+    {"text":"...", "right":"", "image":"", "correct":true}
+  ]
+}
+
+MEDIA RULES:
+- Do NOT generate or request images, videos, or audio automatically.
+- Always return mediaType as "none" and mediaUrl as an empty string for AI-generated questions.
+- Image, video, and audio are created only when the user explicitly chooses them from the existing media controls.
+
+Rules:
+- NEVER return blank required fields.
+- mcq/balloon/mystery/bomb: 2–4 answer choices and exactly one correct answer.
+- match: 2–6 pairs; EVERY pair MUST contain non-empty "text" for the Left Item and either non-empty "right" for the Matching Pair OR a valid "image" URL. Never return a match item with only the left side.
+- order: 2–6 non-empty items in their correct final order.
+- wheel: every section MUST contain non-empty "text" for the category and non-empty "right" for its challenge/question.
+- random: every item must contain the data required by the selected random activity.
+- wheelmcq: provide at least two non-empty choices and exactly one correct answer.
+`;
+}
+
+
+/* =========================================================
+   PRUDLE AI AUTO MEDIA
+   Generates image/video through the existing secure Worker.
+========================================================= */
+
+const PRUDLE_MEDIA_TASK = "generate_question_media";
+const PRUDLE_VIDEO_CHECK_TASK = "check_video_generation";
+
+function sleepPrudleMedia(ms){
+  return new Promise(resolve=>setTimeout(resolve,ms));
+}
+
+async function prudleWorkerRequest(body){
+  const response = await fetch(PRUDLE_AI_ENDPOINT,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify(body)
+  });
+
+  const raw = await response.text();
+  let payload = {};
+  try{
+    payload = raw ? JSON.parse(raw) : {};
+  }catch(_){
+    throw new Error("Media endpoint returned invalid JSON.");
+  }
+
+  if(!response.ok){
+    throw new Error(payload?.error || `Media request failed (${response.status}).`);
+  }
+
+  return payload;
+}
+
+async function waitForPrudleVideo(operationName){
+  const maxAttempts = 40;
+
+  for(let attempt=1; attempt<=maxAttempts; attempt++){
+    setAIStatus(`Creating AI video... ${attempt}/${maxAttempts}`);
+
+    const result = await prudleWorkerRequest({
+      task:PRUDLE_VIDEO_CHECK_TASK,
+      operationName
+    });
+
+    if(String(result?.status || "").toLowerCase() === "completed" && result?.url){
+      return String(result.url).trim();
+    }
+
+    if(String(result?.status || "").toLowerCase() === "failed"){
+      throw new Error(result?.error || "AI video generation failed.");
+    }
+
+    await sleepPrudleMedia(5000);
+  }
+
+  throw new Error("AI video is still processing. Please try again shortly.");
+}
+
+async function generatePrudleMediaForQuestion(question,index,total){
+  const q = question && typeof question === "object" ? question : {};
+  const mediaType = String(q.mediaType || "none").trim().toLowerCase();
+
+  if(!["image","video"].includes(mediaType)){
+    q.mediaType = "none";
+    q.mediaUrl = "";
+    return q;
+  }
+
+  if(String(q.mediaUrl || "").trim()){
+    return q;
+  }
+
+  const mediaPrompt = String(
+    q.mediaPrompt ||
+    q.imagePrompt ||
+    q.videoPrompt ||
+    q.text ||
+    ""
+  ).trim();
+
+  if(!mediaPrompt){
+    q.mediaType = "none";
+    q.mediaUrl = "";
+    return q;
+  }
+
+  setAIStatus(
+    mediaType === "video"
+      ? `Creating video for question ${index + 1} of ${total}...`
+      : `Creating image for question ${index + 1} of ${total}...`
+  );
+
+  const result = await prudleWorkerRequest({
+    task:PRUDLE_MEDIA_TASK,
+    mediaType,
+    mediaPrompt,
+    questionText:String(q.text || ""),
+    prompt:mediaPrompt,
+    imageStyle:"clear educational illustration",
+    imageAspectRatio:"1:1",
+    videoAspectRatio:"16:9",
+    durationSeconds:8
+  });
+
+  if(mediaType === "image"){
+    const url = String(result?.url || result?.mediaUrl || "").trim();
+    if(!url) throw new Error(`Image generation did not return a URL for question ${index + 1}.`);
+    q.mediaUrl = url;
+    q.image = url;
+    return q;
+  }
+
+  if(mediaType === "video"){
+    let url = String(result?.url || result?.mediaUrl || "").trim();
+
+    if(!url){
+      const operationName = String(result?.operationName || result?.operation || "").trim();
+      if(!operationName){
+        throw new Error(`Video generation did not return an operation name for question ${index + 1}.`);
+      }
+      url = await waitForPrudleVideo(operationName);
+    }
+
+    q.mediaUrl = url;
+    q.video = url;
+    return q;
+  }
+
+  return q;
+}
+
+async function addAIQuestionsWithAutomaticMedia(list,count,fallbackType){
+  const selected = list.slice(0,count);
+  let mediaFailures = 0;
+
+  for(let i=0;i<selected.length;i++){
+    let item = normalizeAIQuestion(selected[i],fallbackType);
+
+    try{
+      item = await generatePrudleMediaForQuestion(item,i,selected.length);
+    }catch(error){
+      console.error("Automatic AI media error:",error);
+      mediaFailures++;
+      item.mediaType = "none";
+      item.mediaUrl = "";
+      item.image = "";
+      item.video = "";
+    }
+
+    addQuestion(item);
+  }
+
+  return {
+    added:selected.length,
+    mediaFailures
+  };
+}
+
+
+/* =========================================================
+   STRICT AI QUESTION-TYPE COORDINATION
+   Keeps the generated content structurally compatible with
+   the selected Prudle question/game type.
+========================================================= */
+
+function buildPrudleRequestedTypeInstructions(requestedType, allowedTypes=[]){
+  const type = String(requestedType || "smart").trim().toLowerCase();
+  const allowed = Array.isArray(allowedTypes) && allowedTypes.length ? allowedTypes.filter(t=>PRUDLE_AI_ACTIVITY_TYPES.includes(t)) : [...PRUDLE_AI_ACTIVITY_TYPES];
+  const allowedText = allowed.join(", ");
+
+  const common = `
+CRITICAL PRUDLE TYPE RULES:
+The question wording, answers/items, and selected "type" MUST describe the SAME activity.
+Never write an Order instruction and label it MCQ.
+Never write a Wheel instruction and label it MCQ.
+Never write a Match instruction and label it MCQ.
+
+VALID STRUCTURES:
+- mcq: a direct question + 2–4 choices; exactly one correct=true.
+- match: instruction to match pairs + 2–6 answers shaped {text:left,right:right,image:"",correct:false}.
+- order: instruction to arrange/order + 2–6 answers; "text" values are already in the correct final order; correct=false.
+- random: instruction suitable for random selection + 2–6 independent items/prompts.
+- wheel: spinning-wheel activity + 2–8 sections; each answer MUST have text=category/label and right=challenge/question.
+- wheelmcq: wheel-style multiple-choice activity + 2–4 choices; exactly one correct=true.
+- balloon: short fast multiple-choice challenge + 2–4 choices; exactly one correct=true.
+- mystery: reveal/guess multiple-choice challenge + 2–4 choices; exactly one correct=true.
+- bomb: short review/challenge multiple-choice question + 2–4 choices; exactly one correct=true.
+- listenchoose: listening question; prefer audio/media prompt + 2–4 choices; exactly one correct=true.
+- listenrepeat: pronunciation/repetition prompt; provide the exact word/sentence to repeat in text/items.
+- buildword: spelling task; answers/items contain letters or word parts in the CORRECT final order.
+- buildsentence: sentence-building task; answers/items contain words/phrases in the CORRECT final order.
+- catchanswer: fast recognition question + 2–4 short choices; exactly one correct=true.
+- movechoose: child-friendly physical movement instruction with short optional prompts/items.
+
+Return the actual Prudle type in every question object.
+`;
+
+  if(type === "smart"){
+    return common + `
+MODE: SMART.
+For EACH question independently, choose the educationally most suitable type ONLY from:
+${allowedText}.
+Never return a type outside this allowed list.
+Use variety only when the source content genuinely supports it.
+The wording MUST fit the chosen type and the answer structure MUST follow that type's schema.
+`;
+  }
+
+  if(type === "mixed"){
+    return common + `
+MODE: MIXED.
+Create a varied set using multiple Prudle types ONLY from:
+${allowedText}.
+Never return a type outside this allowed list.
+Do not make everything MCQ.
+For every question, its wording and answer structure MUST exactly match its returned type.
+`;
+  }
+
+  return common + `
+MODE: FIXED TYPE.
+Every generated question MUST use type="${type}".
+Do not return any other type.
+Write every question/instruction specifically for ${type}, and use exactly the ${type} answer structure described above.
+`;
+}
+
+function inferPrudleTypeFromGeneratedQuestion(question, requestedType){
+  const requested = String(requestedType || "smart").trim().toLowerCase();
+
+  // A manually selected fixed type always wins.
+  if(PRUDLE_AI_ACTIVITY_TYPES.includes(requested)){
+    return requested;
+  }
+
+  const q = question && typeof question === "object" ? question : {};
+  const declaredRaw = String(
+    q.type || q.activityType || q.questionType || q.gameType || ""
+  ).trim().toLowerCase();
+
+  const declared = normalizeAiActivityType(declaredRaw);
+  const text = String(
+    q.text || q.question || q.prompt || q.instructions || ""
+  ).trim().toLowerCase();
+
+  const answers = Array.isArray(q.answers) ? q.answers :
+                  Array.isArray(q.options) ? q.options :
+                  Array.isArray(q.items) ? q.items :
+                  Array.isArray(q.pairs) ? q.pairs : [];
+
+  // Strong semantic signals override an incorrect MCQ label.
+  if(/\b(correct order|put .* in .* order|arrange|rearrange|sequence|correct sequence|order the)\b/i.test(text)){
+    return "order";
+  }
+
+  if(/\b(match|matching|pair|connect .* with|match .* with)\b/i.test(text) ||
+     answers.some(a => a && typeof a === "object" &&
+       String(a.right ?? a.match ?? a.pair ?? a.matchingPair ?? "").trim())){
+    return "match";
+  }
+
+  if(/\b(spin the wheel|wheel)\b/i.test(text)){
+    const hasChoices = answers.filter(a => {
+      if(typeof a === "string") return String(a).trim();
+      return String(a?.text ?? a?.option ?? a?.item ?? "").trim();
+    }).length >= 2;
+
+    const hasCorrect = answers.some(a => Boolean(a?.correct ?? a?.isCorrect));
+    return (hasChoices && hasCorrect) ? "wheelmcq" : "wheel";
+  }
+
+  if(/\b(balloon|pop the balloon)\b/i.test(text)) return "balloon";
+  if(/\b(mystery box|mystery|reveal)\b/i.test(text)) return "mystery";
+  if(/\b(bomb|defuse)\b/i.test(text)) return "bomb";
+  if(/\b(listen.*choose|hear.*choose)\b/i.test(text)) return "listenchoose";
+  if(/\b(listen.*repeat|repeat after|pronunciation)\b/i.test(text)) return "listenrepeat";
+  if(/\b(build.*word|spell|arrange.*letters)\b/i.test(text)) return "buildword";
+  if(/\b(build.*sentence|arrange.*words|sentence builder)\b/i.test(text)) return "buildsentence";
+  if(/\b(catch.*answer|catch.*correct|tap.*quick)\b/i.test(text)) return "catchanswer";
+  if(/\b(move.*choose|touch something|jump|point to|physical activity)\b/i.test(text)) return "movechoose";
+  if(/\b(random|pick one|choose one at random)\b/i.test(text)) return "random";
+
+  // Otherwise respect a valid explicit AI type.
+  if(PRUDLE_AI_ACTIVITY_TYPES.includes(declaredRaw) ||
+     ["multiplechoice","matching","ordering","sequence","spinner","mysterybox","bombgame"].includes(
+       declaredRaw.replace(/[\s_-]+/g,"")
+     )){
+    return declared;
+  }
+
+  return "mcq";
+}
+
+function normalizeAIQuestionForRequestedMode(question, requestedType){
+  const q = question && typeof question === "object" ? {...question} : {};
+  q.type = inferPrudleTypeFromGeneratedQuestion(q, requestedType);
+
+  let normalized = normalizeAIQuestion(q, q.type);
+
+  // Fixed selection must never be silently changed by AI.
+  if(PRUDLE_AI_ACTIVITY_TYPES.includes(String(requestedType || "").toLowerCase())){
+    normalized.type = String(requestedType).toLowerCase();
+
+    // Re-normalize after forcing the selected type so its fields follow that schema.
+    normalized = normalizeAIQuestion(
+      {...normalized, type:normalized.type},
+      normalized.type
+    );
+  }
+
+  return normalized;
+}
+
+
+
+function prudleAnswerImagePrompt(question, answer){
+  const type = String(question?.type || "mcq").toLowerCase();
+  const questionText = String(question?.text || "").trim();
+  const left = String(answer?.text || "").trim();
+  const right = String(answer?.right || "").trim();
+  const target = type === "match" ? (right || left) : (left || right);
+
+  return [
+    "Create one clear educational image for one answer option only.",
+    `Question type: ${type}.`,
+    questionText ? `Question: ${questionText}` : "",
+    type === "match" && left ? `Left item: ${left}.` : "",
+    target ? `The image must specifically represent this answer: ${target}.` : "",
+    "Do not combine multiple answers in one image.",
+    "Do not create a worksheet, collage, answer key, or full question card.",
+    "Use a simple centered subject and a clean educational background.",
+    "Avoid extra written text unless the answer itself must be shown as text."
+  ].filter(Boolean).join(" ");
+}
+
+async function generatePrudleAnswerImages(question, questionIndex, questionTotal){
+  const q = question && typeof question === "object" ? question : {};
+  const answers = Array.isArray(q.answers) ? q.answers : [];
+
+  for(let answerIndex=0; answerIndex<answers.length; answerIndex++){
+    const answer = answers[answerIndex];
+    if(!answer) continue;
+
+    const target = String(
+      q.type === "match"
+        ? (answer.right || answer.text || "")
+        : (answer.text || answer.right || "")
+    ).trim();
+
+    if(!target) continue;
+
+    setAIStatus(
+      `Creating answer image ${answerIndex + 1} of ${answers.length} ` +
+      `for question ${questionIndex + 1} of ${questionTotal}...`
+    );
+
+    const prompt = prudleAnswerImagePrompt(q, answer);
+
+    const response = await fetch(PRUDLE_AI_ENDPOINT,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        task:"generate_question_media",
+        mediaType:"image",
+        questionText:String(q.text || ""),
+        text:target,
+        mediaPrompt:prompt,
+        prompt,
+        imageStyle:"clear educational illustration",
+        imageAspectRatio:"1:1"
+      })
+    });
+
+    const raw = await response.text();
+    let payload = {};
+    try{ payload = raw ? JSON.parse(raw) : {}; }catch(_){}
+
+    if(!response.ok){
+      throw new Error(payload?.error || `Answer image generation failed (${response.status}).`);
+    }
+
+    const imageUrl = String(payload?.url || payload?.mediaUrl || "").trim();
+    if(!imageUrl){
+      throw new Error(`No image URL returned for answer ${answerIndex + 1}.`);
+    }
+
+    answer.image = imageUrl;
+  }
+
+  q.answers = answers;
+  return q;
+}
+
+async function generateQuestionsWithAI(){
+  try{
+    if(!requireAdminForQuestions()) return;
+
+    if(!PRUDLE_AI_ENDPOINT || PRUDLE_AI_ENDPOINT.includes("PASTE_YOUR")){
+      throw new Error("Add your secure AI endpoint to PRUDLE_AI_ENDPOINT first. Do not put an AI API key inside this HTML file.");
+    }
+
+    const sourceType = document.getElementById("aiSourceType").value;
+    const level = document.getElementById("aiLevel").value;
+    const count = Math.max(1, Math.min(20, Number(document.getElementById("aiQuestionCount").value || 10)));
+    const selectedAllowedTypes = getAIAllowedTypes();
+    if(!selectedAllowedTypes.length){
+      throw new Error("Select at least one Question / Game Type checkbox for AI generation.");
+    }
+
+    // The checkboxes are the single source of truth.
+    const requestedType =
+      selectedAllowedTypes.length === 1
+        ? selectedAllowedTypes[0]
+        : "mixed";
+    const requestedMedia = String(
+      document.getElementById("aiMediaChoice")?.value || "none"
+    ).trim().toLowerCase();
+
+    const imagePlacement = String(
+      document.getElementById("aiImagePlacement")?.value || "question"
+    ).trim().toLowerCase();
+
+  const smartTypeInstructions = buildPrudleSmartTypeInstructions(requestedType);
+    const strictTypeInstructions =
+      buildPrudleRequestedTypeInstructions(requestedType, selectedAllowedTypes) +
+      "\n\nSTRICT CHECKBOX RULE: Generate questions ONLY using these checked Prudle question types: " +
+      selectedAllowedTypes.join(", ") +
+      ". Never generate an unchecked type. " +
+      (selectedAllowedTypes.length === 1
+        ? "Every generated question MUST use exactly: " + selectedAllowedTypes[0] + "."
+        : "Use only this checked pool and distribute questions among the selected types when appropriate.");
+    const language = document.getElementById("aiLanguage").value;
+    let sourceText = "";
+
+    if(sourceType === "file"){
+      const file = document.getElementById("aiSourceFile").files?.[0];
+      if(!file) throw new Error("Choose a PDF, Word, or TXT file first.");
+      setAIStatus("Reading the source file...");
+      sourceText = await readImportSourceFile(file);
+    }else{
+      sourceText = String(document.getElementById("aiTopic").value || "").trim();
+      if(!sourceText) throw new Error("Enter a topic or instructions first.");
+    }
+
+    // Limit browser payload size while keeping enough source context.
+    sourceText = sourceText.slice(0, 50000);
+
+    const button = document.getElementById("aiGenerateBtn");
+    button.disabled = true;
+    const oldHTML = button.innerHTML;
+    button.innerHTML = '<span class="import-loading"><i class="fa-solid fa-spinner fa-spin"></i> Generating...</span>';
+    setAIStatus(`Generating ${count} questions for ${level}...`);
+
+    try{
+      const response = await fetch(PRUDLE_AI_ENDPOINT,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          task:AI_TASK,
+          text:sourceText,
+          sourceText,
+          prompt:[
+            sourceText,
+            strictTypeInstructions,
+            smartTypeInstructions
+          ].filter(Boolean).join("\n\n"),
+          level,
+          count,
+          questionType:requestedType,
+          requestedQuestionType:requestedType,
+          mediaType:requestedMedia,
+          imagePlacement:requestedMedia === "image" ? imagePlacement : "question",
+
+          smartActivityTypes:requestedType === "smart",
+          mixedActivityTypes:requestedType === "mixed",
+          availableActivityTypes:selectedAllowedTypes,
+           allowedQuestionTypes:selectedAllowedTypes,
+          smartTypeInstructions,
+          strictTypeInstructions,
+          language,
+          activityTitle:readText("activityTitle"),
+          activityDescription:readText("activityDescription"), responseFormat:"json"
+        })
+      });
+
+      const raw = await response.text();
+      let payload;
+      try{ payload = JSON.parse(raw); }catch(_){ throw new Error("AI endpoint returned invalid JSON."); }
+      if(!response.ok) throw new Error(payload?.error || `AI request failed (${response.status}).`);
+
+      const list = Array.isArray(payload) ? payload : payload.questions;
+      if(!Array.isArray(list) || !list.length) throw new Error("AI did not return any questions.");
+
+      const selectedQuestions = list.slice(0,count);
+
+      for(let mediaIndex=0; mediaIndex<selectedQuestions.length; mediaIndex++){
+        let item = normalizeAIQuestionForRequestedMode(
+          selectedQuestions[mediaIndex],
+          requestedType
+        );
+
+        if(!selectedAllowedTypes.includes(item.type)){
+          item = normalizeAIQuestion(
+            {...item,type:selectedAllowedTypes[0]},
+            selectedAllowedTypes[0]
+          );
+        }
+
+        if(requestedMedia === "none"){
+          item.mediaType = "none";
+          item.mediaUrl = "";
+          item.image = "";
+          item.video = "";
+          item.audio = "";
+
+          if(Array.isArray(item.answers)){
+            item.answers.forEach(answer => answer.image = "");
+          }
+
+        }else if(requestedMedia === "image"){
+          const wantsQuestionImage =
+            imagePlacement === "question" || imagePlacement === "both";
+
+          const wantsAnswerImages =
+            imagePlacement === "answers" || imagePlacement === "both";
+
+          if(wantsQuestionImage){
+            item.mediaType = "image";
+
+            const prompt = String(
+              item.mediaPrompt ||
+              item.text ||
+              sourceText ||
+              "Educational English language activity"
+            ).trim();
+
+            setAIStatus(
+              `Creating question image ${mediaIndex + 1} of ${selectedQuestions.length}...`
+            );
+
+            try{
+              const response = await fetch(PRUDLE_AI_ENDPOINT,{
+                method:"POST",
+                headers:{"Content-Type":"application/json"},
+                body:JSON.stringify({
+                  task:"generate_question_media",
+                  mediaType:"image",
+                  questionText:String(item.text || ""),
+                  text:String(item.text || ""),
+                  mediaPrompt:prompt,
+                  prompt,
+                  imageStyle:"clear educational illustration",
+                  imageAspectRatio:"1:1"
+                })
+              });
+
+              const raw = await response.text();
+              let payload = {};
+              try{ payload = raw ? JSON.parse(raw) : {}; }catch(_){}
+
+              if(!response.ok){
+                throw new Error(payload?.error || `Question image generation failed (${response.status}).`);
+              }
+
+              const url = String(payload?.url || payload?.mediaUrl || "").trim();
+              if(!url) throw new Error("No question image URL was returned.");
+
+              item.mediaUrl = url;
+              item.image = url;
+
+            }catch(error){
+              console.error("AI question image generation error:",error);
+              item.mediaType = "none";
+              item.mediaUrl = "";
+              item.image = "";
+              toast(`Question ${mediaIndex + 1}: question image could not be generated.`);
+            }
+          }else{
+            // Answers only: do not create/show the large question image.
+            item.mediaType = "none";
+            item.mediaUrl = "";
+            item.image = "";
+          }
+
+          if(wantsAnswerImages){
+            try{
+              item = await generatePrudleAnswerImages(
+                item,
+                mediaIndex,
+                selectedQuestions.length
+              );
+            }catch(error){
+              console.error("AI answer image generation error:",error);
+              toast(`Question ${mediaIndex + 1}: one or more answer images could not be generated.`);
+            }
+          }else if(Array.isArray(item.answers)){
+            item.answers.forEach(answer => answer.image = "");
+          }
+
+        }else{
+          // Video and audio stay attached to the question itself.
+          item.mediaType = requestedMedia;
+
+          const mediaPrompt = String(
+            item.mediaPrompt ||
+            item.text ||
+            sourceText ||
+            "Educational English language activity"
+          ).trim();
+
+          setAIStatus(
+            `Creating ${requestedMedia} for question ${mediaIndex + 1} of ${selectedQuestions.length}...`
+          );
+
+          try{
+            const mediaResponse = await fetch(PRUDLE_AI_ENDPOINT,{
+              method:"POST",
+              headers:{"Content-Type":"application/json"},
+              body:JSON.stringify({
+                task:"generate_question_media",
+                mediaType:requestedMedia,
+                questionText:String(item.text || ""),
+                text:String(item.text || ""),
+                audioText:String(item.text || ""),
+                mediaPrompt,
+                prompt:mediaPrompt,
+                imageStyle:"clear educational illustration",
+                imageAspectRatio:"1:1",
+                videoAspectRatio:"16:9",
+                durationSeconds:8
+              })
+            });
+
+            const mediaRaw = await mediaResponse.text();
+            let mediaPayload = {};
+            try{ mediaPayload = mediaRaw ? JSON.parse(mediaRaw) : {}; }catch(_){}
+
+            if(!mediaResponse.ok){
+              throw new Error(mediaPayload?.error || `Media generation failed (${mediaResponse.status}).`);
+            }
+
+            let mediaUrl = String(
+              mediaPayload?.url ||
+              mediaPayload?.mediaUrl ||
+              mediaPayload?.audioUrl ||
+              ""
+            ).trim();
+
+            if(requestedMedia === "video" && !mediaUrl){
+              const operationName = String(
+                mediaPayload?.operationName ||
+                mediaPayload?.operation ||
+                ""
+              ).trim();
+
+              if(operationName){
+                for(let attempt=1; attempt<=40 && !mediaUrl; attempt++){
+                  setAIStatus(`Processing video ${mediaIndex + 1} of ${selectedQuestions.length}...`);
+                  await new Promise(resolve=>setTimeout(resolve,5000));
+
+                  const checkResponse = await fetch(PRUDLE_AI_ENDPOINT,{
+                    method:"POST",
+                    headers:{"Content-Type":"application/json"},
+                    body:JSON.stringify({
+                      task:"check_video_generation",
+                      operationName
+                    })
+                  });
+
+                  const checkPayload = await checkResponse.json().catch(()=>({}));
+
+                  if(String(checkPayload?.status || "").toLowerCase() === "failed"){
+                    throw new Error(checkPayload?.error || "Video generation failed.");
+                  }
+
+                  if(String(checkPayload?.status || "").toLowerCase() === "completed"){
+                    mediaUrl = String(checkPayload?.url || checkPayload?.mediaUrl || "").trim();
+                  }
+                }
+              }
+            }
+
+            if(!mediaUrl){
+              throw new Error(`No ${requestedMedia} URL was returned.`);
+            }
+
+            item.mediaUrl = mediaUrl;
+
+            if(requestedMedia === "video"){
+              item.video = mediaUrl;
+            }else if(requestedMedia === "audio"){
+              item.audio = mediaUrl;
+              item.audioUrl = mediaUrl;
+            }
+
+          }catch(mediaError){
+            console.error("AI media generation error:",mediaError);
+            item.mediaType = "none";
+            item.mediaUrl = "";
+            item.video = "";
+            item.audio = "";
+            toast(`Question ${mediaIndex + 1}: ${requestedMedia} could not be generated.`);
+          }
+        }
+
+        addQuestion(item);
+      }
+
+      setAIStatus(
+        `Added ${selectedQuestions.length} AI questions` +
+        (requestedMedia === "none"
+          ? " without media."
+          : requestedMedia === "image"
+            ? ` with images (${imagePlacement}).`
+            : ` with ${requestedMedia}.`) +
+        " Review or edit them, then click Save Activity.",
+        "success"
+      );
+      toast(`Generated ${selectedQuestions.length} AI questions ✨`);
+      document.getElementById("questionsContainer")?.scrollIntoView({behavior:"smooth",block:"start"});
+    }finally{
+      button.disabled = false;
+      button.innerHTML = oldHTML;
+    }
+  }catch(error){
+    console.error("Prudle AI generator error:",error);
+    setAIStatus(error.message || "Unable to generate questions.","error");
+    alert(error.message || "Unable to generate questions.");
+  }
+}
+
+
+async function generateListeningWithAI(){
+  try{
+    if(!requireAdminForQuestions()) return;
+
+    if(!PRUDLE_AI_ENDPOINT || PRUDLE_AI_ENDPOINT.includes("PASTE_YOUR")){
+      throw new Error("Add your secure AI endpoint to PRUDLE_AI_ENDPOINT first. Do not put an AI API key inside this HTML file.");
+    }
+
+    const sourceType = document.getElementById("aiSourceType").value;
+    const level = document.getElementById("aiLevel").value;
+    const language = document.getElementById("aiLanguage").value;
+    const accent = document.getElementById("aiListeningAccent").value;
+    const durationSeconds = Math.max(20, Math.min(180, Number(document.getElementById("aiListeningDuration").value || 60)));
+    const count = Math.max(1, Math.min(20, Number(document.getElementById("aiListeningCount").value || 10)));
+    let sourceText = "";
+
+    if(sourceType === "file"){
+      const file = document.getElementById("aiSourceFile").files?.[0];
+      if(!file) throw new Error("Choose a PDF, Word, or TXT file first.");
+      setAIStatus("Reading the source file...");
+      sourceText = await readImportSourceFile(file);
+    }else{
+      sourceText = String(document.getElementById("aiTopic").value || "").trim();
+      if(!sourceText) throw new Error("Enter a listening topic or instructions first.");
+    }
+
+    sourceText = sourceText.slice(0, 30000);
+
+    const button = document.getElementById("aiListeningBtn");
+    const oldHTML = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<span class="import-loading"><i class="fa-solid fa-spinner fa-spin"></i> Creating listening...</span>';
+    setAIStatus(`Creating ${durationSeconds}-second ${accent} listening and ${count} questions for ${level}...`);
+
+    try{
+      const response = await fetch(PRUDLE_AI_ENDPOINT,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+
+  task:AI_TASK,
+
+  mode:"listening",
+
+  mediaType:"audio",
+
+  text:sourceText,
+          prompt:sourceText,
+          sourceText,
+          level,
+          language,
+          accent,
+          durationSeconds,
+          count,
+          questionType:"mcq",
+          activityTitle:readText("activityTitle"),
+          activityDescription:readText("activityDescription")
+        })
+      });
+
+      const raw = await response.text();
+      let payload;
+      try{ payload = JSON.parse(raw); }catch(_){ throw new Error("AI endpoint returned invalid JSON."); }
+      if(!response.ok) throw new Error(payload?.error || `AI request failed (${response.status}).`);
+
+      const list = Array.isArray(payload?.questions) ? payload.questions : [];
+      const audioUrl = String(payload?.audioUrl || payload?.audio_url || "").trim();
+      if(!list.length) throw new Error("AI did not return listening questions.");
+      if(!audioUrl) throw new Error("AI created questions but did not return an audio URL. Configure the secure endpoint to store the generated audio and return audioUrl.");
+
+      list.slice(0,count).forEach((q,index)=>{
+        const item = normalizeAIQuestion(q,"mcq");
+        // Put the listening audio on every question so it remains available while students answer.
+        item.mediaType = "audio";
+        item.mediaUrl = audioUrl;
+        addQuestion(item);
+      });
+
+      if(payload?.transcript && !readText("activityDescription")){
+        document.getElementById("activityDescription").value = "Listening activity generated with Prudle AI";
+      }
+
+      setAIStatus(`Listening audio and ${Math.min(list.length,count)} questions were added. Review them, then click Save Activity.`,"success");
+      toast(`Listening activity generated 🎧`);
+      document.getElementById("questionsContainer")?.scrollIntoView({behavior:"smooth",block:"start"});
+    }finally{
+      button.disabled = false;
+      button.innerHTML = oldHTML;
+    }
+  }catch(error){
+    console.error("Prudle AI listening generator error:",error);
+    setAIStatus(error.message || "Unable to generate the listening activity.","error");
+    alert(error.message || "Unable to generate the listening activity.");
+  }
+}
+
 /* ===============================
    Save Activity
 ================================ */
@@ -7222,6 +9320,7 @@ timerTotalSeconds,
           .value || "normal",
 
       group:document.getElementById("activityGroup").value,
+      quizGroups:getQuizGroups(),
       status:document.getElementById("activityStatus").value,
 
       questionsLocked:Boolean(CURRENT_ACTIVITY_QUESTIONS_LOCKED),
@@ -7268,6 +9367,242 @@ timerTotalSeconds,
    Display Activities in Admin
 ================================ */
 
+
+function getActivityQuestionGroups(activity){
+  const groups = [];
+
+  if(Array.isArray(activity?.quizGroups)){
+    activity.quizGroups.forEach(group=>{
+      const value = String(group || "").trim();
+      if(value) groups.push(value);
+    });
+  }
+
+  if(Array.isArray(activity?.questions)){
+    activity.questions.forEach(question=>{
+      const value = String(question?.group || "General").trim() || "General";
+      groups.push(value);
+    });
+  }
+
+  if(!groups.length){
+    groups.push("General");
+  }
+
+  return [...new Set(groups)];
+}
+
+function updateAdminCourseFilter(){
+  const select = document.getElementById("adminCourseFilter");
+  if(!select) return;
+
+  const current = String(select.value || "");
+
+  const courseNames = [...new Set(
+    ACTIVITIES_CACHE
+      .map(activity=>String(activity?.courseName || "").trim())
+      .filter(Boolean)
+  )].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:"base"}));
+
+  select.innerHTML =
+    `<option value="">All Courses / Levels</option>` +
+    courseNames
+      .map(name=>`<option value="${esc(name)}">${esc(name)}</option>`)
+      .join("");
+
+  if(courseNames.includes(current)){
+    select.value = current;
+  }
+}
+
+function updateAdminCategoryGroupFilter(){
+  const select = document.getElementById("adminCategoryGroupFilter");
+  if(!select) return;
+
+  const current = String(select.value || "");
+  const selectedCourse = String(
+    document.getElementById("adminCourseFilter")?.value || ""
+  ).trim();
+
+  const categories = [...new Set(
+    ACTIVITIES_CACHE
+      .filter(activity=>{
+        if(!selectedCourse) return true;
+        return String(activity?.courseName || "").trim() === selectedCourse;
+      })
+      .map(activity=>String(activity?.group || "General").trim() || "General")
+      .filter(Boolean)
+  )].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:"base"}));
+
+  select.innerHTML =
+    `<option value="">All Categories / Groups</option>` +
+    categories
+      .map(group=>`<option value="${esc(group)}">${esc(group)}</option>`)
+      .join("");
+
+  if(categories.includes(current)){
+    select.value = current;
+  }
+}
+
+function updateAdminGroupFilter(){
+  const select = document.getElementById("adminQuestionGroupFilter");
+  if(!select) return;
+
+  const current = String(select.value || "");
+  const selectedCourse = String(
+    document.getElementById("adminCourseFilter")?.value || ""
+  ).trim();
+  const selectedCategoryGroup = String(
+    document.getElementById("adminCategoryGroupFilter")?.value || ""
+  ).trim();
+
+  const sourceActivities = ACTIVITIES_CACHE.filter(activity=>{
+    if(
+      selectedCourse &&
+      String(activity?.courseName || "").trim() !== selectedCourse
+    ){
+      return false;
+    }
+
+    if(
+      selectedCategoryGroup &&
+      (String(activity?.group || "General").trim() || "General") !== selectedCategoryGroup
+    ){
+      return false;
+    }
+
+    return true;
+  });
+
+  const groups = [...new Set(
+    sourceActivities.flatMap(activity=>getActivityQuestionGroups(activity))
+  )].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:"base"}));
+
+  select.innerHTML =
+    `<option value="">All Question Groups</option>` +
+    groups
+      .map(group=>`<option value="${esc(group)}">${esc(group)}</option>`)
+      .join("");
+
+  if(groups.includes(current)){
+    select.value = current;
+  }
+}
+
+function refreshAdminDependentFilters(){
+  updateAdminCategoryGroupFilter();
+  updateAdminGroupFilter();
+}
+
+function refreshAdminActivityFilters(){
+  updateAdminCourseFilter();
+  updateAdminCategoryGroupFilter();
+  updateAdminGroupFilter();
+}
+
+function getEditorTimerSettings(){
+  const timerType =
+    document.getElementById("activityTimerType")?.value || "open";
+
+  const timerMinutes = Math.max(
+    0,
+    Number(document.getElementById("activityTimerMinutes")?.value || 0)
+  );
+
+  const timerSeconds = Math.max(
+    0,
+    Math.min(
+      59,
+      Number(document.getElementById("activityTimerSeconds")?.value || 0)
+    )
+  );
+
+  const timerTotalSeconds =
+    timerType === "limited"
+      ? (timerMinutes * 60 + timerSeconds)
+      : 0;
+
+  if(timerType === "limited" && timerTotalSeconds <= 0){
+    throw new Error("Enter a valid quiz time.");
+  }
+
+  return {
+    timerType,
+    timerMinutes,
+    timerSeconds,
+    timerTotalSeconds
+  };
+}
+
+function testCurrentActivityWithoutSaving(){
+  try{
+    const courseId =
+      String(document.getElementById("courseSelect")?.value || "").trim();
+
+    if(!courseId){
+      throw new Error("Select an open course before starting the test preview.");
+    }
+
+    const course =
+      OPEN_COURSES_CACHE.find(item=>item.id === courseId);
+
+    if(!course){
+      throw new Error("Unable to find the selected course.");
+    }
+
+    const questions = canEditCurrentQuestions()
+      ? collectQuestions()
+      : cloneQuestions(LOCKED_QUESTIONS_SNAPSHOT);
+
+    if(!questions.length){
+      throw new Error("Add at least one question before testing the activity.");
+    }
+
+    const timer = getEditorTimerSettings();
+    const tempId = "__prudle_test_" + Date.now();
+
+    const testActivity = {
+      id:tempId,
+      ...timer,
+      title:readText("activityTitle") || "Test Activity",
+      courseId:course.id,
+      courseName:getCourseName(course),
+      trainerName:readText("trainerName") || getTrainer(course),
+      branch:getBranch(course),
+      section:getSection(course),
+      period:getPeriod(course),
+      courseType:getCourseType(course),
+      description:readText("activityDescription"),
+      gameMode:document.getElementById("activityGameMode")?.value || "normal",
+      group:document.getElementById("activityGroup")?.value || "General",
+      quizGroups:getQuizGroups(),
+      status:"open",
+      questionsLocked:false,
+      questions:cloneQuestions(questions),
+      questionCount:questions.length,
+      __unsavedTest:true
+    };
+
+    IS_UNSAVED_TEST_MODE = true;
+
+    // Keep the temporary activity only in memory. Nothing is written to Firestore.
+    ACTIVITIES_CACHE = [
+      testActivity,
+      ...ACTIVITIES_CACHE.filter(item=>item.id !== tempId)
+    ];
+
+    showSection("student");
+    startActivity(tempId,course.id);
+
+    toast("Test mode — activity and result will not be saved");
+
+  }catch(error){
+    console.error(error);
+    alert(error.message || "Unable to start the test activity.");
+  }
+}
+
 async function loadActivities(){
   const box = document.getElementById("adminActivities");
 
@@ -7284,6 +9619,7 @@ async function loadActivities(){
       questionsLocked:Boolean(doc.data().questionsLocked)
     }));
 
+    refreshAdminActivityFilters();
     renderAdminActivities();
 
   }catch(error){
@@ -7298,12 +9634,276 @@ async function loadActivities(){
         questionsLocked:Boolean(doc.data().questionsLocked)
       }));
 
+      refreshAdminActivityFilters();
       renderAdminActivities();
 
     }catch(secondError){
       box.innerHTML = `<div class="empty">Unable to load activities.</div>`;
     }
   }
+}
+
+
+let ADMIN_SAVED_TYPE_FILTER="";
+
+function getSavedTypeInfo(type){
+  const map={
+    listenchoose:{label:"Listen & Choose",icon:"fa-solid fa-ear-listen",emoji:"👂",tag:"LISTENING",desc:"Listen to a word or sentence, then choose the correct picture or answer."},
+    listenrepeat:{label:"Listen & Repeat",icon:"fa-solid fa-volume-high",emoji:"🔊",tag:"PRONUNCIATION",desc:"Play the model audio, then let the learner record and repeat the word or sentence."},
+    buildword:{label:"Build the Word",icon:"fa-solid fa-font",emoji:"🔤",tag:"SPELLING",desc:"Show a picture and arrange shuffled letters to build the correct word."},
+    buildsentence:{label:"Build the Sentence",icon:"fa-solid fa-puzzle-piece",emoji:"🧩",tag:"SENTENCE",desc:"Arrange shuffled words in the correct order to make a complete sentence."},
+    catchanswer:{label:"Catch the Correct Answer",icon:"fa-solid fa-bullseye",emoji:"🎯",tag:"SPEED GAME",desc:"Answers move around the play area. Catch the correct answer before time runs out."},
+    movechoose:{label:"Move & Choose",icon:"fa-solid fa-person-running",emoji:"🏃",tag:"PHYSICAL ACTIVITY",desc:"A classroom movement challenge: find, touch, point, jump or act before the countdown ends."},
+    mcq:{label:"Multiple Choice",icon:"fa-solid fa-list-check",tag:"QUIZ",desc:"Choose the correct answer from multiple options."},
+    match:{label:"Matching",icon:"fa-solid fa-link",tag:"MATCHING",desc:"Connect each word, picture or prompt with its correct match."},
+    order:{label:"Ordering",icon:"fa-solid fa-arrow-down-1-9",tag:"ORDERING",desc:"Put the items in the correct sequence or order."},
+    random:{label:"Random Image",icon:"fa-solid fa-images",tag:"RANDOM",desc:"Reveal a random image and use it as an interactive classroom prompt."},
+    wheelmcq:{label:"Wheel + Multiple Choice",icon:"fa-solid fa-dharmachakra",tag:"WHEEL GAME",desc:"Spin the wheel, reveal a question and choose the correct answer."},
+    balloon:{label:"Balloon Pop",icon:"fa-solid fa-circle",tag:"POP GAME",desc:"Pop the balloon to reveal the question and answer the challenge."},
+    mystery:{label:"Mystery Box",icon:"fa-solid fa-gift",tag:"SURPRISE",desc:"Open the mystery box to reveal a hidden question or challenge."},
+    bomb:{label:"Bomb Defuse",icon:"fa-solid fa-bomb",tag:"CHALLENGE",desc:"Answer correctly before the countdown ends and defuse the bomb."},
+    text:{label:"Written Answer",icon:"fa-solid fa-pen",tag:"WRITING",desc:"Read the prompt and type a written answer."},
+    voice:{label:"Speaking",icon:"fa-solid fa-microphone",tag:"SPEAKING",desc:"Respond to the prompt using a spoken answer."},
+    audio:{label:"Audio",icon:"fa-solid fa-volume-high",tag:"LISTENING",desc:"Listen to the audio and respond to the activity prompt."},
+    video:{label:"Video",icon:"fa-solid fa-video",tag:"VIDEO",desc:"Watch the video and complete the related activity."}
+  };
+  return map[String(type||"").trim().toLowerCase()] || {
+    label:"Activity",
+    icon:"fa-solid fa-gamepad",
+    tag:"ACTIVITY",
+    desc:"Open this interactive activity and view its saved groups."
+  };
+}
+
+function savedTypeMiniPreview(type){
+  const t=String(type||"").trim().toLowerCase();
+
+  if(t==="listenchoose")return `
+    <div class="saved-type-mini-play"><i class="fa-solid fa-play"></i></div>
+    <div class="saved-type-mini-pill">🍎 Apple</div>
+    <div class="saved-type-mini-pill">🍌 Banana</div>`;
+
+  if(t==="listenrepeat")return `
+    <div class="saved-type-mini-play"><i class="fa-solid fa-volume-high"></i></div>
+    <div class="saved-type-mini-pill">Hello, teacher!</div>
+    <div class="saved-type-mini-outline"><i class="fa-solid fa-microphone"></i></div>`;
+
+  if(t==="buildword")return `
+    <span style="font-size:27px">🍎</span>
+    <div class="saved-type-letter">P</div><div class="saved-type-letter">A</div>
+    <div class="saved-type-letter">L</div><div class="saved-type-letter">E</div>`;
+
+  if(t==="buildsentence")return `
+    <div class="saved-type-word-chip">This</div><div class="saved-type-word-chip">is</div>
+    <div class="saved-type-word-chip">my</div><div class="saved-type-word-chip">mother.</div>`;
+
+  if(t==="catchanswer")return `
+    <div class="saved-type-catch-dot one">CAT</div>
+    <div class="saved-type-catch-dot two">DOG</div>
+    <div class="saved-type-catch-dot three">BIRD</div>
+    <span style="font-size:26px">🎯</span>`;
+
+  if(t==="movechoose")return `
+    <div class="saved-type-move-count">3</div><div class="saved-type-move-count">2</div>
+    <div class="saved-type-move-count">1</div><div class="saved-type-move-go">GO! 🏃</div>
+    <div class="saved-type-mini-pill" style="width:100%;text-align:center">Touch something BLUE!</div>`;
+
+  if(t==="mcq")return `
+    <div class="saved-type-mini-pill">A</div><div class="saved-type-mini-pill">B</div>
+    <div class="saved-type-mini-pill">C</div><div class="saved-type-mini-pill">✓</div>`;
+
+  if(t==="match")return `
+    <div class="saved-type-mini-pill">🍎 Apple</div><i class="fa-solid fa-link" style="color:var(--kid-accent)"></i>
+    <div class="saved-type-mini-pill">🐶 Dog</div>`;
+
+  if(t==="order")return `
+    <div class="saved-type-word-chip">1</div><i class="fa-solid fa-arrow-right" style="color:var(--kid-accent)"></i>
+    <div class="saved-type-word-chip">2</div><i class="fa-solid fa-arrow-right" style="color:var(--kid-accent)"></i>
+    <div class="saved-type-word-chip">3</div>`;
+
+  if(t==="random")return `
+    <div class="saved-type-mini-play"><i class="fa-solid fa-shuffle"></i></div>
+    <div class="saved-type-mini-pill">🖼️ Random Image</div>`;
+
+  if(t==="wheelmcq")return `
+    <div class="saved-type-mini-play"><i class="fa-solid fa-dharmachakra"></i></div>
+    <div class="saved-type-mini-pill">Spin</div><div class="saved-type-mini-pill">Choose</div>`;
+
+  if(t==="balloon")return `<span style="font-size:42px">🎈</span><div class="saved-type-mini-pill">POP!</div>`;
+  if(t==="mystery")return `<span style="font-size:42px">🎁</span><div class="saved-type-mini-pill">Open the box</div>`;
+  if(t==="bomb")return `<span style="font-size:40px">💣</span><div class="saved-type-mini-pill">3 · 2 · 1</div>`;
+  if(t==="text")return `<div class="saved-type-mini-pill" style="width:80%;text-align:left">Type your answer...</div>`;
+  if(t==="voice")return `<div class="saved-type-mini-outline"><i class="fa-solid fa-microphone"></i></div><div class="saved-type-mini-pill">Speak now</div>`;
+  if(t==="audio")return `<div class="saved-type-mini-play"><i class="fa-solid fa-play"></i></div><div class="saved-type-mini-pill">Listen</div>`;
+  if(t==="video")return `<div class="saved-type-mini-play"><i class="fa-solid fa-play"></i></div><div class="saved-type-mini-pill">Watch Video</div>`;
+
+  return `<div class="saved-type-mini-play"><i class="fa-solid fa-gamepad"></i></div><div class="saved-type-mini-pill">Open Activity</div>`;
+}
+
+function savedTypeTheme(type){
+  const x={
+    mcq:["#08744f","#e5f8f0"],match:["#155a8a","#e7f4fd"],order:["#9a4d00","#fff0df"],
+    random:["#6c3483","#f4e8fb"],wheelmcq:["#8a6500","#fff7d9"],balloon:["#a61f55","#ffe8f1"],
+    mystery:["#6b4b00","#fff3c9"],bomb:["#8b1e1e","#ffe8e6"],text:["#7a3e00","#fff4e7"],
+    voice:["#9b2445","#fde9ef"],audio:["#34495e","#edf2f6"],video:["#34495e","#edf2f6"],
+    listenchoose:["#2474b5","#eaf4ff"],listenrepeat:["#df2f68","#fff0f5"],
+    buildword:["#0b9b6a","#eafaf4"],buildsentence:["#9b3fc0","#f7ecfc"],
+    catchanswer:["#e86f08","#fff3e7"],movechoose:["#ef4a3b","#fff0ee"]
+  };
+  return x[type]||["#164478","#edf4fa"];
+}
+function savedTypeCounts(activities){
+  const counts={};
+
+  (activities||[]).forEach(activity=>{
+    const types=new Set(
+      (Array.isArray(activity?.questions) ? activity.questions : [])
+        .map(q=>String(q?.type||"mcq").trim().toLowerCase())
+        .filter(type=>type && type!=="wheel")
+    );
+
+    types.forEach(type=>{
+      counts[type]=(counts[type]||0)+1;
+    });
+  });
+
+  return counts;
+}
+function renderSavedTypeCards(activities){
+  const host=document.getElementById("savedActivityTypeCards");
+  if(!host)return;
+
+  const counts=savedTypeCounts(activities);
+  const order=[
+    "listenchoose","listenrepeat","buildword","buildsentence","catchanswer","movechoose",
+    "mcq","match","order","random","wheelmcq","balloon","mystery","bomb","text","voice","audio","video"
+  ];
+  const types=order.filter(type=>(counts[type]||0)>0);
+  const total=(activities||[]).length;
+
+  let html=`
+    <button type="button"
+      class="saved-type-card all-type ${!ADMIN_SAVED_TYPE_FILTER?"active":""}"
+      onclick="setAdminSavedTypeFilter('')">
+      <div class="saved-type-card-top">
+        <span class="saved-type-card-icon"><i class="fa-solid fa-layer-group"></i></span>
+        <span class="saved-type-card-title-wrap">
+          <span class="saved-type-card-name">All Question Types</span>
+          <span class="saved-type-card-tag">ALL ACTIVITIES</span>
+        </span>
+      </div>
+      <div class="saved-type-card-desc">Open all saved activity groups and browse every available question type.</div>
+      <div class="saved-type-mini-stage">
+        <div class="saved-type-mini-play"><i class="fa-solid fa-shapes"></i></div>
+        <div class="saved-type-mini-pill">Listen</div>
+        <div class="saved-type-mini-pill">Play</div>
+        <div class="saved-type-mini-pill">Speak</div>
+      </div>
+      <span class="saved-type-count" title="${total} saved groups">${total}</span>
+    </button>`;
+
+  html+=types.map(type=>{
+    const info=getSavedTypeInfo(type);
+    const count=counts[type]||0;
+    const [color,soft]=savedTypeTheme(type);
+
+    return `
+      <button type="button"
+        class="saved-type-card ${ADMIN_SAVED_TYPE_FILTER===type?"active":""}"
+        style="--type-color:${color};--type-soft:${soft}"
+        onclick="setAdminSavedTypeFilter('${esc(type)}')">
+        <div class="saved-type-card-top">
+          <span class="saved-type-card-icon">${
+            info.emoji ? esc(info.emoji) : `<i class="${info.icon}"></i>`
+          }</span>
+          <span class="saved-type-card-title-wrap">
+            <span class="saved-type-card-name">${esc(info.label)}</span>
+            <span class="saved-type-card-tag">${esc(info.tag||"ACTIVITY")}</span>
+          </span>
+        </div>
+        <div class="saved-type-card-desc">${esc(info.desc||"Open this interactive activity.")}</div>
+        <div class="saved-type-mini-stage">${savedTypeMiniPreview(type)}</div>
+        <span class="saved-type-count" title="${count} saved ${count===1?"group":"groups"}">${count}</span>
+      </button>`;
+  }).join("");
+
+  host.innerHTML=html;
+}
+
+function syncSavedActivitiesModalSearch(value){
+  const mainSearch=document.getElementById("adminActivitySearch");
+  if(mainSearch){
+    mainSearch.value=String(value||"");
+  }
+  renderAdminActivities();
+}
+
+function clearSavedActivitiesModalSearch(){
+  const popupSearch=document.getElementById("savedActivitiesModalSearch");
+  if(popupSearch)popupSearch.value="";
+  syncSavedActivitiesModalSearch("");
+  popupSearch?.focus();
+}
+
+function setAdminSavedTypeFilter(type){
+  ADMIN_SAVED_TYPE_FILTER=String(type||"").trim().toLowerCase();
+
+  renderAdminActivities();
+
+  const modal=document.getElementById("savedActivitiesTypeModal");
+  const body=document.getElementById("savedActivitiesTypeModalBody");
+  const title=document.getElementById("savedActivitiesTypeModalTitle");
+  const list=document.getElementById("adminActivities");
+  const popupSearch=document.getElementById("savedActivitiesModalSearch");
+  const mainSearch=document.getElementById("adminActivitySearch");
+
+  if(!modal || !body || !list)return;
+
+  if(popupSearch){
+    popupSearch.value=String(mainSearch?.value||"");
+  }
+
+  const info=ADMIN_SAVED_TYPE_FILTER
+    ? getSavedTypeInfo(ADMIN_SAVED_TYPE_FILTER)
+    : null;
+
+  if(title){
+    title.innerHTML=ADMIN_SAVED_TYPE_FILTER
+      ? `<i class="${info.icon}"></i> ${esc(info.label)} — Saved Groups`
+      : `<i class="fa-solid fa-layer-group"></i> All Saved Activity Groups`;
+  }
+
+  list.classList.remove("saved-admin-list-inline-hidden");
+  body.appendChild(list);
+
+  modal.classList.add("show");
+  document.body.style.overflow="hidden";
+}
+
+function closeSavedActivitiesTypeModal(event){
+  if(event && event.target!==event.currentTarget)return;
+
+  const modal=document.getElementById("savedActivitiesTypeModal");
+  const list=document.getElementById("adminActivities");
+  const browser=document.getElementById("savedActivityTypeBrowser");
+
+  modal?.classList.remove("show");
+  document.body.style.overflow="";
+
+  if(list && browser){
+    browser.insertAdjacentElement("afterend",list);
+    list.classList.add("saved-admin-list-inline-hidden");
+  }
+}
+
+document.addEventListener("keydown",event=>{
+  if(event.key==="Escape"){
+    closeSavedActivitiesTypeModal();
+  }
+});
+function activityHasSavedType(activity,type){
+  if(!type)return true;
+  return (activity?.questions||[]).some(q=>String(q?.type||"mcq").trim().toLowerCase()===type);
 }
 
 function renderAdminActivities(){
@@ -7329,21 +9929,87 @@ function renderAdminActivities(){
       ""
     ).trim();
 
+  const selectedCourse =
+    String(
+      document.getElementById("adminCourseFilter")?.value ||
+      ""
+    ).trim();
+
+  const selectedQuestionGroup =
+    String(
+      document.getElementById("adminQuestionGroupFilter")?.value ||
+      ""
+    ).trim();
+
+  const selectedCategoryGroup =
+    String(
+      document.getElementById("adminCategoryGroupFilter")?.value ||
+      ""
+    ).trim();
+
   const filteredActivities =
-    ACTIVITIES_CACHE.filter(
-      activity=>
-        activityMatchesNameSearch(
+    ACTIVITIES_CACHE.filter(activity=>{
+
+      if(
+        !activityMatchesNameSearch(
           activity,
           query
         )
-    );
+      ){
+        return false;
+      }
+
+      if(
+        selectedCourse &&
+        String(activity?.courseName || "").trim() !== selectedCourse
+      ){
+        return false;
+      }
+
+      if(
+        selectedQuestionGroup &&
+        !getActivityQuestionGroups(activity).includes(selectedQuestionGroup)
+      ){
+        return false;
+      }
+
+      if(
+        selectedCategoryGroup &&
+        (String(activity?.group || "General").trim() || "General") !== selectedCategoryGroup
+      ){
+        return false;
+      }
+
+      if(ADMIN_SAVED_TYPE_FILTER && !activityHasSavedType(activity,ADMIN_SAVED_TYPE_FILTER)){
+        return false;
+      }
+
+      return true;
+    });
 
   if(countBox){
+    const hasFilters =
+      Boolean(
+        query ||
+        selectedCourse ||
+        selectedQuestionGroup ||
+        selectedCategoryGroup
+      );
+
     countBox.textContent =
-      query
+      hasFilters
         ? `${filteredActivities.length} of ${ACTIVITIES_CACHE.length} activities`
         : `${ACTIVITIES_CACHE.length} saved activities`;
   }
+
+  const typeBrowserActivities=ACTIVITIES_CACHE.filter(activity=>{
+    if(!activityMatchesNameSearch(activity,query))return false;
+    if(selectedCourse && String(activity?.courseName||"").trim()!==selectedCourse)return false;
+    if(selectedQuestionGroup && !getActivityQuestionGroups(activity).includes(selectedQuestionGroup))return false;
+    if(selectedCategoryGroup && (String(activity?.group||"General").trim()||"General")!==selectedCategoryGroup)return false;
+    return true;
+  });
+  renderSavedTypeCards(typeBrowserActivities);
 
   if(!ACTIVITIES_CACHE.length){
 
@@ -7431,6 +10097,12 @@ function renderAdminActivities(){
             </span>
 
             <span class="mini">
+              🗂️ ${esc(
+                getActivityQuestionGroups(activity).join(", ")
+              )}
+            </span>
+
+            <span class="mini">
               ${
                 (
                   activity.gameMode ||
@@ -7452,8 +10124,8 @@ function renderAdminActivities(){
             <span class="mini">
               ${
                 activity.questionsLocked
-                  ? "🔒 Questions Locked"
-                  : "🔓 Questions Editable"
+                  ? "🔒 Locked by " + esc(activity.lockedBy || activity.lockedByUsername || "Unknown")
+                  : "🔓 Quiz Unlocked"
               }
             </span>
 
@@ -7461,51 +10133,61 @@ function renderAdminActivities(){
 
           <div class="actions">
 
-            <button
-              class="btn btn-primary"
-              onclick="editActivity('${activity.id}')">
-
-              <i class="fa-solid fa-pen"></i>
-              Edit
-            </button>
+            ${isActivityLockedForCurrentUser(activity) ? `<button class="btn btn-light" type="button" disabled title="Locked by ${esc(activity.lockedBy || activity.lockedByUsername || "another user")}"><i class="fa-solid fa-lock"></i> Locked</button>` : `<button class="btn btn-primary" onclick="closeSavedActivitiesTypeModal();editActivity('${activity.id}')"><i class="fa-solid fa-pen"></i> Edit</button>`}
 
             <button
               class="btn btn-success"
-              onclick="previewActivity('${activity.id}')">
+              onclick="closeSavedActivitiesTypeModal();previewActivity('${activity.id}')">
 
               <i class="fa-solid fa-eye"></i>
               Preview
             </button>
 
 
-            <button
-              class="btn btn-light"
-              onclick="copyActivity('${activity.id}')">
-
-              <i class="fa-solid fa-copy"></i>
-              Copy
-            </button>
-
             ${
-              IS_ADMIN_USER
-                ? `
+              isActivityLockedForCurrentUser(activity)
+                ? `<button class="btn btn-light" type="button" disabled title="Questions locked by ${esc(activity.lockedBy || activity.lockedByUsername || "another user")}"><i class="fa-solid fa-lock"></i> Copy Locked</button>`
+                : `
                   <button
-                    class="btn btn-gold"
-                    onclick="toggleActivityQuestionsLock('${activity.id}')">
-
-                    <i class="fa-solid ${
-                      activity.questionsLocked
-                        ? "fa-lock-open"
-                        : "fa-lock"
-                    }"></i>
-
-                    ${
-                      activity.questionsLocked
-                        ? "Unlock Questions"
-                        : "Lock Questions"
-                    }
+                    class="btn btn-light"
+                    onclick="closeSavedActivitiesTypeModal();copyActivity('${activity.id}')">
+                    <i class="fa-solid fa-copy"></i>
+                    Copy
                   </button>
                 `
+            }
+
+            ${
+              getCurrentPrudleUsername()
+                ? (
+                    activity.questionsLocked && isActivityLockedForCurrentUser(activity)
+                      ? `
+                        <button
+                          class="btn btn-light"
+                          type="button"
+                          disabled
+                          title="Only ${esc(activity.lockedBy || activity.lockedByUsername || "the user who locked it")} can unlock these questions">
+                          <i class="fa-solid fa-lock"></i>
+                          Questions Locked
+                        </button>
+                      `
+                      : `
+                        <button
+                          class="btn btn-gold"
+                          onclick="closeSavedActivitiesTypeModal();toggleActivityQuestionsLock('${activity.id}')">
+                          <i class="fa-solid ${
+                            activity.questionsLocked
+                              ? "fa-lock-open"
+                              : "fa-lock"
+                          }"></i>
+                          ${
+                            activity.questionsLocked
+                              ? "Unlock Questions"
+                              : "Lock Questions"
+                          }
+                        </button>
+                      `
+                  )
                 : ""
             }
 
@@ -7517,7 +10199,7 @@ function renderAdminActivities(){
                 ? `
                   <button
                     class="btn btn-danger"
-                    onclick="deleteActivity('${activity.id}')">
+                    onclick="closeSavedActivitiesTypeModal();deleteActivity('${activity.id}')">
 
                     <i class="fa-solid fa-trash"></i>
                     Delete
@@ -7533,6 +10215,13 @@ function renderAdminActivities(){
       `)
       .join("");
 
+
+  if(
+    box &&
+    !box.closest("#savedActivitiesTypeModalBody")
+  ){
+    box.classList.add("saved-admin-list-inline-hidden");
+  }
 }
 
 /* ===============================
@@ -7680,7 +10369,16 @@ function editActivity(id){
     return;
   }
 
+  if(isActivityLockedForCurrentUser(activity)){
+    alert("🔒 This quiz is locked by: " + (activity.lockedBy || activity.lockedByUsername || "another user") + "\nOnly the same user who locked it can open it.");
+    return;
+  }
+
   EDIT_ACTIVITY_ID = id;
+  QUIZ_GROUPS = Array.isArray(activity.quizGroups) && activity.quizGroups.length
+    ? [...new Set(["General", ...activity.quizGroups])]
+    : [...new Set(["General", ...(activity.questions || []).map(q=>q.group || "General")])];
+  renderQuizGroups();
   LOCKED_QUESTIONS_SNAPSHOT = cloneQuestions(activity.questions || []);
   CURRENT_ACTIVITY_QUESTIONS_LOCKED = Boolean(activity.questionsLocked);
 
@@ -7825,6 +10523,8 @@ function resetEditor(){
   stopBombTimer();
 
   EDIT_ACTIVITY_ID = "";
+  QUIZ_GROUPS = ["General"];
+  renderQuizGroups();
   LOCKED_QUESTIONS_SNAPSHOT = [];
   CURRENT_ACTIVITY_QUESTIONS_LOCKED = false;
 
@@ -11999,6 +14699,15 @@ async function finishActivity(){
 
   launchBigConfetti();
 
+  if(IS_UNSAVED_TEST_MODE || CURRENT_ACTIVITY?.__unsavedTest){
+    toast("Test completed — no activity or result was saved");
+    window.scrollTo({
+      top:0,
+      behavior:"smooth"
+    });
+    return;
+  }
+
   try{
 
     await db
@@ -12210,6 +14919,9 @@ function restartGame(){
 
 function backToActivities(){
 
+  const returnToEditor =
+    Boolean(IS_UNSAVED_TEST_MODE || CURRENT_ACTIVITY?.__unsavedTest);
+
   clearRandomQuestionTimers();
   stopActivityTimer();
   stopRaceObserver();
@@ -12248,7 +14960,13 @@ function backToActivities(){
     .classList
     .remove("hidden");
 
-  loadStudentActivities();
+  if(returnToEditor){
+    IS_UNSAVED_TEST_MODE = false;
+    showSection("admin");
+    toast("Returned to editor — test data was not saved");
+  }else{
+    loadStudentActivities();
+  }
 
   window.scrollTo({
     top:0,
@@ -12312,7 +15030,8 @@ function launchBigConfetti(){
 ================================ */
 
 window.addEventListener("DOMContentLoaded",async()=>{
-  await loadOpenCourses();
+  await renderQuizGroups();
+loadOpenCourses();
 
   updateCurrentUserRole(
     localStorage.getItem("role") || CURRENT_USER_ROLE
