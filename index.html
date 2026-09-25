@@ -630,6 +630,10 @@ button{cursor:pointer}
   display:none;margin-top:8px
 }
 
+
+/* Professional movement / kids games */
+.prudle-kids-game{padding:10px 0;text-align:center}.kids-game-banner{font-size:20px;font-weight:900;color:var(--blue);margin:5px 0 18px}.kids-big-action{border:0;border-radius:18px;padding:15px 22px;background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;font-weight:900;font-size:17px;box-shadow:0 9px 20px rgba(22,68,120,.2);margin:12px auto}.kids-choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.kids-choice-card{min-height:105px;border:2px solid #dce6ef;border-radius:20px;background:#fff;font-size:18px;font-weight:900;padding:14px;transition:.2s}.kids-choice-card img{width:100%;height:115px;object-fit:contain;border-radius:12px}.kids-choice-card.correct,.catch-target.correct{border-color:var(--green);background:#e9fbf4}.kids-choice-card.wrong,.catch-target.wrong{border-color:var(--red);background:#fff0ee}.repeat-stage,.build-target,.move-instruction,.mystery-reward-reveal{border-radius:22px;background:#f8fbfd;border:1px solid var(--border);padding:22px}.repeat-icon{font-size:55px}.repeat-phrase{font-size:28px;font-weight:900;color:var(--blue);margin:10px}.repeat-steps{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}.repeat-steps span{background:#fff;border:1px solid var(--border);padding:8px 12px;border-radius:999px;font-weight:800}.build-target{min-height:75px;font-size:24px;font-weight:900;margin-bottom:14px}.build-tiles{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}.build-tile{min-width:55px;min-height:55px;border:2px solid var(--blue2);background:#fff;color:var(--blue);border-radius:15px;font-size:20px;font-weight:900}.build-tile.picked{opacity:.35;transform:scale(.92)}.catch-stage{position:relative;min-height:310px;border-radius:24px;background:linear-gradient(145deg,#eef8ff,#fff8e8);overflow:hidden;border:2px dashed #bfd5e6}.catch-target{position:absolute;border:2px solid var(--blue2);background:#fff;border-radius:999px;padding:13px 18px;font-weight:900;animation:prudleFloat 2.8s ease-in-out infinite alternate}.catch-0{left:7%;top:15%}.catch-1{right:8%;top:22%;animation-delay:.4s}.catch-2{left:25%;bottom:15%;animation-delay:.8s}.catch-3{right:22%;bottom:12%;animation-delay:1.2s}@keyframes prudleFloat{to{transform:translate(18px,22px) rotate(3deg)}}.move-countdown{display:flex;justify-content:center;gap:12px}.move-countdown span{width:58px;height:58px;border-radius:50%;display:grid;place-items:center;background:var(--gold);font-size:25px;font-weight:900}.move-go{font-size:34px;font-weight:900;color:var(--green);margin:12px}.move-instruction{font-size:26px;font-weight:900;color:var(--blue)}.mystery-reward-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.mystery-reward-box{min-height:145px;border:0;border-radius:24px;background:linear-gradient(145deg,#6c43a8,#9a67db);color:#fff;box-shadow:0 10px 24px rgba(81,49,145,.24);font-size:15px;font-weight:900}.mystery-reward-box span{display:block;font-size:50px}.mystery-reward-box.opened{transform:scale(1.04);box-shadow:0 0 0 5px rgba(244,185,66,.35)}.mystery-reward-reveal{margin-top:16px;font-size:19px}.reward-burst{font-size:30px}@media(max-width:600px){.kids-choice-grid{grid-template-columns:1fr}.mystery-reward-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.catch-stage{min-height:360px}.move-instruction,.repeat-phrase{font-size:21px}.game-reward-editor{grid-template-columns:1fr!important}}@media(prefers-reduced-motion:reduce){.catch-target{animation:none}}
+
 /* Student */
 .student-start{
   max-width:1100px;margin:25px auto
@@ -5160,6 +5164,19 @@ function addQuestion(data = null){
       </div>
     </div>
 
+    <div class="grid grid-2 game-reward-editor" style="margin-top:12px">
+      <div class="field">
+        <label>⭐ Points / Reward Score</label>
+        <input class="q-reward-points" type="number" min="1" max="100" value="${Math.max(1,Number(q.rewardPoints || q.degree || 1))}">
+        <div class="help">Points earned when the student completes this game successfully.</div>
+      </div>
+      <div class="field">
+        <label>🏆 Motivational Reward</label>
+        <input class="q-reward-text" value="${esc(q.rewardText || q.reward || '')}" placeholder="Example: Super Star ⭐ / Great teamwork!">
+        <div class="help">Optional message shown after success.</div>
+      </div>
+    </div>
+
     <div class="media-preview-box q-media-preview hidden"></div>
 
     <div class="answers-admin"></div>
@@ -5558,7 +5575,7 @@ else if(type === "order"){
   }else if(type === "mystery"){
 
     note.textContent =
-      "The student opens a mystery box first. The hidden question and its answer choices then appear.";
+      "Mystery Reward Box: each item is a surprise challenge/reward. The student opens one box, completes the revealed classroom challenge, and earns the question points. No correct-answer choice is required.";
 
     labels.forEach(label=>{
       label.textContent =
@@ -5576,19 +5593,19 @@ else if(type === "order"){
     note.textContent = "Add an audio URL in Question Media, then add picture/text choices and select one correct answer.";
     labels.forEach(label=>{ label.textContent="Answer Choice"; });
   }else if(type === "listenrepeat"){
-    note.textContent = "Add the model audio and the word/sentence to repeat. Items can be used as pronunciation prompts.";
+    note.textContent = "Movement speaking activity: add model audio and a short word/sentence. The learner listens, repeats aloud, then taps I Repeated It to earn the reward.";
     labels.forEach(label=>{ label.textContent="Repeat Prompt"; });
   }else if(type === "buildword"){
-    note.textContent = "Enter the target word as letter/items in the correct order. The activity can shuffle them for the learner.";
+    note.textContent = "Hands-on spelling game: enter letters/parts in the CORRECT order. They are shuffled into large touch tiles for the learner to physically build the word.";
     labels.forEach(label=>{ label.textContent="Letter / Part"; });
   }else if(type === "buildsentence"){
-    note.textContent = "Enter the sentence words in the correct final order. They can be shuffled for the learner.";
+    note.textContent = "Hands-on sentence race: enter words/phrases in the CORRECT order. Students tap the shuffled word cards to build the sentence.";
     labels.forEach(label=>{ label.textContent="Word / Phrase"; });
   }else if(type === "catchanswer"){
-    note.textContent = "Add fast answer choices and select one correct answer for the Catch the Correct Answer game.";
+    note.textContent = "Movement speed game: answers move around the play area. The learner must catch/tap the correct moving answer before time runs out.";
     labels.forEach(label=>{ label.textContent="Moving Answer"; });
   }else if(type === "movechoose"){
-    note.textContent = "Write the physical movement instruction and add optional prompts/items for the classroom challenge.";
+    note.textContent = "Real classroom movement challenge: write an action such as Touch something blue / Point to the door / Jump 3 times. After a 3-2-1 GO countdown the learner performs it and taps Done.";
     labels.forEach(label=>{ label.textContent="Movement Prompt / Item"; });
   }else{
 
@@ -6252,6 +6269,8 @@ function collectQuestions(){
     const text = box.querySelector(".q-text").value.trim();
     const mediaType = box.querySelector(".q-media-type")?.value || "none";
     const mediaUrl = box.querySelector(".q-media-url")?.value.trim() || "";
+    const rewardPoints = Math.max(1,Math.min(100,Number(box.querySelector(".q-reward-points")?.value || 1)));
+    const rewardText = String(box.querySelector(".q-reward-text")?.value || "").trim();
     const answers = [];
 
     box.querySelectorAll(".answer-admin").forEach(answerBox=>{
@@ -6272,7 +6291,7 @@ function collectQuestions(){
       throw new Error(`Question ${index + 1} requires at least two items.`);
     }
 
-    if(type === "mcq" || (type === "wheelmcq" && wheelAnswerMode === "mcq") || type === "balloon" || type === "mystery" || type === "bomb"){
+    if(type === "mcq" || (type === "wheelmcq" && wheelAnswerMode === "mcq") || type === "balloon" || type === "bomb" || type === "listenchoose" || type === "catchanswer"){
       if(!answers.some(answer=>answer.correct)){
         throw new Error(`Select the correct answer for question ${index + 1}.`);
       }
@@ -6332,10 +6351,17 @@ function collectQuestions(){
 
 }
 
-    if(type === "order"){
+    if(["order","buildword","buildsentence"].includes(type)){
       if(answers.some(answer=>!answer.text)){
         throw new Error(`Complete every sequence item in question ${index + 1}.`);
       }
+    }
+
+    if(type === "mystery"){
+      if(answers.length < 2 || answers.some(answer=>!answer.text)){
+        throw new Error(`Mystery Reward Box ${index + 1} requires at least two non-empty surprise challenges.`);
+      }
+      answers.forEach(answer=>{ answer.correct = false; });
     }
 
     if(type === "wheel"){
@@ -6390,6 +6416,9 @@ function collectQuestions(){
       questionId,
       type,
       wheelAnswerMode,
+      degree:rewardPoints,
+      rewardPoints,
+      rewardText,
       text:(type === "random" && !text)
         ? "Look at the selected image and answer the question."
         : (type === "wheel" && !text
@@ -6397,7 +6426,7 @@ function collectQuestions(){
           : (type === "balloon" && !text
               ? "Pop the balloon to reveal the question."
               : (type === "mystery" && !text
-                  ? "Open the mystery box to reveal the question."
+                  ? "Choose a Mystery Reward Box and complete the surprise challenge!"
                   : (type === "bomb" && !text
                       ? "Answer correctly to cut the wire and defuse the bomb."
                       : text)))),
@@ -8118,7 +8147,7 @@ function normalizeAIQuestion(q, fallbackType="mcq"){
       .map(a=>({...a,correct:false}));
   }
 
-  if(["mcq","wheelmcq","balloon","mystery","bomb"].includes(type)){
+  if(["mcq","wheelmcq","balloon","bomb","listenchoose","catchanswer"].includes(type)){
     answers = answers.filter(a => a.text || a.image);
 
     // If the AI supplied no usable choices, create editable placeholders.
@@ -8152,7 +8181,39 @@ function normalizeAIQuestion(q, fallbackType="mcq"){
     });
   }
 
+  if(["buildword","buildsentence"].includes(type)){
+    answers = answers.filter(a=>a.text || a.right).map(a=>({
+      ...a, text:a.text || a.right, right:"", correct:false
+    }));
+  }
+
+  if(type === "listenrepeat" || type === "movechoose"){
+    answers = answers.filter(a=>a.text || a.right);
+    if(!answers.length){
+      answers = [
+        {text:questionText || "Complete the challenge",right:"",image:"",correct:false},
+        {text:"Great job!",right:"",image:"",correct:false}
+      ];
+    }
+    while(answers.length < 2) answers.push({text:"Ready",right:"",image:"",correct:false});
+  }
+
+  if(type === "mystery"){
+    answers = answers.filter(a=>a.text || a.right).map((a,index)=>({
+      ...a,
+      text:a.text || `Mystery ${index + 1}`,
+      right:a.right || a.text || "Complete the surprise challenge!",
+      correct:false
+    }));
+    while(answers.length < 3){
+      const n=answers.length+1;
+      answers.push({text:`Mystery ${n}`,right:"Complete the surprise challenge!",image:"",correct:false});
+    }
+  }
+
   return {
+    rewardPoints:Math.max(1,Number(q?.rewardPoints || q?.degree || q?.points || 1)),
+    rewardText:String(q?.rewardText || q?.reward || ""),
     type,
     wheelAnswerMode:String(q?.wheelAnswerMode || "mcq").toLowerCase() === "correctwrong"
       ? "correctwrong"
@@ -8330,52 +8391,31 @@ function buildPrudleSmartTypeInstructions(requestedType){
   if(requestedType !== "smart") return "";
 
   return `
-IMPORTANT — SMART ACTIVITY TYPE:
-Choose the most educationally suitable Prudle activity type FOR EACH QUESTION independently.
+IMPORTANT — SMART PRUDLE ACTIVITY ENGINE:
+Choose the best activity type for EACH item. The six kids activity types are REAL interactive games, not ordinary MCQ skins.
 
-Available Prudle types and when to use them:
-- mcq: normal comprehension, grammar, vocabulary, reading/listening checks with one correct answer.
-- match: vocabulary ↔ meaning, word ↔ definition, term ↔ example, or paired concepts. Return answers as {text:left,right:right}.
-- order: sentence rearrangement, steps, events, dialogue sequence, chronological order. Return answers already in the CORRECT order.
-- wheel: short prompts/items suitable for a spinning wheel, speaking prompts, quick recall, categories.
-- wheelmcq: a wheel-style prompt that also needs multiple-choice answering.
-- balloon: short fast-recognition multiple-choice questions suitable for a balloon game.
-- mystery: discovery/guessing questions where revealing the answer feels appropriate.
-- bomb: short challenge/review multiple-choice questions suitable for a fast game.
-- random: a random-pick activity made of short independent prompts/items.
+Types:
+- mcq: standard one-correct-answer question.
+- match: matching pairs.
+- order: sequence/order.
+- random: random image/prompt selection.
+- wheel / wheelmcq / balloon / bomb: existing game formats.
+- listenchoose: listening game; provide 2–4 choices and exactly one correct answer. Keep the prompt short and suitable for audio.
+- listenrepeat: pronunciation movement task; text is the phrase to hear/repeat. No right/wrong MCQ is needed.
+- buildword: spelling manipulation; answers are letters or meaningful chunks in the CORRECT final order.
+- buildsentence: sentence manipulation; answers are words/phrases in the CORRECT final order.
+- catchanswer: speed/touch game; 3–5 short moving choices with exactly one correct answer.
+- movechoose: physical classroom challenge such as stand, point, touch, jump, find, move, mime, or bring. It must be safe, simple, age-appropriate and doable beside the student's seat. No MCQ is needed.
+- mystery: MYSTERY REWARD BOX, not an MCQ. Create 3–6 surprise classroom challenges/rewards. Each answer item uses text as the box label and right as the revealed challenge/reward. No correct answer.
 
-Do NOT force all generated questions into the same type.
-Analyze the learning objective and content of every question, then assign the best "type".
+Every item should also include:
+"rewardPoints": 1-10,
+"rewardText": a short motivating message such as "Super Star ⭐" or "Amazing teamwork!".
 
-Return ONLY valid JSON. Each question must contain:
-{
-  "type":"mcq|match|order|random|wheel|wheelmcq|balloon|mystery|bomb",
-  "wheelAnswerMode":"mcq",
-  "text":"question or instruction",
-  "mediaType":"none|image|video|audio",
-  "mediaPrompt":"clear visual prompt when image or video is educationally useful",
-  "mediaUrl":"",
-  "answers":[
-    {"text":"...", "right":"", "image":"", "correct":true}
-  ]
-}
-
-MEDIA RULES:
-- Do NOT generate or request images, videos, or audio automatically.
-- Always return mediaType as "none" and mediaUrl as an empty string for AI-generated questions.
-- Image, video, and audio are created only when the user explicitly chooses them from the existing media controls.
-
-Rules:
-- NEVER return blank required fields.
-- mcq/balloon/mystery/bomb: 2–4 answer choices and exactly one correct answer.
-- match: 2–6 pairs; EVERY pair MUST contain non-empty "text" for the Left Item and either non-empty "right" for the Matching Pair OR a valid "image" URL. Never return a match item with only the left side.
-- order: 2–6 non-empty items in their correct final order.
-- wheel: every section MUST contain non-empty "text" for the category and non-empty "right" for its challenge/question.
-- random: every item must contain the data required by the selected random activity.
-- wheelmcq: provide at least two non-empty choices and exactly one correct answer.
+Return valid JSON only. Keep activities professional, short, varied, age-appropriate, and physically safe.
+MEDIA: return mediaType "none" unless the request explicitly requires listening/media. Never invent URLs.
 `;
 }
-
 
 /* =========================================================
    PRUDLE AI AUTO MEDIA
@@ -12057,10 +12097,17 @@ document
 
   if(type === "mystery"){
     document.getElementById("gameQuestion").textContent =
-      "🎁 Choose and open the mystery box!";
-    renderMysteryQuestion(question,answersBox);
+      question.text || "🎁 Choose a Mystery Reward Box!";
+    renderMysteryRewardQuestion(question,answersBox);
     return;
   }
+
+  if(type === "listenchoose"){ renderListenChooseGame(question,answersBox); return; }
+  if(type === "listenrepeat"){ renderListenRepeatGame(question,answersBox); return; }
+  if(type === "buildword"){ renderBuildGame(question,answersBox,"word"); return; }
+  if(type === "buildsentence"){ renderBuildGame(question,answersBox,"sentence"); return; }
+  if(type === "catchanswer"){ renderCatchAnswerGame(question,answersBox); return; }
+  if(type === "movechoose"){ renderMoveChooseGame(question,answersBox); return; }
 
   answersBox.className = "student-answers";
 
@@ -12081,6 +12128,112 @@ document
 
     answersBox.appendChild(button);
   });
+}
+
+
+/* =========================================================
+   PRUDLE PROFESSIONAL KIDS / MOVEMENT GAME ENGINE
+========================================================= */
+function prudleQuestionPoints(question){
+  return Math.max(1,Math.min(100,Number(question?.rewardPoints || question?.degree || 1)));
+}
+function prudleCompleteGame(correct=true,selectedText=""){
+  if(ANSWER_LOCKED) return;
+  ANSWER_LOCKED=true;
+  const q=CURRENT_ACTIVITY.questions[CURRENT_QUESTION_INDEX];
+  const points=correct ? prudleQuestionPoints(q) : 0;
+  if(correct) CURRENT_SCORE += points;
+  const feedback=document.getElementById("feedback");
+  feedback.className="feedback " + (correct ? "good" : "bad");
+  feedback.textContent=correct
+    ? `🎉 ${q?.rewardText || "Great job!"} +${points} point${points===1?"":"s"}`
+    : "❌ Try again next time!";
+  if(correct){ launchSmallConfetti(); playCorrectSound(); } else { playWrongSound(); }
+  syncCurrentAnswerResult(Boolean(correct),points,selectedText);
+  document.getElementById("scorePill").textContent=`⭐ ${CURRENT_SCORE}`;
+  showNextQuestionButton();
+}
+
+function renderListenChooseGame(question,answersBox){
+  answersBox.className="prudle-kids-game listen-choose-game";
+  const audio=String(question.mediaUrl||question.audioUrl||question.audio||"").trim();
+  answersBox.innerHTML=`
+    <div class="kids-game-banner">👂 <strong>Listen carefully, then choose!</strong></div>
+    ${audio?`<button class="kids-big-action" type="button" onclick="document.getElementById('gameQuestionAudio').play()">🔊 Play Again</button>`:""}
+    <div class="kids-choice-grid">${(question.answers||[]).map((a,i)=>`
+      <button class="kids-choice-card" type="button" onclick="chooseKidsChoice(${i},this)">
+        ${a.image?`<img src="${esc(a.image)}" alt="">`:""}<span>${esc(a.text||"")}</span>
+      </button>`).join("")}</div>`;
+}
+function chooseKidsChoice(index,button){
+  if(ANSWER_LOCKED)return;
+  const q=CURRENT_ACTIVITY.questions[CURRENT_QUESTION_INDEX];
+  const ok=Boolean(q.answers?.[index]?.correct);
+  document.querySelectorAll('.kids-choice-card').forEach((b,i)=>{b.disabled=true;if(q.answers?.[i]?.correct)b.classList.add('correct');});
+  button.classList.add(ok?'correct':'wrong');
+  prudleCompleteGame(ok,q.answers?.[index]?.text||"");
+}
+
+function renderListenRepeatGame(question,answersBox){
+  answersBox.className="prudle-kids-game listen-repeat-game";
+  const phrase=question.text || question.answers?.[0]?.text || "Listen and repeat.";
+  answersBox.innerHTML=`<div class="repeat-stage"><div class="repeat-icon">🔊</div><div class="repeat-phrase">${esc(phrase)}</div>
+    <div class="repeat-steps"><span>1️⃣ Listen</span><span>2️⃣ Repeat aloud</span><span>3️⃣ Tap when done</span></div>
+    <button class="kids-big-action" type="button" onclick="prudleCompleteGame(true,'Repeated aloud')">🎙️ I Repeated It!</button></div>`;
+}
+
+let PRUDLE_BUILD_SELECTED=[];
+function renderBuildGame(question,answersBox,mode){
+  PRUDLE_BUILD_SELECTED=[];
+  const items=(question.answers||[]).map((a,i)=>({text:String(a.text||a.right||''),i})).filter(x=>x.text);
+  const shuffled=shuffleArray(items);
+  answersBox.className="prudle-kids-game build-game";
+  answersBox.innerHTML=`<div class="kids-game-banner">${mode==='word'?'🔤 Build the Word':'🧩 Build the Sentence'}</div>
+    <div id="buildTarget" class="build-target">Tap the tiles in the correct order</div>
+    <div class="build-tiles">${shuffled.map(x=>`<button class="build-tile" data-original="${x.i}" type="button" onclick="pickBuildTile(this,'${mode}')">${esc(x.text)}</button>`).join('')}</div>
+    <div class="type-result-actions"><button class="btn btn-light" type="button" onclick="renderStudentQuestion()">↻ Reset</button><button class="btn btn-primary" type="button" onclick="checkBuildGame('${mode}')">✓ Check</button></div>`;
+}
+function pickBuildTile(btn){
+  if(ANSWER_LOCKED||btn.disabled)return;
+  PRUDLE_BUILD_SELECTED.push(Number(btn.dataset.original)); btn.disabled=true; btn.classList.add('picked');
+  const q=CURRENT_ACTIVITY.questions[CURRENT_QUESTION_INDEX];
+  document.getElementById('buildTarget').textContent=PRUDLE_BUILD_SELECTED.map(i=>q.answers[i]?.text||'').join(q.type==='buildword'?'':' ');
+}
+function checkBuildGame(){
+  if(ANSWER_LOCKED)return;
+  const q=CURRENT_ACTIVITY.questions[CURRENT_QUESTION_INDEX];
+  if(PRUDLE_BUILD_SELECTED.length!==(q.answers||[]).length){alert('Use all tiles first.');return;}
+  const ok=PRUDLE_BUILD_SELECTED.every((original,pos)=>original===pos);
+  prudleCompleteGame(ok,document.getElementById('buildTarget')?.textContent||'');
+}
+
+function renderCatchAnswerGame(question,answersBox){
+  answersBox.className="prudle-kids-game catch-game";
+  answersBox.innerHTML=`<div class="kids-game-banner">🎯 Catch the correct answer!</div><div class="catch-stage">${(question.answers||[]).map((a,i)=>`<button class="catch-target catch-${i%4}" type="button" onclick="catchKidsAnswer(${i},this)">${esc(a.text||'Answer')}</button>`).join('')}</div>`;
+}
+function catchKidsAnswer(index,button){
+  if(ANSWER_LOCKED)return;
+  const q=CURRENT_ACTIVITY.questions[CURRENT_QUESTION_INDEX];
+  const ok=Boolean(q.answers?.[index]?.correct); button.classList.add(ok?'correct':'wrong');
+  prudleCompleteGame(ok,q.answers?.[index]?.text||'');
+}
+
+function renderMoveChooseGame(question,answersBox){
+  answersBox.className="prudle-kids-game move-game";
+  answersBox.innerHTML=`<div class="move-countdown"><span>3</span><span>2</span><span>1</span></div><div class="move-go">GO! 🏃</div><div class="move-instruction">${esc(question.text||'Complete the movement challenge!')}</div><button class="kids-big-action" type="button" onclick="prudleCompleteGame(true,'Movement completed')">✅ Done!</button>`;
+}
+
+function renderMysteryRewardQuestion(question,answersBox){
+  answersBox.className="prudle-kids-game mystery-reward-game";
+  const items=(question.answers||[]).slice(0,6);
+  answersBox.innerHTML=`<div class="kids-game-banner">🎁 Pick ONE surprise box</div><div class="mystery-reward-grid">${items.map((a,i)=>`<button class="mystery-reward-box" type="button" onclick="openMysteryReward(${i},this)"><span>🎁</span><strong>${esc(a.text||`Mystery ${i+1}`)}</strong></button>`).join('')}</div><div id="mysteryRewardReveal" class="mystery-reward-reveal hidden"></div>`;
+}
+function openMysteryReward(index,button){
+  if(ANSWER_LOCKED)return;
+  const q=CURRENT_ACTIVITY.questions[CURRENT_QUESTION_INDEX]; const a=q.answers?.[index]||{};
+  document.querySelectorAll('.mystery-reward-box').forEach(b=>b.disabled=true); button.classList.add('opened');
+  const reveal=document.getElementById('mysteryRewardReveal'); reveal.classList.remove('hidden');
+  reveal.innerHTML=`<div class="reward-burst">✨ 🎉 ✨</div><h3>${esc(a.right||a.text||'Complete the surprise challenge!')}</h3><button class="kids-big-action" type="button" onclick="prudleCompleteGame(true,'Mystery reward completed')">🏆 Challenge Completed</button>`;
 }
 
 function showNextQuestionButton(){
