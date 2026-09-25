@@ -2599,6 +2599,34 @@ button{cursor:pointer}
 
 
 @media(max-width:600px){#aiMediaChoice.ai-type-checks{grid-template-columns:1fr!important}#aiMediaChoice .ai-type-check{min-height:46px;font-size:14px}}
+
+/* Learn & Practice navigation */
+#nextQuestionArea{
+  gap:10px;
+  flex-wrap:wrap;
+}
+#previousLearnVideoBtn,
+#nextQuestionBtn{
+  min-height:48px;
+  touch-action:manipulation;
+}
+@media(max-width:650px){
+  #nextQuestionArea{
+    display:grid;
+    grid-template-columns:1fr;
+    width:100%;
+  }
+  #nextQuestionArea.hidden{
+    display:none!important;
+  }
+  #previousLearnVideoBtn,
+  #nextQuestionBtn{
+    width:100%;
+    min-height:52px;
+    font-size:15px;
+  }
+}
+
 </style>
 </head>
 
@@ -3284,6 +3312,17 @@ button{cursor:pointer}
   style="justify-content:center;margin-top:15px">
 
   <button
+    id="previousLearnVideoBtn"
+    class="btn btn-light hidden"
+    type="button"
+    onclick="previousLearnPracticeVideo()">
+
+    <i class="fa-solid fa-arrow-left"></i>
+    Previous Video
+
+  </button>
+
+  <button
     id="nextQuestionBtn"
     class="btn btn-primary"
     type="button"
@@ -3467,7 +3506,8 @@ const PRUDLE_QUESTION_TYPE_META = {
   buildword:{label:"Build the Word",icon:"🔤"},
   buildsentence:{label:"Build the Sentence",icon:"🧩"},
   catchanswer:{label:"Catch the Correct Answer",icon:"🎯"},
-  movechoose:{label:"Move & Choose",icon:"🏃"}
+  movechoose:{label:"Move & Choose",icon:"🏃"},
+  learnpractice:{label:"Learn and Practice",icon:"🎓"}
 };
 let ACTIVE_QUESTION_TYPE_GROUP = "all";
 
@@ -5126,6 +5166,7 @@ function addQuestion(data = null){
           <option value="buildsentence" ${q.type === "buildsentence" ? "selected" : ""}>🧩 Build the Sentence</option>
           <option value="catchanswer" ${q.type === "catchanswer" ? "selected" : ""}>🎯 Catch the Correct Answer</option>
           <option value="movechoose" ${q.type === "movechoose" ? "selected" : ""}>🏃 Move &amp; Choose</option>
+          <option value="learnpractice" ${q.type === "learnpractice" ? "selected" : ""}>🎓 Learn and Practice</option>
         </select>
         <div class="question-type-note q-type-note"></div>
 
@@ -5468,6 +5509,11 @@ function updateQuestionType(questionBox){
       ".answers-admin + .btn"
     );
 
+  const answersAdmin =
+    questionBox.querySelector(".answers-admin");
+  if(answersAdmin) answersAdmin.style.display="";
+  if(addButton) addButton.style.display="";
+
 if(type === "match"){
 
   note.textContent =
@@ -5608,6 +5654,17 @@ else if(type === "order"){
   }else if(type === "movechoose"){
     note.textContent = "Real classroom movement challenge: write an action such as Touch something blue / Point to the door / Jump 3 times. After a 3-2-1 GO countdown the learner performs it and taps Done.";
     labels.forEach(label=>{ label.textContent="Movement Prompt / Item"; });
+  }else if(type === "learnpractice"){
+    note.textContent = "Learn and Practice: add an educational video only. The learner watches the video, then continues to the next question. No answers are required.";
+    labels.forEach(label=>{ label.textContent="Not used for this activity"; });
+    const mediaTypeSelect=questionBox.querySelector(".q-media-type");
+    if(mediaTypeSelect){
+      mediaTypeSelect.value="video";
+      mediaTypeSelect.disabled=false;
+    }
+    const answersAdmin=questionBox.querySelector(".answers-admin");
+    if(answersAdmin) answersAdmin.style.display="none";
+    if(addButton) addButton.style.display="none";
   }else{
 
     note.textContent =
@@ -6284,11 +6341,11 @@ function collectQuestions(){
       });
     });
 
-    if(!text && type !== "random" && type !== "wheel"){
+    if(!text && type !== "random" && type !== "wheel" && type !== "learnpractice"){
       throw new Error(`Enter the text or instructions for question ${index + 1}.`);
     }
 
-    if(answers.length < 2 && !(type === "wheelmcq" && wheelAnswerMode === "correctwrong")){
+    if(type !== "learnpractice" && answers.length < 2 && !(type === "wheelmcq" && wheelAnswerMode === "correctwrong")){
       throw new Error(`Question ${index + 1} requires at least two items.`);
     }
 
@@ -6418,6 +6475,13 @@ function collectQuestions(){
   );
 
 }
+
+    if(type === "learnpractice"){
+      if(mediaType !== "video" || !mediaUrl){
+        throw new Error(`Learn and Practice question ${index + 1} requires a video URL.`);
+      }
+      answers.length = 0;
+    }
 
     const questionId =
       String(box.dataset.questionId || createStableQuestionId());
@@ -9782,6 +9846,7 @@ function getSavedTypeInfo(type){
     buildsentence:{label:"Build the Sentence",icon:"fa-solid fa-puzzle-piece",emoji:"🧩",tag:"SENTENCE",desc:"Arrange shuffled words in the correct order to make a complete sentence."},
     catchanswer:{label:"Catch the Correct Answer",icon:"fa-solid fa-bullseye",emoji:"🎯",tag:"SPEED GAME",desc:"Answers move around the play area. Catch the correct answer before time runs out."},
     movechoose:{label:"Move & Choose",icon:"fa-solid fa-person-running",emoji:"🏃",tag:"PHYSICAL ACTIVITY",desc:"A classroom movement challenge: find, touch, point, jump or act before the countdown ends."},
+    learnpractice:{label:"Learn and Practice",icon:"fa-solid fa-graduation-cap",emoji:"🎓",tag:"LEARNING VIDEO",desc:"Watch an educational video, then continue to the next question."},
     mcq:{label:"Multiple Choice",icon:"fa-solid fa-list-check",tag:"QUIZ",desc:"Choose the correct answer from multiple options."},
     match:{label:"Matching",icon:"fa-solid fa-link",tag:"MATCHING",desc:"Connect each word, picture or prompt with its correct match."},
     order:{label:"Ordering",icon:"fa-solid fa-arrow-down-1-9",tag:"ORDERING",desc:"Put the items in the correct sequence or order."},
@@ -9903,7 +9968,7 @@ function renderSavedTypeCards(activities){
 
   const counts=savedTypeCounts(activities);
   const order=[
-    "listenchoose","listenrepeat","buildword","buildsentence","catchanswer","movechoose",
+    "learnpractice","listenchoose","listenrepeat","buildword","buildsentence","catchanswer","movechoose",
     "mcq","match","order","random","wheelmcq","balloon","mystery","bomb","text","voice","audio","video"
   ];
   const types=order.filter(type=>(counts[type]||0)>0);
@@ -12010,6 +12075,9 @@ document
   .getElementById("nextQuestionArea")
   .classList
   .add("hidden");
+
+  updatePreviousLearnVideoButton();
+
   const questions = CURRENT_ACTIVITY.questions;
   const question = questions[CURRENT_QUESTION_INDEX];
   const type = question.type || "mcq";
@@ -12195,6 +12263,11 @@ document
     return;
   }
 
+  if(type === "learnpractice"){
+    renderLearnPracticeVideo(question,answersBox);
+    return;
+  }
+
   if(type === "listenchoose"){ renderListenChooseGame(question,answersBox); return; }
   if(type === "listenrepeat"){ renderListenRepeatGame(question,answersBox); return; }
   if(type === "buildword"){ renderBuildGame(question,answersBox,"word"); return; }
@@ -12223,6 +12296,31 @@ document
   });
 }
 
+
+/* =====================================
+   LEARN AND PRACTICE — VIDEO ONLY
+===================================== */
+function renderLearnPracticeVideo(question,answersBox){
+  answersBox.className="learn-practice-player";
+  answersBox.innerHTML=`
+    <div style="text-align:center;padding:10px 0 2px">
+      <div style="font-size:18px;font-weight:900;color:var(--blue);margin-bottom:8px">
+        🎓 Learn and Practice
+      </div>
+      <div style="color:var(--muted);font-weight:700;line-height:1.7">
+        Watch the educational video, then continue to the next question. You can return to the video later using Previous Video.
+      </div>
+    </div>
+  `;
+
+  /*
+    This activity is instructional only:
+    no answer, no correct/wrong grading, and no score change.
+    The existing video player above is used for YouTube or direct video URLs.
+  */
+  ANSWER_LOCKED=true;
+  showNextQuestionButton();
+}
 
 /* =========================================================
    PRUDLE PROFESSIONAL KIDS / MOVEMENT GAME ENGINE
@@ -12438,6 +12536,88 @@ function moveNextGroupedQuestionToCurrent(
 
   return true;
 }
+
+function getPreviousLearnPracticeIndex(){
+  if(
+    !CURRENT_ACTIVITY ||
+    !Array.isArray(CURRENT_ACTIVITY.questions) ||
+    CURRENT_QUESTION_INDEX <= 0
+  ){
+    return -1;
+  }
+
+  /*
+    Return to the most recent Learn and Practice video before
+    the current question. This lets the learner review the lesson
+    without changing the score or recording a new answer.
+  */
+  for(let index = CURRENT_QUESTION_INDEX - 1; index >= 0; index--){
+    const type =
+      String(CURRENT_ACTIVITY.questions[index]?.type || "")
+        .trim()
+        .toLowerCase();
+
+    if(type === "learnpractice"){
+      return index;
+    }
+  }
+
+  return -1;
+}
+
+function updatePreviousLearnVideoButton(){
+  const button =
+    document.getElementById("previousLearnVideoBtn");
+
+  if(!button) return;
+
+  const previousIndex =
+    getPreviousLearnPracticeIndex();
+
+  button.classList.toggle(
+    "hidden",
+    previousIndex < 0
+  );
+}
+
+function previousLearnPracticeVideo(){
+  if(
+    ACTIVITY_FINISHED ||
+    !CURRENT_ACTIVITY ||
+    !Array.isArray(CURRENT_ACTIVITY.questions)
+  ){
+    return;
+  }
+
+  const previousIndex =
+    getPreviousLearnPracticeIndex();
+
+  if(previousIndex < 0){
+    return;
+  }
+
+  stopBombTimer();
+  stopActivityTimer();
+  clearRandomQuestionTimers();
+  clearWheelState();
+
+  CURRENT_QUESTION_INDEX =
+    previousIndex;
+
+  /*
+    Learn and Practice is review-only:
+    no score is changed and no answer result is created.
+  */
+  ANSWER_LOCKED = false;
+
+  renderStudentQuestion();
+
+  window.scrollTo({
+    top:0,
+    behavior:"smooth"
+  });
+}
+
 
 function nextQuestionManually(){
   stopBombTimer();
