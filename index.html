@@ -5576,7 +5576,7 @@ else if(type === "order"){
   }else if(type === "mystery"){
 
     note.textContent =
-      "Mystery Reward Box: each item is a surprise challenge/reward. The student opens one box, completes the revealed classroom challenge, and earns the question points. No correct-answer choice is required.";
+      "Mystery Box: each Mystery question becomes a closed box in the game. The student chooses one box, then the hidden question and its answer choices appear. Select one correct answer for every Mystery question.";
 
     labels.forEach(label=>{
       label.textContent =
@@ -6360,9 +6360,19 @@ function collectQuestions(){
 
     if(type === "mystery"){
       if(answers.length < 2 || answers.some(answer=>!answer.text)){
-        throw new Error(`Mystery Reward Box ${index + 1} requires at least two non-empty surprise challenges.`);
+        throw new Error(`Mystery Box question ${index + 1} requires at least two non-empty answer choices.`);
       }
-      answers.forEach(answer=>{ answer.correct = false; });
+      if(!answers.some(answer=>answer.correct)){
+        throw new Error(`Mystery Box question ${index + 1} requires one correct answer.`);
+      }
+      let mysteryCorrectFound = false;
+      answers.forEach(answer=>{
+        if(answer.correct && !mysteryCorrectFound){
+          mysteryCorrectFound = true;
+        }else if(answer.correct){
+          answer.correct = false;
+        }
+      });
     }
 
     if(type === "wheel"){
@@ -8148,7 +8158,7 @@ function normalizeAIQuestion(q, fallbackType="mcq"){
       .map(a=>({...a,correct:false}));
   }
 
-  if(["mcq","wheelmcq","balloon","bomb","listenchoose","catchanswer"].includes(type)){
+  if(["mcq","wheelmcq","balloon","mystery","bomb","listenchoose","catchanswer"].includes(type)){
     answers = answers.filter(a => a.text || a.image);
 
     // If the AI supplied no usable choices, create editable placeholders.
@@ -8199,18 +8209,6 @@ function normalizeAIQuestion(q, fallbackType="mcq"){
     while(answers.length < 2) answers.push({text:"Ready",right:"",image:"",correct:false});
   }
 
-  if(type === "mystery"){
-    answers = answers.filter(a=>a.text || a.right).map((a,index)=>({
-      ...a,
-      text:a.text || `Mystery ${index + 1}`,
-      right:a.right || a.text || "Complete the surprise challenge!",
-      correct:false
-    }));
-    while(answers.length < 3){
-      const n=answers.length+1;
-      answers.push({text:`Mystery ${n}`,right:"Complete the surprise challenge!",image:"",correct:false});
-    }
-  }
 
   return {
     rewardPoints:Math.max(1,Number(q?.rewardPoints || q?.degree || q?.points || 1)),
@@ -10267,10 +10265,12 @@ function renderAdminActivities(){
 
             <button
               class="btn btn-success"
+              type="button"
+              title="Try this game directly"
               onclick="closeSavedActivitiesTypeModal();previewActivity('${activity.id}')">
 
-              <i class="fa-solid fa-eye"></i>
-              Preview
+              <i class="fa-solid fa-gamepad"></i>
+              Try Game
             </button>
 
 
@@ -12186,9 +12186,12 @@ document
   }
 
   if(type === "mystery"){
+    // Mystery Box is a QUESTION PICKER, not an answer-as-a-box game.
+    // Show one box for every remaining Mystery question. After the student
+    // opens a box, the selected question and its normal answer choices appear.
     document.getElementById("gameQuestion").textContent =
-      question.text || "🎁 Choose a Mystery Reward Box!";
-    renderMysteryRewardQuestion(question,answersBox);
+      "🎁 Choose a Mystery Box!";
+    renderMysteryQuestion(question,answersBox);
     return;
   }
 
@@ -12310,7 +12313,15 @@ function catchKidsAnswer(index,button){
 
 function renderMoveChooseGame(question,answersBox){
   answersBox.className="prudle-kids-game move-game";
-  answersBox.innerHTML=`<div class="move-countdown"><span>3</span><span>2</span><span>1</span></div><div class="move-go">GO! 🏃</div><div class="move-instruction">${esc(question.text||'Complete the movement challenge!')}</div><button class="kids-big-action" type="button" onclick="prudleCompleteGame(true,'Movement completed')">✅ Done!</button>`;
+  answersBox.innerHTML=`
+    <div class="kids-game-banner">🏃 Move &amp; Choose</div>
+    <div class="move-countdown"><span>3</span><span>2</span><span>1</span></div>
+    <div class="move-go">GO! 🏃</div>
+    <div class="move-instruction">Complete the movement challenge shown above.</div>
+    <button class="kids-big-action" type="button"
+      onclick="prudleCompleteGame(true,'Movement completed')">
+      ✅ Done!
+    </button>`;
 }
 
 function renderMysteryRewardQuestion(question,answersBox){
