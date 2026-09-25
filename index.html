@@ -8222,6 +8222,7 @@ function normalizeAIQuestion(q, fallbackType="mcq"){
     text:questionText || "AI generated activity",
     mediaType:String(q?.mediaType || (q?.image ? "image" : "none")).toLowerCase(),
     mediaPrompt:String(q?.mediaPrompt || q?.imagePrompt || q?.videoPrompt || ""),
+    audioText:String(q?.audioText || q?.spokenText || q?.ttsText || ""),
     mediaUrl:String(q?.mediaUrl || q?.audioUrl || q?.audio || q?.video || q?.image || ""),
     image:String(q?.image || ""),
     answers
@@ -8606,7 +8607,15 @@ VALID STRUCTURES:
 - balloon: short fast multiple-choice challenge + 2–4 choices; exactly one correct=true.
 - mystery: reveal/guess multiple-choice challenge + 2–4 choices; exactly one correct=true.
 - bomb: short review/challenge multiple-choice question + 2–4 choices; exactly one correct=true.
-- listenchoose: listening question; prefer audio/media prompt + 2–4 choices; exactly one correct=true.
+- listenchoose: listening recognition question + 2–4 choices; exactly one correct=true.
+  CRITICAL LISTEN & CHOOSE RULES:
+  * The written question, spoken audio, correct answer text, and correct answer image MUST all refer to the SAME target word/object.
+  * First choose the correct target from the lesson/source (example: Dog or Banana), then build the whole question around that exact target.
+  * For beginner/kids vocabulary, prefer a simple written prompt such as "Where is the dog?" or "Where is the banana?".
+  * Return audioText separately. audioText must naturally repeat/reinforce the same target, for example: "Where is the dog? A dog." or "Where is the banana? Banana."
+  * Never ask about one object while the correct answer/image represents another object.
+  * Distractors must be the same semantic category when possible (Dog/Cat/Duck/Bird; Banana/Lemon/Pineapple/Mango).
+  * If Audio media is requested, this type MUST use mediaType="audio".
 - listenrepeat: pronunciation/repetition prompt; provide the exact word/sentence to repeat in text/items.
 - buildword: spelling task; answers/items contain letters or word parts in the CORRECT final order.
 - buildsentence: sentence-building task; answers/items contain words/phrases in the CORRECT final order.
@@ -8733,6 +8742,37 @@ function normalizeAIQuestionForRequestedMode(question, requestedType){
 }
 
 
+
+
+function preparePrudleListenChooseQuestion(question, audioRequested=false){
+  const q = question && typeof question === "object" ? question : {};
+  if(String(q.type || "").toLowerCase() !== "listenchoose") return q;
+
+  const answers = Array.isArray(q.answers) ? q.answers : [];
+  const correct = answers.find(answer => answer && answer.correct) || answers[0] || {};
+  const target = String(correct.text || correct.right || "").trim();
+
+  if(target){
+    const cleanTarget = target.replace(/[?.!]+$/g,"").trim();
+    const lowerTarget = cleanTarget.toLowerCase();
+
+    // Keep the wording deliberately simple and force all parts to the same target.
+    q.text = `Where is the ${lowerTarget}?`;
+    q.audioText = `Where is the ${lowerTarget}? ${cleanTarget}.`;
+
+    // A target-specific prompt also keeps any generated media aligned.
+    q.mediaPrompt =
+      `Beginner English listening activity. The exact target is "${cleanTarget}". ` +
+      `The spoken audio must say: "${q.audioText}" ` +
+      `Do not mention a different target or answer.`;
+  }
+
+  if(audioRequested){
+    q.mediaType = "audio";
+  }
+
+  return q;
+}
 
 function prudleAnswerImagePrompt(question, answer){
   const type = String(question?.type || "mcq").toLowerCase();
@@ -8892,7 +8932,12 @@ async function generateQuestionsWithAI(){
           requestedMediaTypes,
           mediaSelection:requestedMediaTypes,
           mediaInstructions: requestedMediaTypes.length
-            ? "Generate suitable content for these selected media: " + requestedMediaTypes.join(", ") + ". For image create a clear visual clue; for audio create natural listening text; for video create a short visual teaching scene. Do not duplicate the same content unnecessarily."
+            ? "Generate suitable content for these selected media: " + requestedMediaTypes.join(", ") + ". " +
+              "For image create a clear visual clue; for audio return a separate audioText field containing exactly what should be spoken; for video create a short visual teaching scene. " +
+              "For listenchoose, the written question + audioText + correct answer + correct answer image MUST use the exact same target word. " +
+              "Example target Dog: text='Where is the dog?', audioText='Where is the dog? A dog.', correct answer='Dog'. " +
+              "Example target Banana: text='Where is the banana?', audioText='Where is the banana? Banana.', correct answer='Banana'. " +
+              "Never mix targets between the question, audio, answers, and images."
             : "No media requested.",
           imagePlacement:requestedMediaTypes.includes("image") ? imagePlacement : "question",
 
@@ -8930,6 +8975,11 @@ async function generateQuestionsWithAI(){
             selectedAllowedTypes[0]
           );
         }
+
+        item = preparePrudleListenChooseQuestion(
+          item,
+          requestedMediaTypes.includes("audio")
+        );
 
         if(requestedMedia === "none"){
           item.mediaType = "none";
@@ -9046,7 +9096,7 @@ async function generateQuestionsWithAI(){
                 mediaType:requestedMedia,
                 questionText:String(item.text || ""),
                 text:String(item.text || ""),
-                audioText:String(item.text || ""),
+                audioText:String(item.audioText || item.text || ""),
                 mediaPrompt,
                 prompt:mediaPrompt,
                 imageStyle:"clear educational illustration",
@@ -9149,6 +9199,20 @@ async function generateQuestionsWithAI(){
               item.mediaTypes=requestedMediaTypes.slice();
             }
           }catch(extraError){console.error(extraError);toast(`Question ${mediaIndex+1}: ${extraMediaType} could not be generated.`);}
+        }
+
+        if(
+          item.type === "listenchoose" &&
+          requestedMediaTypes.includes("audio")
+        ){
+          const listenAudioUrl = String(item.audioUrl || item.audio || "").trim();
+
+          if(listenAudioUrl){
+            item.mediaType = "audio";
+            item.mediaUrl = listenAudioUrl;
+          }else if(requestedMedia === "audio" && item.mediaUrl){
+            item.mediaType = "audio";
+          }
         }
 
         addQuestion(item);
