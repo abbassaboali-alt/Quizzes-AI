@@ -2597,6 +2597,8 @@ button{cursor:pointer}
   .kids-activity-card{min-height:auto}
 }
 
+
+@media(max-width:600px){#aiMediaChoice.ai-type-checks{grid-template-columns:1fr!important}#aiMediaChoice .ai-type-check{min-height:46px;font-size:14px}}
 </style>
 </head>
 
@@ -2898,13 +2900,12 @@ button{cursor:pointer}
         </div>
           <div class="field">
             <label>AI Media</label>
-            <select id="aiMediaChoice" onchange="updateAIImagePlacementUI()">
-              <option value="none">No Media</option>
-              <option value="image">🖼️ Images</option>
-              <option value="video">🎬 Videos</option>
-              <option value="audio">🔊 Audio</option>
-            </select>
-            <div class="help">Choose before generating. Media will be created only when selected here.</div>
+            <div id="aiMediaChoice" class="ai-type-checks" onchange="updateAIImagePlacementUI()">
+              <label class="ai-type-check"><input type="checkbox" value="image"> 🖼️ Image</label>
+              <label class="ai-type-check"><input type="checkbox" value="audio"> 🔊 Audio</label>
+              <label class="ai-type-check"><input type="checkbox" value="video"> 🎬 Video</label>
+            </div>
+            <div class="help">Select one, two, or all media types. AI chooses suitable content for every selected medium. Leave all unchecked for No Media.</div>
           </div>
           <div class="field hidden" id="aiImagePlacementField">
             <label>Where should images appear?</label>
@@ -7991,13 +7992,13 @@ function updateAISourceUI(){
 }
 
 
-function updateAIImagePlacementUI(){
-  const media = String(
-    document.getElementById("aiMediaChoice")?.value || "none"
-  ).trim().toLowerCase();
+function getAIMediaTypes(){
+  return [...new Set(Array.from(document.querySelectorAll("#aiMediaChoice input[type=checkbox]:checked")).map(el=>String(el.value||"").trim().toLowerCase()).filter(v=>["image","audio","video"].includes(v)))];
+}
 
-  document.getElementById("aiImagePlacementField")
-    ?.classList.toggle("hidden", media !== "image");
+function updateAIImagePlacementUI(){
+  const media = getAIMediaTypes();
+  document.getElementById("aiImagePlacementField")?.classList.toggle("hidden", !media.includes("image"));
 }
 
 function setAIStatus(message, kind=""){
@@ -8832,9 +8833,8 @@ async function generateQuestionsWithAI(){
       selectedAllowedTypes.length === 1
         ? selectedAllowedTypes[0]
         : "mixed";
-    const requestedMedia = String(
-      document.getElementById("aiMediaChoice")?.value || "none"
-    ).trim().toLowerCase();
+    const requestedMediaTypes = getAIMediaTypes();
+    const requestedMedia = requestedMediaTypes[0] || "none";
 
     const imagePlacement = String(
       document.getElementById("aiImagePlacement")?.value || "question"
@@ -8889,7 +8889,12 @@ async function generateQuestionsWithAI(){
           questionType:requestedType,
           requestedQuestionType:requestedType,
           mediaType:requestedMedia,
-          imagePlacement:requestedMedia === "image" ? imagePlacement : "question",
+          requestedMediaTypes,
+          mediaSelection:requestedMediaTypes,
+          mediaInstructions: requestedMediaTypes.length
+            ? "Generate suitable content for these selected media: " + requestedMediaTypes.join(", ") + ". For image create a clear visual clue; for audio create natural listening text; for video create a short visual teaching scene. Do not duplicate the same content unnecessarily."
+            : "No media requested.",
+          imagePlacement:requestedMediaTypes.includes("image") ? imagePlacement : "question",
 
           smartActivityTypes:requestedType === "smart",
           mixedActivityTypes:requestedType === "mixed",
@@ -9123,16 +9128,37 @@ async function generateQuestionsWithAI(){
           }
         }
 
+        /* Generate every additionally checked medium and keep each URL on the question. */
+        for(const extraMediaType of requestedMediaTypes){
+          if(extraMediaType === requestedMedia) continue;
+          const extraPrompt=String(item.mediaPrompt || item.text || sourceText || "Educational English activity").trim();
+          try{
+            setAIStatus(`Creating ${extraMediaType} ${mediaIndex + 1} of ${selectedQuestions.length}...`);
+            const extraResponse=await fetch(PRUDLE_AI_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({task:"generate_question_media",mediaType:extraMediaType,questionText:String(item.text||""),text:String(item.text||""),audioText:String(item.audioText||item.text||""),mediaPrompt:extraPrompt,prompt:extraPrompt,imageStyle:"clear educational illustration",imageAspectRatio:"1:1",videoAspectRatio:"16:9",durationSeconds:8})});
+            const extraPayload=await extraResponse.json().catch(()=>({}));
+            if(!extraResponse.ok) throw new Error(extraPayload?.error||`Extra ${extraMediaType} failed.`);
+            let extraUrl=String(extraPayload?.url||extraPayload?.mediaUrl||extraPayload?.audioUrl||"").trim();
+            if(extraMediaType==="video" && !extraUrl){
+              const op=String(extraPayload?.operationName||extraPayload?.operation||"").trim();
+              if(op) extraUrl=await waitForPrudleVideo(op);
+            }
+            if(extraUrl){
+              if(extraMediaType==="image") item.image=extraUrl;
+              if(extraMediaType==="audio"){item.audio=extraUrl;item.audioUrl=extraUrl;}
+              if(extraMediaType==="video") item.video=extraUrl;
+              item.mediaTypes=requestedMediaTypes.slice();
+            }
+          }catch(extraError){console.error(extraError);toast(`Question ${mediaIndex+1}: ${extraMediaType} could not be generated.`);}
+        }
+
         addQuestion(item);
       }
 
       setAIStatus(
         `Added ${selectedQuestions.length} AI questions` +
-        (requestedMedia === "none"
+        (!requestedMediaTypes.length
           ? " without media."
-          : requestedMedia === "image"
-            ? ` with images (${imagePlacement}).`
-            : ` with ${requestedMedia}.`) +
+          : ` with ${requestedMediaTypes.join(" + ")}${requestedMediaTypes.includes("image") ? ` (${imagePlacement})` : ""}.`) +
         " Review or edit them, then click Save Activity.",
         "success"
       );
